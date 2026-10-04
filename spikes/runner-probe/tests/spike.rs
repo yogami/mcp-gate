@@ -162,6 +162,22 @@ fn p0_spike_06_landlock_plus_seccomp() {
     assert_eq!(c["detail"]["denied_blocked"], true, "denied open must be blocked by Landlock");
 }
 
+/// TASK-0.9: P0-SPIKE-07, inotify catches reads.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_07_inotify_catches_reads() {
+    let report = probe(&["--check", "P0-SPIKE-07", "--json"]);
+    let c = &report["checks"]["P0-SPIKE-07"];
+    assert_eq!(
+        c["status"], "pass",
+        "P0-SPIKE-07 status must be pass, got: {:?}",
+        c
+    );
+    assert_eq!(c["detail"]["open_seen"], true, "IN_OPEN must be observed");
+    assert_eq!(c["detail"]["access_seen"], true, "IN_ACCESS must be observed");
+}
+
+
 
 
 
