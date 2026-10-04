@@ -1,6 +1,11 @@
 #![forbid(unsafe_code)]
 
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
+use mcpg_domain::verdict::ExitCode;
+
+mod cmd;
 
 #[derive(Parser)]
 #[command(name = "mcp-gate")]
@@ -13,31 +18,71 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Check a config file against the schema and resolve all paths
+    Validate {
+        /// Config file to validate
+        #[arg(short = 'c', long = "config", default_value = "./mcp-gate.yaml")]
+        config: PathBuf,
+    },
     /// Print version, commit, build target and supported MCP protocol versions
     Version,
 }
 
-fn run_command(cmd: Commands) {
+fn run_command(cmd: Commands) -> ExitCode {
     match cmd {
+        Commands::Validate { config } => cmd::validate::execute(&config),
         Commands::Version => {
             println!("mcp-gate 0.1.0");
             println!("Supported MCP protocol versions: 2025-06-18, 2024-11-05");
+            ExitCode::Pass
         }
     }
 }
 
 fn main() {
     let cli = Cli::parse();
-    run_command(cli.command);
+    let code = run_command(cli.command);
+    std::process::exit(code as i32);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
 
     #[test]
     fn parses_version() {
         let cli = Cli::try_parse_from(["mcp-gate", "version"]).expect("parse version command");
-        run_command(cli.command);
+        let code = run_command(cli.command);
+        assert_eq!(code, ExitCode::Pass);
+    }
+
+    #[test]
+    fn validates_valid_and_invalid_configs_in_unit() {
+        let valid_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("tests/configs/valid/annotated.yaml");
+        let code_valid = run_command(Commands::Validate { config: valid_path });
+        assert_eq!(code_valid, ExitCode::Pass);
+
+        let invalid_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("tests/configs/invalid/unknown_key.yaml");
+        let code_invalid = run_command(Commands::Validate {
+            config: invalid_path,
+        });
+        assert_eq!(code_invalid, ExitCode::Usage);
+
+        let missing_path = Path::new("non_existent_config.yaml");
+        let code_missing = run_command(Commands::Validate {
+            config: missing_path.to_path_buf(),
+        });
+        assert_eq!(code_missing, ExitCode::Usage);
     }
 }

@@ -98,7 +98,7 @@ These do not block work, but they should land in SPEC v0.3 before the affected t
 | TASK-1.5 | JSON Schema validation | 2 | [x] |
 | TASK-1.6 | YAML span map | 3 | [x] |
 | TASK-1.7 | Path variable expansion | 3 | [x] |
-| TASK-1.8 | `mcp-gate validate` | 3 | [ ] |
+| TASK-1.8 | `mcp-gate validate` | 3 | [x] |
 | TASK-1.9 | Env: fixed vars and exact passthrough | 3 | [ ] |
 | TASK-1.10 | Env: wildcard, set, decoys | 3 | [ ] |
 | TASK-1.11 | Env: CI deny list | 3 | [ ] |
