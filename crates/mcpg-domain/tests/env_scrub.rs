@@ -383,3 +383,82 @@ fn path_set_requires_reachable_entries() {
         .expect("PATH should be present");
     assert_eq!(found.1.to_string_lossy(), "/usr/bin:/bin");
 }
+
+#[cfg(unix)]
+#[test]
+fn p1_env_12_values_preserved_byte_exact() {
+    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+
+    let mut host = make_host_vars();
+    let val_newline = OsString::from("line1\nline2");
+    let val_equals = OsString::from("key=value=more");
+    let val_bytes = OsString::from_vec(vec![b'a', 0xff, b'b', 0xfe]);
+
+    host.push((OsString::from("VAR_NEWLINE"), val_newline));
+    host.push((OsString::from("VAR_EQUALS"), val_equals));
+    host.push((OsString::from("VAR_NON_UTF8"), val_bytes));
+
+    let cfg = EnvConfig {
+        passthrough: vec![
+            "VAR_NEWLINE".to_string(),
+            "VAR_EQUALS".to_string(),
+            "VAR_NON_UTF8".to_string(),
+        ],
+        ..Default::default()
+    };
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let outcome = build_env(&host, &cfg, &fixed, &decoys, &allow_all).expect("build_env succeeds");
+
+    let found_nl = outcome
+        .vars
+        .iter()
+        .find(|(k, _)| k == "VAR_NEWLINE")
+        .expect("VAR_NEWLINE should be present");
+    assert_eq!(found_nl.1.as_bytes(), b"line1\nline2");
+
+    let found_eq = outcome
+        .vars
+        .iter()
+        .find(|(k, _)| k == "VAR_EQUALS")
+        .expect("VAR_EQUALS should be present");
+    assert_eq!(found_eq.1.as_bytes(), b"key=value=more");
+
+    let found_non_utf8 = outcome
+        .vars
+        .iter()
+        .find(|(k, _)| k == "VAR_NON_UTF8")
+        .expect("VAR_NON_UTF8 should be present");
+    assert_eq!(found_non_utf8.1.as_bytes(), &[b'a', 0xff, b'b', 0xfe]);
+}
+
+proptest::proptest! {
+    #![proptest_config(proptest::test_runner::Config::with_cases(100))]
+    #[test]
+    fn p1_env_13_output_sorted_and_stable(weights in proptest::collection::vec(proptest::prelude::any::<u32>(), 40)) {
+        let base_host = make_host_vars();
+        let cfg = EnvConfig {
+            passthrough: vec!["HOST_VAR_*".to_string()],
+            ..Default::default()
+        };
+        let fixed = default_fixed();
+        let decoys = [];
+
+        let expected = build_env(&base_host, &cfg, &fixed, &decoys, &allow_all)
+            .expect("build_env succeeds")
+            .vars;
+
+        let mut items: Vec<(u32, (OsString, OsString))> = weights
+            .into_iter()
+            .zip(base_host.into_iter().take(40))
+            .collect();
+        items.sort_by_key(|&(w, _)| w);
+        let shuffled: Vec<(OsString, OsString)> = items.into_iter().map(|(_, item)| item).collect();
+
+        let outcome = build_env(&shuffled, &cfg, &fixed, &decoys, &allow_all)
+            .expect("build_env succeeds");
+
+        proptest::prop_assert_eq!(outcome.vars, expected);
+    }
+}
