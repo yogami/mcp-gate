@@ -87,7 +87,7 @@ These do not block work, but they should land in SPEC v0.3 before the affected t
 | TASK-0.7 | P0-SPIKE-05 Landlock ABI and restrict | 1 | [x] |
 | TASK-0.8 | P0-SPIKE-06 Landlock plus seccomp in one child | 1 | [x] |
 | TASK-0.9 | P0-SPIKE-07 inotify on child reads | 1 | [x] |
-| TASK-0.10 | P0-SPIKE-08 inotify on mmap read | 1 | [ ] |
+| TASK-0.10 | P0-SPIKE-08 inotify on mmap read | 1 | [x] |
 | TASK-0.11 | P0-SPIKE-09 non-dumpable parent | 1 | [ ] |
 | TASK-0.12 | P0-SPIKE-10 notification overhead | 1 | [ ] |
 | TASK-0.13 | Compat report and go/no-go | 1 | [ ] |

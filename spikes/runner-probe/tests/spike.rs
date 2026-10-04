@@ -156,10 +156,18 @@ fn p0_spike_06_landlock_plus_seccomp() {
         "P0-SPIKE-06 status must be pass, got: {:?}",
         c
     );
-    let notifs = c["detail"]["notifs_seen"].as_i64().expect("notifs_seen is integer");
-    assert!(notifs >= 2, "must see at least 2 notifications, got: {notifs}");
+    let notifs = c["detail"]["notifs_seen"]
+        .as_i64()
+        .expect("notifs_seen is integer");
+    assert!(
+        notifs >= 2,
+        "must see at least 2 notifications, got: {notifs}"
+    );
     assert_eq!(c["detail"]["allowed_ok"], true, "allowed open must succeed");
-    assert_eq!(c["detail"]["denied_blocked"], true, "denied open must be blocked by Landlock");
+    assert_eq!(
+        c["detail"]["denied_blocked"], true,
+        "denied open must be blocked by Landlock"
+    );
 }
 
 /// TASK-0.9: P0-SPIKE-07, inotify catches reads.
@@ -174,7 +182,10 @@ fn p0_spike_07_inotify_catches_reads() {
         c
     );
     assert_eq!(c["detail"]["open_seen"], true, "IN_OPEN must be observed");
-    assert_eq!(c["detail"]["access_seen"], true, "IN_ACCESS must be observed");
+    assert_eq!(
+        c["detail"]["access_seen"], true,
+        "IN_ACCESS must be observed"
+    );
 }
 
 /// TASK-0.10: P0-SPIKE-08, inotify on mmap read.
@@ -188,13 +199,50 @@ fn p0_spike_08_inotify_mmap_read() {
         "P0-SPIKE-08 status must be pass, got: {:?}",
         c
     );
-    assert_eq!(c["detail"]["open_seen"], true, "IN_OPEN must be observed on mmap read");
+    assert_eq!(
+        c["detail"]["open_seen"], true,
+        "IN_OPEN must be observed on mmap read"
+    );
 }
 
+/// Run `runner-probe` with custom env vars.
+fn probe_with_env(args: &[&str], envs: &[(&str, &str)]) -> Value {
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_runner-probe"));
+    cmd.args(args);
+    for (k, v) in envs {
+        cmd.env(k, v);
+    }
+    let out = cmd.output().expect("runner-probe should start");
+    assert!(
+        out.status.success(),
+        "runner-probe {:?} exited with {:?}, stderr: {}",
+        args,
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    serde_json::from_slice(&out.stdout).expect("stdout should be valid JSON")
+}
 
-
-
-
-
-
-
+/// TASK-0.11: P0-SPIKE-09, non-dumpable parent hides its environment.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_09_dumpable_zero_hides_environ() {
+    let report = probe_with_env(
+        &["--check", "P0-SPIKE-09", "--json"],
+        &[("MCPG_SPIKE_SECRET", "s3-canary-secret-12345")],
+    );
+    let c = &report["checks"]["P0-SPIKE-09"];
+    assert_eq!(
+        c["status"], "pass",
+        "P0-SPIKE-09 status must be pass, got: {:?}",
+        c
+    );
+    assert_eq!(
+        c["detail"]["errno"], "EACCES",
+        "detail.errno must be EACCES"
+    );
+    assert_eq!(
+        c["detail"]["secret_seen"], false,
+        "detail.secret_seen must be false"
+    );
+}

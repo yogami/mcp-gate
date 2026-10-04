@@ -15,6 +15,8 @@
 //! `checks["P0-SPIKE-NN"]`. A check that is not written yet reports
 //! `"status": "not_implemented"`.
 
+#![allow(clippy::manual_c_str_literals)]
+
 use std::ffi::CStr;
 use std::process::ExitCode;
 
@@ -93,17 +95,19 @@ fn host_info() -> Result<(String, String), String> {
         return Err(format!("uname failed: {}", std::io::Error::last_os_error()));
     }
     // SAFETY: `uname` NUL-terminates every field.
-    let field = |p: &[libc::c_char]| unsafe { CStr::from_ptr(p.as_ptr()) }
-        .to_string_lossy()
-        .into_owned();
+    let field = |p: &[libc::c_char]| {
+        unsafe { CStr::from_ptr(p.as_ptr()) }
+            .to_string_lossy()
+            .into_owned()
+    };
     Ok((field(&u.release), field(&u.machine)))
 }
 
 #[cfg(target_os = "linux")]
 mod linux_probe {
+    use serde_json::{json, Value};
     use std::mem;
     use std::os::raw::{c_int, c_ushort};
-    use serde_json::{json, Value};
 
     // Constants from <linux/seccomp.h> and <linux/filter.h>
     const SECCOMP_SET_MODE_FILTER: libc::c_uint = 1;
@@ -291,7 +295,10 @@ mod linux_probe {
 
         let res = libc::sendmsg(sock, &msg, 0);
         if res < 0 {
-            Err(format!("sendmsg failed: {}", std::io::Error::last_os_error()))
+            Err(format!(
+                "sendmsg failed: {}",
+                std::io::Error::last_os_error()
+            ))
         } else {
             Ok(())
         }
@@ -315,7 +322,10 @@ mod linux_probe {
 
         let res = libc::recvmsg(sock, &mut msg, 0);
         if res <= 0 {
-            return Err(format!("recvmsg failed: {}", std::io::Error::last_os_error()));
+            return Err(format!(
+                "recvmsg failed: {}",
+                std::io::Error::last_os_error()
+            ));
         }
 
         let cmsg = libc::CMSG_FIRSTHDR(&msg);
@@ -385,7 +395,7 @@ mod linux_probe {
                     libc::_exit(20 + (err & 0x7f));
                 }
 
-                if let Err(_) = send_fd(sv[1], listener_fd) {
+                if send_fd(sv[1], listener_fd).is_err() {
                     libc::close(listener_fd);
                     libc::_exit(2);
                 }
@@ -490,7 +500,7 @@ mod linux_probe {
                     libc::_exit(20 + (err & 0x7f));
                 }
 
-                if let Err(_) = send_fd(sv[1], listener_fd) {
+                if send_fd(sv[1], listener_fd).is_err() {
                     libc::close(listener_fd);
                     libc::_exit(2);
                 }
@@ -504,9 +514,17 @@ mod linux_probe {
                 libc::close(sv[1]);
 
                 // Call openat on known file
-                let mut fd = libc::openat(libc::AT_FDCWD, b"/etc/hostname\0".as_ptr() as *const _, libc::O_RDONLY);
+                let mut fd = libc::openat(
+                    libc::AT_FDCWD,
+                    b"/etc/hostname\0".as_ptr() as *const _,
+                    libc::O_RDONLY,
+                );
                 if fd < 0 {
-                    fd = libc::openat(libc::AT_FDCWD, b"/etc/hosts\0".as_ptr() as *const _, libc::O_RDONLY);
+                    fd = libc::openat(
+                        libc::AT_FDCWD,
+                        b"/etc/hosts\0".as_ptr() as *const _,
+                        libc::O_RDONLY,
+                    );
                 }
 
                 if fd >= 0 {
@@ -641,7 +659,7 @@ mod linux_probe {
                     libc::_exit(20 + (err & 0x7f));
                 }
 
-                if let Err(_) = send_fd(sv[1], listener_fd) {
+                if send_fd(sv[1], listener_fd).is_err() {
                     libc::close(listener_fd);
                     libc::_exit(2);
                 }
@@ -655,9 +673,17 @@ mod linux_probe {
                 libc::close(sv[1]);
 
                 // Call openat on known file
-                let mut fd = libc::openat(libc::AT_FDCWD, b"/etc/hostname\0".as_ptr() as *const _, libc::O_RDONLY);
+                let mut fd = libc::openat(
+                    libc::AT_FDCWD,
+                    b"/etc/hostname\0".as_ptr() as *const _,
+                    libc::O_RDONLY,
+                );
                 if fd < 0 {
-                    fd = libc::openat(libc::AT_FDCWD, b"/etc/hosts\0".as_ptr() as *const _, libc::O_RDONLY);
+                    fd = libc::openat(
+                        libc::AT_FDCWD,
+                        b"/etc/hosts\0".as_ptr() as *const _,
+                        libc::O_RDONLY,
+                    );
                 }
 
                 if fd >= 0 {
@@ -713,7 +739,12 @@ mod linux_probe {
                     if mem_fd >= 0 {
                         let mut buf = [0u8; 4096];
                         let path_ptr = notif.data.args[1];
-                        let n = libc::pread(mem_fd, buf.as_mut_ptr() as *mut _, buf.len(), path_ptr as libc::off_t);
+                        let n = libc::pread(
+                            mem_fd,
+                            buf.as_mut_ptr() as *mut _,
+                            buf.len(),
+                            path_ptr as libc::off_t,
+                        );
                         libc::close(mem_fd);
                         if n > 0 {
                             let end = buf.iter().position(|&b| b == 0).unwrap_or(n as usize);
@@ -723,7 +754,12 @@ mod linux_probe {
 
                     // Verify NOTIF_ID_VALID
                     let mut id_check = notif.id;
-                    if libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_ID_VALID as _, &mut id_check) == 0 {
+                    if libc::ioctl(
+                        listener_fd,
+                        SECCOMP_IOCTL_NOTIF_ID_VALID as _,
+                        &mut id_check,
+                    ) == 0
+                    {
                         id_valid = true;
                     }
 
@@ -791,7 +827,8 @@ mod linux_probe {
                 };
 
                 const SECCOMP_FILTER_FLAG_WAIT_KILLABLE_RECV: libc::c_uint = 32;
-                let flags = SECCOMP_FILTER_FLAG_NEW_LISTENER | SECCOMP_FILTER_FLAG_WAIT_KILLABLE_RECV;
+                let flags =
+                    SECCOMP_FILTER_FLAG_NEW_LISTENER | SECCOMP_FILTER_FLAG_WAIT_KILLABLE_RECV;
 
                 let fd = libc::syscall(
                     libc::SYS_seccomp,
@@ -905,7 +942,10 @@ mod linux_probe {
                 }
 
                 // Allow reading /tmp
-                let tmp_fd = libc::open(b"/tmp\0".as_ptr() as *const _, libc::O_RDONLY | libc::O_DIRECTORY | libc::O_CLOEXEC);
+                let tmp_fd = libc::open(
+                    b"/tmp\0".as_ptr() as *const _,
+                    libc::O_RDONLY | libc::O_DIRECTORY | libc::O_CLOEXEC,
+                );
                 if tmp_fd < 0 {
                     libc::close(ruleset_fd);
                     libc::_exit(3);
@@ -965,7 +1005,11 @@ mod linux_probe {
                     }
                 })
             } else {
-                let code = if libc::WIFEXITED(status) { libc::WEXITSTATUS(status) } else { -1 };
+                let code = if libc::WIFEXITED(status) {
+                    libc::WEXITSTATUS(status)
+                } else {
+                    -1
+                };
                 json!({
                     "status": "fail",
                     "detail": {
@@ -981,7 +1025,11 @@ mod linux_probe {
     pub fn check_combo() -> Value {
         unsafe {
             let allowed_file = b"/tmp/probe_allowed.txt\0";
-            let create_fd = libc::open(allowed_file.as_ptr() as *const _, libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC, 0o644);
+            let create_fd = libc::open(
+                allowed_file.as_ptr() as *const _,
+                libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC,
+                0o644,
+            );
             if create_fd >= 0 {
                 libc::write(create_fd, b"allowed\n".as_ptr() as *const _, 8);
                 libc::close(create_fd);
@@ -1030,7 +1078,7 @@ mod linux_probe {
                     libc::_exit(2);
                 }
 
-                if let Err(_) = send_fd(sv[1], listener_fd) {
+                if send_fd(sv[1], listener_fd).is_err() {
                     libc::close(listener_fd);
                     libc::_exit(3);
                 }
@@ -1058,7 +1106,10 @@ mod linux_probe {
                     libc::_exit(5);
                 }
 
-                let tmp_fd = libc::open(b"/tmp\0".as_ptr() as *const _, libc::O_RDONLY | libc::O_DIRECTORY | libc::O_CLOEXEC);
+                let tmp_fd = libc::open(
+                    b"/tmp\0".as_ptr() as *const _,
+                    libc::O_RDONLY | libc::O_DIRECTORY | libc::O_CLOEXEC,
+                );
                 if tmp_fd < 0 {
                     libc::close(ruleset_fd);
                     libc::_exit(6);
@@ -1090,14 +1141,22 @@ mod linux_probe {
                 }
 
                 // 3. Open allowed file (should succeed)
-                let fd_allowed = libc::openat(libc::AT_FDCWD, allowed_file.as_ptr() as *const _, libc::O_RDONLY);
+                let fd_allowed = libc::openat(
+                    libc::AT_FDCWD,
+                    allowed_file.as_ptr() as *const _,
+                    libc::O_RDONLY,
+                );
                 if fd_allowed < 0 {
                     libc::_exit(10);
                 }
                 libc::close(fd_allowed);
 
                 // 4. Open denied file (should fail with EACCES)
-                let fd_denied = libc::openat(libc::AT_FDCWD, b"/etc/passwd\0".as_ptr() as *const _, libc::O_RDONLY);
+                let fd_denied = libc::openat(
+                    libc::AT_FDCWD,
+                    b"/etc/passwd\0".as_ptr() as *const _,
+                    libc::O_RDONLY,
+                );
                 if fd_denied < 0 {
                     let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
                     if err == libc::EACCES {
@@ -1175,7 +1234,11 @@ mod linux_probe {
                     }
                 })
             } else {
-                let code = if libc::WIFEXITED(status) { libc::WEXITSTATUS(status) } else { -1 };
+                let code = if libc::WIFEXITED(status) {
+                    libc::WEXITSTATUS(status)
+                } else {
+                    -1
+                };
                 json!({
                     "status": "fail",
                     "detail": {
@@ -1192,7 +1255,11 @@ mod linux_probe {
     pub fn check_inotify_reads() -> Value {
         unsafe {
             let test_file = b"/tmp/probe_inotify_read.txt\0";
-            let create_fd = libc::open(test_file.as_ptr() as *const _, libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC, 0o644);
+            let create_fd = libc::open(
+                test_file.as_ptr() as *const _,
+                libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC,
+                0o644,
+            );
             if create_fd >= 0 {
                 libc::write(create_fd, b"canary secret\n".as_ptr() as *const _, 14);
                 libc::close(create_fd);
@@ -1261,7 +1328,8 @@ mod linux_probe {
                     if len > 0 {
                         let mut offset = 0;
                         while offset + mem::size_of::<libc::inotify_event>() <= len as usize {
-                            let ev_ptr = event_buf.as_ptr().add(offset) as *const libc::inotify_event;
+                            let ev_ptr =
+                                event_buf.as_ptr().add(offset) as *const libc::inotify_event;
                             let ev = &*ev_ptr;
                             if (ev.mask & libc::IN_OPEN) != 0 {
                                 open_seen = true;
@@ -1310,7 +1378,11 @@ mod linux_probe {
     pub fn check_inotify_mmap() -> Value {
         unsafe {
             let test_file = b"/tmp/probe_inotify_mmap.txt\0";
-            let create_fd = libc::open(test_file.as_ptr() as *const _, libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC, 0o644);
+            let create_fd = libc::open(
+                test_file.as_ptr() as *const _,
+                libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC,
+                0o644,
+            );
             if create_fd >= 0 {
                 let page = [b'A'; 4096];
                 libc::write(create_fd, page.as_ptr() as *const _, page.len());
@@ -1390,7 +1462,8 @@ mod linux_probe {
                     if len > 0 {
                         let mut offset = 0;
                         while offset + mem::size_of::<libc::inotify_event>() <= len as usize {
-                            let ev_ptr = event_buf.as_ptr().add(offset) as *const libc::inotify_event;
+                            let ev_ptr =
+                                event_buf.as_ptr().add(offset) as *const libc::inotify_event;
                             let ev = &*ev_ptr;
                             if (ev.mask & libc::IN_OPEN) != 0 {
                                 open_seen = true;
@@ -1431,6 +1504,143 @@ mod linux_probe {
             }
         }
     }
+
+    pub fn check_dumpable() -> Value {
+        unsafe {
+            // SPEC 3.1.2 / REQ-PROC-001:
+            // Runner marks itself non-dumpable. This makes /proc/<pid>/environ
+            // and /proc/<pid>/mem unreadable to same-UID unprivileged children.
+            if libc::prctl(libc::PR_SET_DUMPABLE, 0, 0, 0, 0) != 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("prctl(PR_SET_DUMPABLE, 0) failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            let parent_pid = libc::getpid();
+
+            let mut fds: [c_int; 2] = [-1, -1];
+            if libc::pipe(fds.as_mut_ptr()) != 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("pipe failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            let pid = libc::fork();
+            if pid < 0 {
+                libc::close(fds[0]);
+                libc::close(fds[1]);
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("fork failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            if pid == 0 {
+                // Child process: attempt to open /proc/<parent_pid>/environ
+                libc::close(fds[0]);
+
+                let path = format!("/proc/{parent_pid}/environ\0");
+                let fd = libc::open(path.as_ptr() as *const _, libc::O_RDONLY);
+
+                let (err_no, secret_seen) = if fd < 0 {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
+                    (err, false)
+                } else {
+                    let mut buf = vec![0u8; 8192];
+                    let n = libc::read(fd, buf.as_mut_ptr() as *mut _, buf.len());
+                    libc::close(fd);
+
+                    let secret_env =
+                        std::env::var("MCPG_SPIKE_SECRET").unwrap_or_else(|_| "s3".to_string());
+                    let found = if n > 0 {
+                        let bytes = &buf[..n as usize];
+                        bytes
+                            .windows(secret_env.len())
+                            .any(|w| w == secret_env.as_bytes())
+                    } else {
+                        false
+                    };
+                    (0, found)
+                };
+
+                let mut payload = [0u8; 5];
+                payload[0..4].copy_from_slice(&err_no.to_le_bytes());
+                payload[4] = if secret_seen { 1 } else { 0 };
+
+                libc::write(fds[1], payload.as_ptr() as *const _, payload.len());
+                libc::close(fds[1]);
+                libc::_exit(0);
+            }
+
+            // Parent process
+            libc::close(fds[1]);
+
+            let mut payload = [0u8; 5];
+            let mut total_read = 0;
+            while total_read < payload.len() {
+                let n = libc::read(
+                    fds[0],
+                    payload.as_mut_ptr().add(total_read) as *mut _,
+                    payload.len() - total_read,
+                );
+                if n <= 0 {
+                    break;
+                }
+                total_read += n as usize;
+            }
+            libc::close(fds[0]);
+
+            let mut status: c_int = 0;
+            libc::waitpid(pid, &mut status, 0);
+
+            if total_read == 5 {
+                let err_no = i32::from_le_bytes(payload[0..4].try_into().unwrap());
+                let secret_seen = payload[4] == 1;
+
+                let errno_str = match err_no {
+                    libc::EACCES => "EACCES".to_string(),
+                    libc::ENOENT => "ENOENT".to_string(),
+                    libc::EPERM => "EPERM".to_string(),
+                    0 => "SUCCESS".to_string(),
+                    other => format!("ERRNO_{other}"),
+                };
+
+                if errno_str == "EACCES" && !secret_seen {
+                    json!({
+                        "status": "pass",
+                        "detail": {
+                            "errno": "EACCES",
+                            "secret_seen": false
+                        }
+                    })
+                } else {
+                    json!({
+                        "status": "fail",
+                        "detail": {
+                            "errno": errno_str,
+                            "secret_seen": secret_seen
+                        }
+                    })
+                }
+            } else {
+                json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": "child did not send status",
+                        "child_status": status
+                    }
+                })
+            }
+        }
+    }
 }
 
 /// Run one check. Checks are added here by TASK-0.3 to TASK-0.12.
@@ -1452,8 +1662,11 @@ fn run_check(id: &str, _args: &Args) -> Value {
         "P0-SPIKE-07" => linux_probe::check_inotify_reads(),
         #[cfg(target_os = "linux")]
         "P0-SPIKE-08" => linux_probe::check_inotify_mmap(),
+        #[cfg(target_os = "linux")]
+        "P0-SPIKE-09" => linux_probe::check_dumpable(),
         #[cfg(not(target_os = "linux"))]
-        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" | "P0-SPIKE-05" | "P0-SPIKE-06" | "P0-SPIKE-07" | "P0-SPIKE-08" => json!({
+        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" | "P0-SPIKE-05"
+        | "P0-SPIKE-06" | "P0-SPIKE-07" | "P0-SPIKE-08" | "P0-SPIKE-09" => json!({
             "status": "unsupported",
             "detail": { "reason": "Linux-only" }
         }),
