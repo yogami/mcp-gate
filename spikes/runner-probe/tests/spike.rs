@@ -109,5 +109,23 @@ fn p0_spike_03_read_path_arg() {
     );
 }
 
+/// TASK-0.6: P0-SPIKE-04, check WAIT_KILLABLE_RECV flag support.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_04_wait_killable_recv() {
+    let report = probe(&["--check", "P0-SPIKE-04", "--json"]);
+    let c = &report["checks"]["P0-SPIKE-04"];
+    assert!(
+        c["status"] == "info" || c["status"] == "pass",
+        "status must be info or pass, got: {:?}",
+        c
+    );
+    assert!(
+        c["detail"]["supported"].is_boolean(),
+        "detail.supported must be boolean"
+    );
+}
+
+
 
 

@@ -746,6 +746,92 @@ mod linux_probe {
             }
         }
     }
+    pub fn check_wait_killable() -> Value {
+        unsafe {
+            let pid = libc::fork();
+            if pid < 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("fork failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            if pid == 0 {
+                if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 {
+                    libc::_exit(1);
+                }
+
+                let filter = make_openat_filter();
+                let prog = sock_fprog {
+                    len: filter.len() as c_ushort,
+                    filter: filter.as_ptr(),
+                };
+
+                const SECCOMP_FILTER_FLAG_WAIT_KILLABLE_RECV: libc::c_uint = 32;
+                let flags = SECCOMP_FILTER_FLAG_NEW_LISTENER | SECCOMP_FILTER_FLAG_WAIT_KILLABLE_RECV;
+
+                let fd = libc::syscall(
+                    libc::SYS_seccomp,
+                    SECCOMP_SET_MODE_FILTER,
+                    flags,
+                    &prog as *const sock_fprog,
+                ) as c_int;
+
+                if fd >= 0 {
+                    libc::close(fd);
+                    libc::_exit(0);
+                } else {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
+                    if err == libc::EINVAL {
+                        libc::_exit(10);
+                    } else {
+                        libc::_exit(20);
+                    }
+                }
+            }
+
+            let mut status: c_int = 0;
+            libc::waitpid(pid, &mut status, 0);
+
+            if libc::WIFEXITED(status) {
+                let code = libc::WEXITSTATUS(status);
+                if code == 0 {
+                    json!({
+                        "status": "info",
+                        "detail": {
+                            "supported": true,
+                            "wait_killable_recv": true
+                        }
+                    })
+                } else if code == 10 {
+                    json!({
+                        "status": "info",
+                        "detail": {
+                            "supported": false,
+                            "wait_killable_recv": false
+                        }
+                    })
+                } else {
+                    json!({
+                        "status": "fail",
+                        "detail": {
+                            "child_exit_code": code,
+                            "error": "unexpected error during seccomp syscall"
+                        }
+                    })
+                }
+            } else {
+                json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": "child process crashed"
+                    }
+                })
+            }
+        }
+    }
 }
 
 /// Run one check. Checks are added here by TASK-0.3 to TASK-0.12.
@@ -757,8 +843,10 @@ fn run_check(id: &str, _args: &Args) -> Value {
         "P0-SPIKE-02" => linux_probe::check_continue(),
         #[cfg(target_os = "linux")]
         "P0-SPIKE-03" => linux_probe::check_read_path(),
+        #[cfg(target_os = "linux")]
+        "P0-SPIKE-04" => linux_probe::check_wait_killable(),
         #[cfg(not(target_os = "linux"))]
-        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" => json!({
+        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" => json!({
             "status": "unsupported",
             "detail": { "reason": "seccomp is Linux-only" }
         }),
