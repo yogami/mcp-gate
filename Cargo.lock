@@ -535,6 +535,7 @@ dependencies = [
 name = "mcpg-linux"
 version = "0.1.0"
 dependencies = [
+ "getrandom",
  "libc",
  "mcpg-app",
  "mcpg-domain",

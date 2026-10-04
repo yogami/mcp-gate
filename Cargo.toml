@@ -31,4 +31,5 @@ assert_cmd = "2.0"
 predicates = "3.1"
 proptest = "1.5"
 insta = { version = "1.39", features = ["yaml"] }
+getrandom = "0.3"
 

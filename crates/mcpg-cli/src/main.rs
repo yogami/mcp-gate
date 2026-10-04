@@ -23,6 +23,9 @@ enum Commands {
         /// Config file to run
         #[arg(short = 'c', long = "config", default_value = "./mcp-gate.yaml")]
         config: PathBuf,
+        /// Seed for reproducible execution (64 hex characters)
+        #[arg(long = "seed")]
+        seed: Option<mcpg_domain::seed::Seed>,
     },
     /// Check a config file against the schema and resolve all paths
     Validate {
@@ -38,7 +41,7 @@ enum Commands {
 
 fn run_command(cmd: Commands) -> ExitCode {
     match cmd {
-        Commands::Run { .. } => cmd::run::execute(),
+        Commands::Run { config, seed } => cmd::run::execute(&config, seed),
         Commands::Validate { config } => cmd::validate::execute(&config),
         Commands::Probe => cmd::probe::execute(),
         Commands::Version => {
@@ -49,8 +52,21 @@ fn run_command(cmd: Commands) -> ExitCode {
     }
 }
 
+fn handle_cli_error(err: clap::Error) -> ! {
+    if err.use_stderr() {
+        eprintln!("{err}");
+        std::process::exit(ExitCode::Usage as i32);
+    } else {
+        print!("{err}");
+        std::process::exit(ExitCode::Pass as i32);
+    }
+}
+
 fn main() {
-    let cli = Cli::parse();
+    let cli = match Cli::try_parse() {
+        Ok(c) => c,
+        Err(err) => handle_cli_error(err),
+    };
     let code = run_command(cli.command);
     std::process::exit(code as i32);
 }

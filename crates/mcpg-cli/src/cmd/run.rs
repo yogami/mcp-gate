@@ -1,6 +1,9 @@
+use std::path::Path;
+
+use mcpg_domain::seed::Seed;
 use mcpg_domain::verdict::ExitCode;
 
-pub fn execute() -> ExitCode {
+pub fn execute(_config: &Path, _seed: Option<Seed>) -> ExitCode {
     #[cfg(not(target_os = "linux"))]
     {
         eprintln!("Error: mcp-gate run requires Linux (exit 69)");

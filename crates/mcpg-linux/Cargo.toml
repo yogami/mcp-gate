@@ -10,3 +10,4 @@ repository.workspace = true
 mcpg-domain = { path = "../mcpg-domain" }
 mcpg-app = { path = "../mcpg-app" }
 libc = "0.2"
+getrandom = { workspace = true }
