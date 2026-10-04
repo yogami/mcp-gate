@@ -8,6 +8,7 @@ pub mod env;
 pub mod fs_view;
 pub mod host;
 pub mod path;
+pub mod policy;
 pub mod verdict;
 
 #[cfg(feature = "testing")]
