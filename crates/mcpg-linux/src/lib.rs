@@ -5,3 +5,4 @@ pub mod entropy;
 pub mod probe;
 pub mod rundir;
 pub mod self_harden;
+pub mod workspace;
