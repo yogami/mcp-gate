@@ -1739,6 +1739,8 @@ mod linux_probe {
                 Ok(fd) => fd,
                 Err(e) => {
                     libc::close(sv[0]);
+                    let mut st: c_int = 0;
+                    libc::waitpid(pid, &mut st, 0);
                     return json!({
                         "status": "fail",
                         "detail": {
@@ -1752,9 +1754,6 @@ mod linux_probe {
             let sync = [1u8; 1];
             libc::write(sv[0], sync.as_ptr() as *const _, 1);
 
-            let mut req = mem::zeroed::<seccomp_notif>();
-            let mut resp = mem::zeroed::<seccomp_notif_resp>();
-
             let mut pfd = libc::pollfd {
                 fd: listener_fd,
                 events: libc::POLLIN,
@@ -1762,10 +1761,14 @@ mod linux_probe {
             };
 
             let mut notifs_seen: u64 = 0;
+            let mut failed = false;
+            let mut fail_reason = String::new();
+
             while notifs_seen < iterations {
+                pfd.revents = 0;
                 let mut poll_res;
                 loop {
-                    poll_res = libc::poll(&mut pfd, 1, 10_000);
+                    poll_res = libc::poll(&mut pfd, 1, 5000);
                     if poll_res < 0
                         && std::io::Error::last_os_error().raw_os_error() == Some(libc::EINTR)
                     {
@@ -1775,26 +1778,46 @@ mod linux_probe {
                 }
 
                 if poll_res <= 0 || (pfd.revents & libc::POLLIN) == 0 {
+                    failed = true;
+                    fail_reason = format!(
+                        "poll timed out after {notifs_seen} of {iterations} notifications (revents: {})",
+                        pfd.revents
+                    );
                     break;
                 }
 
+                let mut req: seccomp_notif = mem::zeroed();
                 let ret = libc::ioctl(
                     listener_fd,
                     SECCOMP_IOCTL_NOTIF_RECV as _,
                     &mut req as *mut _,
                 );
-                if ret == 0 {
-                    resp.id = req.id;
-                    resp.flags = SECCOMP_USER_NOTIF_FLAG_CONTINUE;
-                    resp.val = 0;
-                    resp.error = 0;
-                    let _ = libc::ioctl(
-                        listener_fd,
-                        SECCOMP_IOCTL_NOTIF_SEND as _,
-                        &mut resp as *mut _,
+                if ret != 0 {
+                    failed = true;
+                    fail_reason = format!(
+                        "NOTIF_RECV failed at {notifs_seen}: {}",
+                        std::io::Error::last_os_error()
                     );
-                    notifs_seen += 1;
+                    break;
                 }
+
+                let mut resp: seccomp_notif_resp = mem::zeroed();
+                resp.id = req.id;
+                resp.flags = SECCOMP_USER_NOTIF_FLAG_CONTINUE;
+                let s_ret = libc::ioctl(
+                    listener_fd,
+                    SECCOMP_IOCTL_NOTIF_SEND as _,
+                    &mut resp as *mut _,
+                );
+                if s_ret != 0 {
+                    failed = true;
+                    fail_reason = format!(
+                        "NOTIF_SEND failed at {notifs_seen}: {}",
+                        std::io::Error::last_os_error()
+                    );
+                    break;
+                }
+                notifs_seen += 1;
             }
 
             libc::close(listener_fd);
@@ -1817,7 +1840,7 @@ mod linux_probe {
             let mut status: c_int = 0;
             libc::waitpid(pid, &mut status, 0);
 
-            if notifs_seen == iterations && total_read == 16 {
+            if !failed && notifs_seen == iterations && total_read == 16 {
                 let with_ns = u128::from_le_bytes(buf);
                 let ratio = (with_ns as f64) / (without_ns as f64);
                 json!({
@@ -1833,7 +1856,7 @@ mod linux_probe {
                 json!({
                     "status": "fail",
                     "detail": {
-                        "error": "timed out or missed notifications",
+                        "error": if fail_reason.is_empty() { "incomplete read from child".to_string() } else { fail_reason },
                         "notifs_seen": notifs_seen,
                         "iterations": iterations,
                         "child_status": status
