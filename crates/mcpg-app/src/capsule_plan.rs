@@ -10,25 +10,7 @@ use std::path::PathBuf;
 use mcpg_domain::config::model::Config;
 use mcpg_domain::config::vars::{expand, VarTable};
 use mcpg_domain::env::EnvOutcome;
-use serde::{Deserialize, Serialize};
-
-/// Operational mode of the capsule execution harness.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum Mode {
-    #[default]
-    Enforce,
-    Observe,
-}
-
-impl fmt::Display for Mode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Enforce => write!(f, "enforce"),
-            Self::Observe => write!(f, "observe"),
-        }
-    }
-}
+pub use mcpg_domain::mode::Mode;
 
 /// Errors occurring during capsule plan construction.
 #[derive(Debug, Clone, PartialEq, Eq)]

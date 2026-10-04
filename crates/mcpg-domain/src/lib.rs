@@ -8,6 +8,8 @@ pub mod config;
 pub mod env;
 pub mod fs_view;
 pub mod host;
+pub mod landlock_plan;
+pub mod mode;
 pub mod path;
 pub mod policy;
 pub mod seed;
