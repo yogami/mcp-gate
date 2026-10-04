@@ -6,6 +6,7 @@
 pub mod canary;
 pub mod config;
 pub mod env;
+pub mod exec_deps;
 pub mod fs_view;
 pub mod host;
 pub mod landlock_plan;
