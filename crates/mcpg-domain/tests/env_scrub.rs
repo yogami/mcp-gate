@@ -384,6 +384,73 @@ fn path_set_requires_reachable_entries() {
     assert_eq!(found.1.to_string_lossy(), "/usr/bin:/bin");
 }
 
+#[test]
+fn env_path_checked_against_enforcement_set() {
+    use mcpg_domain::config::model::{Baseline, PolicyConfig};
+    use mcpg_domain::config::vars::VarTable;
+    use mcpg_domain::policy::resolve::ResolvedPolicy;
+    use mcpg_domain::policy::sets::EnforcementSet;
+    use mcpg_domain::testing::FakeFs;
+
+    let mut fs = FakeFs::new();
+    fs.add_dir("/usr");
+    fs.add_dir("/usr/bin");
+    fs.add_dir("/bin");
+    fs.add_dir("/capsule");
+    fs.add_dir("/capsule/home");
+    fs.add_dir("/capsule/tmp");
+
+    let vars = VarTable {
+        workspace: std::path::PathBuf::from("/capsule/workspace"),
+        capsule_home: std::path::PathBuf::from("/capsule/home"),
+        capsule_tmp: std::path::PathBuf::from("/capsule/tmp"),
+        config_dir: std::path::PathBuf::from("/repo"),
+    };
+
+    let policy = PolicyConfig {
+        baseline: Baseline::Minimal,
+        read_paths: vec!["/bin".to_string()],
+        write_paths: Vec::new(),
+        allowed_child_binaries: Vec::new(),
+        allow_network: false,
+        allowed_unix_sockets: Vec::new(),
+    };
+
+    let resolved = ResolvedPolicy::from_config(&policy, &vars, &fs).expect("resolve policy");
+    let enforcement = EnforcementSet::from_policy(&resolved, &vars);
+
+    let host = make_host_vars();
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let mut set_good = std::collections::BTreeMap::new();
+    set_good.insert("PATH".to_string(), "/usr/bin:/bin".to_string());
+    let cfg_good = EnvConfig {
+        set: set_good,
+        ..Default::default()
+    };
+    let outcome = build_env(&host, &cfg_good, &fixed, &decoys, &|p| {
+        enforcement.contains(p)
+    })
+    .expect("enforcement set allows /usr/bin and /bin");
+    assert!(outcome
+        .vars
+        .iter()
+        .any(|(k, v)| k == "PATH" && v == "/usr/bin:/bin"));
+
+    let mut set_bad = std::collections::BTreeMap::new();
+    set_bad.insert("PATH".to_string(), "/usr/bin:/opt/evil".to_string());
+    let cfg_bad = EnvConfig {
+        set: set_bad,
+        ..Default::default()
+    };
+    let err = build_env(&host, &cfg_bad, &fixed, &decoys, &|p| {
+        enforcement.contains(p)
+    })
+    .expect_err("enforcement set must reject /opt/evil");
+    assert_eq!(err, EnvError::InvalidSet("PATH".to_string()));
+}
+
 #[cfg(unix)]
 #[test]
 fn p1_env_12_values_preserved_byte_exact() {

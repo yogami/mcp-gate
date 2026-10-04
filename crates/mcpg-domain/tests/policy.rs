@@ -280,3 +280,54 @@ fn pol_capsule_tmp_always_rw() {
     assert!(resolved.is_read_allowed(Path::new("/capsule/tmp/test.txt")));
     assert!(resolved.is_write_allowed(Path::new("/capsule/tmp/test.txt")));
 }
+
+#[test]
+fn p1_pol_04_decoy_zone_enforced_not_evaluated() {
+    use mcpg_domain::policy::sets::{EnforcementSet, EvaluationSet};
+
+    let mut fs = FakeFs::new();
+    fs.add_dir("/capsule");
+    fs.add_dir("/capsule/workspace");
+    fs.add_dir("/capsule/home");
+    fs.add_dir("/capsule/home/.ssh");
+    fs.add_file("/capsule/home/.ssh/id_ed25519", b"canary");
+    fs.add_dir("/capsule/tmp");
+
+    let vars = test_vars();
+    let policy = empty_policy();
+
+    let resolved = ResolvedPolicy::from_config(&policy, &vars, &fs).expect("resolve policy");
+    let enforcement = EnforcementSet::from_policy(&resolved, &vars);
+    let evaluation = EvaluationSet::from_policy(&resolved, &vars);
+
+    let canary_path = Path::new("/capsule/home/.ssh/id_ed25519");
+
+    // REQ-POL-007: Decoy zone is in EnforcementSet (readable) but NOT in EvaluationSet
+    assert!(enforcement.is_read_allowed(canary_path));
+    assert!(enforcement.contains(canary_path));
+
+    assert!(!evaluation.is_read_allowed(canary_path));
+    assert!(!evaluation.contains(canary_path));
+}
+
+#[test]
+fn evaluation_set_excludes_capsule_home() {
+    use mcpg_domain::policy::sets::{EnforcementSet, EvaluationSet};
+
+    let mut fs = FakeFs::new();
+    fs.add_dir("/capsule/home");
+    fs.add_dir("/capsule/tmp");
+
+    let vars = test_vars();
+    let policy = empty_policy();
+
+    let resolved = ResolvedPolicy::from_config(&policy, &vars, &fs).expect("resolve policy");
+    let enforcement = EnforcementSet::from_policy(&resolved, &vars);
+    let evaluation = EvaluationSet::from_policy(&resolved, &vars);
+
+    assert!(enforcement.is_read_allowed(Path::new("/capsule/home")));
+    assert!(enforcement.contains(Path::new("/capsule/home")));
+
+    assert!(!evaluation.is_read_allowed(Path::new("/capsule/home")));
+    assert!(!evaluation.contains(Path::new("/capsule/home")));
+}
