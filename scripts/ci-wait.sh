@@ -28,6 +28,7 @@ echo "ci-wait: watching run $run_id"
 rc=0
 gh run watch "$run_id" --exit-status || rc=$?
 
+rm -rf "$out"
 mkdir -p "$out"
 gh run download "$run_id" --dir "$out" || echo "ci-wait: no artifacts to download" >&2
 

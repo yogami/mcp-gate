@@ -66,3 +66,25 @@ fn p0_spike_01_listener_fd_received() {
     assert!(fd >= 3, "listener_fd must be >= 3, got {fd}");
 }
 
+/// TASK-0.4: P0-SPIKE-02, receive a notification and continue.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_02_notification_continue() {
+    let report = probe(&["--check", "P0-SPIKE-02", "--json"]);
+    let c = &report["checks"]["P0-SPIKE-02"];
+    assert_eq!(
+        c["status"], "pass",
+        "P0-SPIKE-02 status must be pass, got: {:?}",
+        c
+    );
+    assert_eq!(
+        c["detail"]["notifications"], 1,
+        "must receive exactly 1 notification"
+    );
+    assert_eq!(
+        c["detail"]["child_open_ok"], true,
+        "child open must succeed"
+    );
+}
+
+

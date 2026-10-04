@@ -80,7 +80,7 @@ These do not block work, but they should land in SPEC v0.3 before the affected t
 |---|---|---|---|
 | TASK-0.1 | Spike crate and report envelope | 1 | [x] |
 | TASK-0.2 | Spike workflow and CI helper scripts | 1 | [x] |
-| TASK-0.3 | P0-SPIKE-01 seccomp listener fd | 1 | [ ] |
+| TASK-0.3 | P0-SPIKE-01 seccomp listener fd | 1 | [x] |
 | TASK-0.4 | P0-SPIKE-02 receive and continue | 1 | [ ] |
 | TASK-0.5 | P0-SPIKE-03 read path from child memory | 1 | [ ] |
 | TASK-0.6 | P0-SPIKE-04 WAIT_KILLABLE_RECV probe | 1 | [ ] |
