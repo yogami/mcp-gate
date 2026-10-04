@@ -493,6 +493,7 @@ dependencies = [
 name = "mcpg-domain"
 version = "0.1.0"
 dependencies = [
+ "mcpg-domain",
  "proptest",
  "serde",
  "serde_json",

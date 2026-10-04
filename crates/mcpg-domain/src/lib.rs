@@ -5,4 +5,8 @@
 
 pub mod config;
 pub mod env;
+pub mod fs_view;
 pub mod verdict;
+
+#[cfg(feature = "testing")]
+pub mod testing;

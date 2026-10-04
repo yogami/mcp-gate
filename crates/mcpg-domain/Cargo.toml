@@ -6,9 +6,14 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+[features]
+default = []
+testing = []
+
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]
+mcpg-domain = { path = ".", features = ["testing"] }
 proptest = { workspace = true }
