@@ -599,6 +599,7 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_json",
+ "serde_yml",
  "sha2",
 ]
 

@@ -22,3 +22,4 @@ rand_core = { workspace = true }
 mcpg-domain = { path = ".", features = ["testing"] }
 proptest = { workspace = true }
 insta = { workspace = true }
+serde_yml = { workspace = true }
