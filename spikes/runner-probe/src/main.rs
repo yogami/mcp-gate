@@ -99,9 +99,305 @@ fn host_info() -> Result<(String, String), String> {
     Ok((field(&u.release), field(&u.machine)))
 }
 
+#[cfg(target_os = "linux")]
+mod linux_probe {
+    use std::mem;
+    use std::os::raw::{c_int, c_ushort};
+    use serde_json::{json, Value};
+
+    // Constants from <linux/seccomp.h> and <linux/filter.h>
+    const SECCOMP_SET_MODE_FILTER: libc::c_uint = 1;
+    const SECCOMP_FILTER_FLAG_NEW_LISTENER: libc::c_uint = 8;
+    const SECCOMP_RET_KILL_PROCESS: u32 = 0x80000000;
+    const SECCOMP_RET_ALLOW: u32 = 0x7fff0000;
+    const SECCOMP_RET_USER_NOTIF: u32 = 0x7fc00000;
+
+    const BPF_LD: u16 = 0x00;
+    const BPF_W: u16 = 0x00;
+    const BPF_ABS: u16 = 0x20;
+    const BPF_JMP: u16 = 0x05;
+    const BPF_JEQ: u16 = 0x10;
+    const BPF_K: u16 = 0x00;
+    const BPF_RET: u16 = 0x06;
+
+    #[repr(C)]
+    #[derive(Debug, Clone, Copy)]
+    struct sock_filter {
+        code: u16,
+        jt: u8,
+        jf: u8,
+        k: u32,
+    }
+
+    #[repr(C)]
+    struct sock_fprog {
+        len: c_ushort,
+        filter: *const sock_filter,
+    }
+
+    const SECCOMP_DATA_NR_OFFSET: u32 = 0;
+    const SECCOMP_DATA_ARCH_OFFSET: u32 = 4;
+
+    #[cfg(target_arch = "x86_64")]
+    const AUDIT_ARCH: u32 = 0xc000003e; // AUDIT_ARCH_X86_64
+    #[cfg(target_arch = "aarch64")]
+    const AUDIT_ARCH: u32 = 0xc00000b7; // AUDIT_ARCH_AARCH64
+
+    #[cfg(target_arch = "x86_64")]
+    const SYS_OPENAT_NR: u32 = 257;
+    #[cfg(target_arch = "aarch64")]
+    const SYS_OPENAT_NR: u32 = 56;
+
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    const AUDIT_ARCH: u32 = 0;
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    const SYS_OPENAT_NR: u32 = 0;
+
+    fn make_openat_filter() -> Vec<sock_filter> {
+        vec![
+            // 0: [arch]
+            sock_filter {
+                code: BPF_LD | BPF_W | BPF_ABS,
+                jt: 0,
+                jf: 0,
+                k: SECCOMP_DATA_ARCH_OFFSET,
+            },
+            // 1: if arch == AUDIT_ARCH jump to 3 (jt=1, jf=0)
+            sock_filter {
+                code: BPF_JMP | BPF_JEQ | BPF_K,
+                jt: 1,
+                jf: 0,
+                k: AUDIT_ARCH,
+            },
+            // 2: kill process on arch mismatch
+            sock_filter {
+                code: BPF_RET | BPF_K,
+                jt: 0,
+                jf: 0,
+                k: SECCOMP_RET_KILL_PROCESS,
+            },
+            // 3: [nr]
+            sock_filter {
+                code: BPF_LD | BPF_W | BPF_ABS,
+                jt: 0,
+                jf: 0,
+                k: SECCOMP_DATA_NR_OFFSET,
+            },
+            // 4: if nr == SYS_OPENAT_NR jump to 5 (jt=0, jf=1)
+            sock_filter {
+                code: BPF_JMP | BPF_JEQ | BPF_K,
+                jt: 0,
+                jf: 1,
+                k: SYS_OPENAT_NR,
+            },
+            // 5: return USER_NOTIF for openat
+            sock_filter {
+                code: BPF_RET | BPF_K,
+                jt: 0,
+                jf: 0,
+                k: SECCOMP_RET_USER_NOTIF,
+            },
+            // 6: return ALLOW
+            sock_filter {
+                code: BPF_RET | BPF_K,
+                jt: 0,
+                jf: 0,
+                k: SECCOMP_RET_ALLOW,
+            },
+        ]
+    }
+
+    unsafe fn send_fd(sock: c_int, fd: c_int) -> Result<(), String> {
+        let mut dummy: [u8; 1] = [0];
+        let mut iov = libc::iovec {
+            iov_base: dummy.as_mut_ptr() as *mut _,
+            iov_len: 1,
+        };
+
+        let cmsg_space = libc::CMSG_SPACE(mem::size_of::<c_int>() as u32) as usize;
+        let mut cmsg_buf = vec![0u8; cmsg_space];
+
+        let mut msg: libc::msghdr = mem::zeroed();
+        msg.msg_iov = &mut iov;
+        msg.msg_iovlen = 1;
+        msg.msg_control = cmsg_buf.as_mut_ptr() as *mut _;
+        msg.msg_controllen = cmsg_space;
+
+        let cmsg = libc::CMSG_FIRSTHDR(&msg);
+        if cmsg.is_null() {
+            return Err("CMSG_FIRSTHDR failed".into());
+        }
+        (*cmsg).cmsg_level = libc::SOL_SOCKET;
+        (*cmsg).cmsg_type = libc::SCM_RIGHTS;
+        (*cmsg).cmsg_len = libc::CMSG_LEN(mem::size_of::<c_int>() as u32) as _;
+
+        let data_ptr = libc::CMSG_DATA(cmsg) as *mut c_int;
+        *data_ptr = fd;
+
+        let res = libc::sendmsg(sock, &msg, 0);
+        if res < 0 {
+            Err(format!("sendmsg failed: {}", std::io::Error::last_os_error()))
+        } else {
+            Ok(())
+        }
+    }
+
+    unsafe fn recv_fd(sock: c_int) -> Result<c_int, String> {
+        let mut dummy: [u8; 1] = [0];
+        let mut iov = libc::iovec {
+            iov_base: dummy.as_mut_ptr() as *mut _,
+            iov_len: 1,
+        };
+
+        let cmsg_space = libc::CMSG_SPACE(mem::size_of::<c_int>() as u32) as usize;
+        let mut cmsg_buf = vec![0u8; cmsg_space];
+
+        let mut msg: libc::msghdr = mem::zeroed();
+        msg.msg_iov = &mut iov;
+        msg.msg_iovlen = 1;
+        msg.msg_control = cmsg_buf.as_mut_ptr() as *mut _;
+        msg.msg_controllen = cmsg_space;
+
+        let res = libc::recvmsg(sock, &mut msg, 0);
+        if res <= 0 {
+            return Err(format!("recvmsg failed: {}", std::io::Error::last_os_error()));
+        }
+
+        let cmsg = libc::CMSG_FIRSTHDR(&msg);
+        if cmsg.is_null() {
+            return Err("recvmsg: no control message received".into());
+        }
+        if (*cmsg).cmsg_level != libc::SOL_SOCKET || (*cmsg).cmsg_type != libc::SCM_RIGHTS {
+            return Err("recvmsg: unexpected control message type".into());
+        }
+
+        let data_ptr = libc::CMSG_DATA(cmsg) as *const c_int;
+        let fd = *data_ptr;
+        if fd < 0 {
+            return Err("recvmsg: negative fd received".into());
+        }
+        Ok(fd)
+    }
+
+    pub fn check_listener() -> Value {
+        unsafe {
+            let mut sv: [c_int; 2] = [-1, -1];
+            if libc::socketpair(libc::AF_UNIX, libc::SOCK_SEQPACKET, 0, sv.as_mut_ptr()) != 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("socketpair failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            let pid = libc::fork();
+            if pid < 0 {
+                libc::close(sv[0]);
+                libc::close(sv[1]);
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("fork failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            if pid == 0 {
+                // Child process
+                libc::close(sv[0]);
+
+                if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(1);
+                    libc::_exit(10 + (err & 0x7f));
+                }
+
+                let filter = make_openat_filter();
+                let prog = sock_fprog {
+                    len: filter.len() as c_ushort,
+                    filter: filter.as_ptr(),
+                };
+
+                let listener_fd = libc::syscall(
+                    libc::SYS_seccomp,
+                    SECCOMP_SET_MODE_FILTER,
+                    SECCOMP_FILTER_FLAG_NEW_LISTENER,
+                    &prog as *const sock_fprog,
+                ) as c_int;
+
+                if listener_fd < 0 {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(1);
+                    libc::_exit(20 + (err & 0x7f));
+                }
+
+                if let Err(_) = send_fd(sv[1], listener_fd) {
+                    libc::close(listener_fd);
+                    libc::_exit(2);
+                }
+
+                libc::close(listener_fd);
+                libc::close(sv[1]);
+                libc::_exit(0);
+            }
+
+            // Parent process
+            libc::close(sv[1]);
+
+            let fd_res = recv_fd(sv[0]);
+            libc::close(sv[0]);
+
+            let mut status: c_int = 0;
+            libc::waitpid(pid, &mut status, 0);
+
+            if !libc::WIFEXITED(status) || libc::WEXITSTATUS(status) != 0 {
+                let code = if libc::WIFEXITED(status) {
+                    libc::WEXITSTATUS(status)
+                } else {
+                    -1
+                };
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "child_exit_code": code,
+                        "error": format!("child exited abnormally: {code}")
+                    }
+                });
+            }
+
+            match fd_res {
+                Ok(listener_fd) => {
+                    // Close the received listener fd before exiting check
+                    libc::close(listener_fd);
+                    json!({
+                        "status": "pass",
+                        "detail": {
+                            "listener_fd": listener_fd
+                        }
+                    })
+                }
+                Err(e) => json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": e
+                    }
+                }),
+            }
+        }
+    }
+}
+
 /// Run one check. Checks are added here by TASK-0.3 to TASK-0.12.
 fn run_check(id: &str, _args: &Args) -> Value {
-    json!({ "status": "not_implemented", "detail": { "check": id } })
+    match id {
+        #[cfg(target_os = "linux")]
+        "P0-SPIKE-01" => linux_probe::check_listener(),
+        #[cfg(not(target_os = "linux"))]
+        "P0-SPIKE-01" => json!({
+            "status": "unsupported",
+            "detail": { "reason": "seccomp is Linux-only" }
+        }),
+        _ => json!({ "status": "not_implemented", "detail": { "check": id } }),
+    }
 }
 
 fn build_report(args: &Args) -> Result<Value, String> {
