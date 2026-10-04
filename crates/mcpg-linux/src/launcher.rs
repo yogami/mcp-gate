@@ -19,8 +19,12 @@ use mcpg_app::ports::{CapsuleLauncher, LaunchError, RunningCapsule};
 pub struct LinuxLauncher;
 
 impl LinuxLauncher {
-    /// Create a new Linux launcher.
+    /// Create a new Linux launcher and configure subreaper.
     pub fn new() -> Self {
+        #[cfg(target_os = "linux")]
+        unsafe {
+            let _ = libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0);
+        }
         Self
     }
 }

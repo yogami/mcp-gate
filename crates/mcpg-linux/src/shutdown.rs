@@ -1,0 +1,131 @@
+//! Capsule shutdown sequence and orphan process management.
+//!
+//! SPEC 3.1.6: Closes stdin, waits grace period, sends SIGTERM to process group,
+//! escalates to SIGKILL, and reaps all descendants via PR_SET_CHILD_SUBREAPER.
+
+use std::path::Path;
+use std::time::{Duration, Instant};
+
+use mcpg_app::ports::RunningCapsule;
+
+/// Stage at which the capsule exited.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShutdownStage {
+    StdinClosed,
+    Terminated,
+    Killed,
+}
+
+/// Report summarizing shutdown exit status and reaped orphan processes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShutdownReport {
+    pub stage: ShutdownStage,
+    pub survivors: Vec<u32>,
+}
+
+fn wait_for_exit(child: &mut std::process::Child, timeout: Duration) -> bool {
+    let start = Instant::now();
+    while start.elapsed() < timeout {
+        if let Ok(Some(_)) = child.try_wait() {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    child.try_wait().ok().flatten().is_some()
+}
+
+fn parse_children_file(path: &Path) -> Vec<u32> {
+    std::fs::read_to_string(path)
+        .unwrap_or_default()
+        .split_whitespace()
+        .filter_map(|s| s.parse::<u32>().ok())
+        .collect()
+}
+
+fn collect_thread_children(entry: std::fs::DirEntry) -> Vec<u32> {
+    let path = entry.path().join("children");
+    parse_children_file(&path)
+}
+
+fn collect_tree_pids(root_pid: u32) -> Vec<u32> {
+    let mut pids = vec![root_pid];
+    let task_dir = format!("/proc/{root_pid}/task");
+    if let Ok(entries) = std::fs::read_dir(task_dir) {
+        for cpid in entries.flatten().flat_map(collect_thread_children) {
+            pids.extend(collect_tree_pids(cpid));
+        }
+    }
+    pids
+}
+
+fn kill_survivor_pid(pid: u32, survivors: &mut Vec<u32>) {
+    unsafe {
+        if libc::kill(pid as i32, 0) == 0 {
+            libc::kill(pid as i32, libc::SIGKILL);
+            if !survivors.contains(&pid) {
+                survivors.push(pid);
+            }
+        }
+    }
+}
+
+fn kill_known_pids(pids: &[u32], survivors: &mut Vec<u32>) {
+    for &pid in pids {
+        kill_survivor_pid(pid, survivors);
+    }
+}
+
+fn reap_all_children(survivors: &mut Vec<u32>, main_pid: u32) {
+    let mut status = 0;
+    loop {
+        let reaped = unsafe { libc::waitpid(-1, &mut status, libc::WNOHANG) };
+        if reaped <= 0 {
+            break;
+        }
+        let rpid = reaped as u32;
+        if rpid != main_pid && !survivors.contains(&rpid) {
+            survivors.push(rpid);
+        }
+    }
+}
+
+/// Execute graceful capsule shutdown with signal escalation and orphan reaping.
+pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport {
+    let mut survivors = Vec::new();
+    let known_pids = collect_tree_pids(cap.pid);
+    let pgid = cap.pid as i32;
+
+    drop(cap.child.stdin.take());
+
+    if wait_for_exit(&mut cap.child, grace) {
+        reap_all_children(&mut survivors, cap.pid);
+        return ShutdownReport {
+            stage: ShutdownStage::StdinClosed,
+            survivors,
+        };
+    }
+
+    unsafe {
+        libc::kill(-pgid, libc::SIGTERM);
+    }
+    if wait_for_exit(&mut cap.child, Duration::from_secs(1)) {
+        reap_all_children(&mut survivors, cap.pid);
+        return ShutdownReport {
+            stage: ShutdownStage::Terminated,
+            survivors,
+        };
+    }
+
+    unsafe {
+        libc::kill(-pgid, libc::SIGKILL);
+    }
+    kill_known_pids(&known_pids, &mut survivors);
+    let _ = cap.child.wait();
+
+    reap_all_children(&mut survivors, cap.pid);
+
+    ShutdownReport {
+        stage: ShutdownStage::Killed,
+        survivors,
+    }
+}
