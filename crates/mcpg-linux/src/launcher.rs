@@ -120,6 +120,14 @@ fn child_pre_exec(cwd_cstr: &CString) -> io::Result<()> {
 
 impl CapsuleLauncher for LinuxLauncher {
     fn launch(&self, plan: &CapsulePlan) -> Result<RunningCapsule, LaunchError> {
+        #[cfg(target_os = "linux")]
+        unsafe {
+            let dumpable = libc::prctl(libc::PR_GET_DUMPABLE, 0, 0, 0, 0);
+            if dumpable != 0 {
+                return Err(LaunchError::NotHardened);
+            }
+        }
+
         #[cfg(unix)]
         let prog = OsStr::from_bytes(plan.program.as_bytes());
         #[cfg(not(unix))]

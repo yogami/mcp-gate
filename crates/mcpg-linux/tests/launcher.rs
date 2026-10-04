@@ -71,6 +71,9 @@ fn make_plan(subcmd: &str, args: &[&str], workspace: &Path) -> CapsulePlan {
 }
 
 fn run_probe_subcommand(subcmd: &str, args: &[&str], workspace: &Path) -> serde_json::Value {
+    #[cfg(target_os = "linux")]
+    let _ = mcpg_linux::self_harden::harden_self();
+
     let plan = make_plan(subcmd, args, workspace);
     let launcher = LinuxLauncher::new();
     let running = launcher.launch(&plan).expect("launch failed");
@@ -79,6 +82,51 @@ fn run_probe_subcommand(subcmd: &str, args: &[&str], workspace: &Path) -> serde_
     assert!(output.status.success(), "probe exited with error");
     let text = String::from_utf8(output.stdout).expect("utf8");
     serde_json::from_str(text.trim()).expect("valid json")
+}
+
+#[test]
+#[ignore]
+#[cfg(target_os = "linux")]
+fn helper_hardened_parent() {
+    if std::env::var("MCPG_HELPER").as_deref() != Ok("hardened_parent") {
+        return;
+    }
+
+    mcpg_linux::self_harden::harden_self().expect("harden self");
+
+    let tmp = tempfile_helper::TempDir::new("mcpg_helper_parent");
+    let runner_pid = std::process::id();
+    let target_path = format!("/proc/{runner_pid}/environ");
+
+    let plan = make_plan("read", &[&target_path], tmp.path());
+    let launcher = LinuxLauncher::new();
+    let running = launcher.launch(&plan).expect("launch failed");
+
+    let output = running.child.wait_with_output().expect("wait output");
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).expect("utf8");
+    let val: serde_json::Value = serde_json::from_str(text.trim()).expect("valid json");
+
+    assert_eq!(val["status"], "error");
+    assert_eq!(val["error"], "EACCES");
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn p2_launch_04_capsule_cannot_read_runner_environ() {
+    let current_exe = std::env::current_exe().expect("current exe");
+    let status = std::process::Command::new(current_exe)
+        .env("MCPG_HELPER", "hardened_parent")
+        .args([
+            "--exact",
+            "helper_hardened_parent",
+            "--ignored",
+            "--nocapture",
+        ])
+        .status()
+        .expect("run helper");
+
+    assert!(status.success(), "helper_hardened_parent failed");
 }
 
 #[test]
