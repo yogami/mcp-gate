@@ -115,9 +115,9 @@ fn validate_protocol_version(result: &Value, versions: &[String]) -> Result<Stri
 
 /// Client driver executing MCP lifecycle stages against an McpTransport.
 pub struct McpClient<T: McpTransport> {
-    transport: T,
-    next_id: u64,
-    server_info: Option<ServerInfo>,
+    pub(crate) transport: T,
+    pub(crate) next_id: u64,
+    pub(crate) server_info: Option<ServerInfo>,
 }
 
 impl<T: McpTransport> McpClient<T> {

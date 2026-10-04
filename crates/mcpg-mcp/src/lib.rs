@@ -4,4 +4,5 @@
 pub mod client;
 pub mod framing;
 pub mod testing;
+pub mod tools;
 pub mod transport;
