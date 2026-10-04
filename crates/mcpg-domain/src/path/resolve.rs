@@ -34,6 +34,70 @@ impl Resolution {
     pub fn is_eloop(&self) -> bool {
         self.error == Some(ResolveError::Eloop)
     }
+
+    pub fn display(&self) -> String {
+        #[cfg(unix)]
+        {
+            use std::os::unix::ffi::OsStrExt;
+            escape_bytes(self.resolved.as_os_str().as_bytes())
+        }
+        #[cfg(not(unix))]
+        {
+            self.resolved.to_string_lossy().into_owned()
+        }
+    }
+}
+
+impl std::fmt::Display for Resolution {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.display())
+    }
+}
+
+fn format_hex_byte(byte: u8, out: &mut String) {
+    use std::fmt::Write;
+    let _ = write!(out, "\\x{:02x}", byte);
+}
+
+fn append_error_bytes(bytes: &[u8], len: Option<usize>, out: &mut String) -> usize {
+    let count = len.unwrap_or(bytes.len());
+    for &b in &bytes[..count] {
+        format_hex_byte(b, out);
+    }
+    count
+}
+
+fn step_escape_chunk(bytes: &[u8], out: &mut String) -> usize {
+    match std::str::from_utf8(bytes) {
+        Ok(valid) => {
+            out.push_str(valid);
+            valid.len()
+        }
+        Err(e) => {
+            let valid_len = e.valid_up_to();
+            if valid_len > 0 {
+                let valid = &bytes[..valid_len];
+                let s = std::str::from_utf8(valid).unwrap_or("");
+                out.push_str(s);
+                return valid_len;
+            }
+            append_error_bytes(bytes, e.error_len(), out)
+        }
+    }
+}
+
+/// Convert raw bytes into a UTF-8 string, escaping invalid UTF-8 bytes as `\xNN`.
+pub fn escape_bytes(bytes: &[u8]) -> String {
+    let mut out = String::with_capacity(bytes.len());
+    let mut offset = 0;
+    while offset < bytes.len() {
+        let consumed = step_escape_chunk(&bytes[offset..], &mut out);
+        if consumed == 0 {
+            break;
+        }
+        offset += consumed;
+    }
+    out
 }
 
 fn initial_state(root: &Path, base: &Path, raw: &[u8]) -> (PathBuf, Option<EscapeKind>) {

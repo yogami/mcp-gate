@@ -152,3 +152,58 @@ fn p1_path_08_eloop_after_40() {
     );
     assert_eq!(res.symlinks_followed, 40);
 }
+
+#[test]
+fn p1_path_10_missing_tail_joined_lexically() {
+    let mut fs = FakeFs::new();
+    fs.add_dir("/c");
+    fs.add_dir("/c/ws");
+    fs.add_dir("/c/ws/existing");
+    fs.add_symlink("/c/ws/link_to_existing", "/c/ws/existing");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+
+    let res = resolve(&fs, root, base, b"existing/missing_dir/file.txt", true);
+    assert_eq!(
+        res.resolved,
+        Path::new("/c/ws/existing/missing_dir/file.txt")
+    );
+    assert!(!res.exists);
+    assert_eq!(res.escaped_via, None);
+
+    let res2 = resolve(
+        &fs,
+        root,
+        base,
+        b"link_to_existing/missing/../another_missing/tail.txt",
+        true,
+    );
+    assert_eq!(
+        res2.resolved,
+        Path::new("/c/ws/existing/another_missing/tail.txt")
+    );
+    assert!(!res2.exists);
+    assert_eq!(res2.escaped_via, None);
+}
+
+#[test]
+fn p1_path_15_non_utf8_preserved() {
+    let mut fs = FakeFs::new();
+    fs.add_dir("/c");
+    fs.add_dir("/c/ws");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+
+    let raw = b"bad_\xff\xfe_dir/file.txt";
+    let res = resolve(&fs, root, base, raw, true);
+    assert!(!res.exists);
+
+    let display = res.display();
+    assert!(
+        display.contains(r"\xff\xfe"),
+        "expected escaped bytes in display, got: {display}"
+    );
+    assert_eq!(display, r"/c/ws/bad_\xff\xfe_dir/file.txt");
+}
