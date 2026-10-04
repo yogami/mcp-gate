@@ -25,12 +25,12 @@ fn p1_cfg_02_invalid_configs_rejected() {
             .unwrap_or_else(|e| panic!("failed to read {}: {e}", path.display()));
         let res = load_str(&content);
         match res {
-            Err(ConfigError::Schema(_)) | Err(ConfigError::Semantic(_)) => {
+            Err(ConfigError::Schema { .. }) | Err(ConfigError::Semantic { .. }) => {
                 // Expected rejection
             }
-            Err(ConfigError::Yaml(err)) => {
+            Err(ConfigError::Yaml { message, .. }) => {
                 panic!(
-                    "expected Schema or Semantic error for {}, got Yaml error: {err}",
+                    "expected Schema or Semantic error for {}, got Yaml error: {message}",
                     path.display()
                 );
             }
@@ -58,10 +58,10 @@ fn p1_seed_02_seed_key_rejected() {
 
     let res = load_str(&content);
     match res {
-        Err(ConfigError::Schema(err)) => {
+        Err(ConfigError::Schema { message, .. }) => {
             assert!(
-                err.contains("seed"),
-                "expected schema error to name 'seed', got: {err}"
+                message.contains("seed"),
+                "expected schema error to name 'seed', got: {message}"
             );
         }
         other => {
