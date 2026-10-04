@@ -92,8 +92,8 @@ These do not block work, but they should land in SPEC v0.3 before the affected t
 | TASK-0.12 | P0-SPIKE-10 notification overhead | 1 | [x] |
 | TASK-0.13 | Compat report and go/no-go | 1 | [x] |
 | TASK-1.1 | Cargo workspace scaffold | 2 | [x] |
-| TASK-1.2 | CI pipeline and traceability script | 2 | [ ] |
-| TASK-1.3 | Exit codes and precedence | 2 | [ ] |
+| TASK-1.2 | CI pipeline and traceability script | 2 | [x] |
+| TASK-1.3 | Exit codes and precedence | 2 | [x] |
 | TASK-1.4 | YAML parser ADR and config model | 2 | [ ] |
 | TASK-1.5 | JSON Schema validation | 2 | [ ] |
 | TASK-1.6 | YAML span map | 3 | [ ] |
