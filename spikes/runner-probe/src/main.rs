@@ -180,15 +180,11 @@ mod linux_probe {
         flags: u32,
     }
 
-    #[cfg(target_arch = "x86_64")]
-    type IoctlReq = libc::c_ulong;
-    #[cfg(target_arch = "aarch64")]
-    type IoctlReq = libc::c_int;
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     type IoctlReq = libc::c_ulong;
 
-    const SECCOMP_IOCTL_NOTIF_RECV: IoctlReq = 0xc0502100 as IoctlReq;
-    const SECCOMP_IOCTL_NOTIF_SEND: IoctlReq = 0xc0182101 as IoctlReq;
+    const SECCOMP_IOCTL_NOTIF_RECV: IoctlReq = 0xc0502100;
+    const SECCOMP_IOCTL_NOTIF_SEND: IoctlReq = 0xc0182101;
+    const SECCOMP_IOCTL_NOTIF_ID_VALID: IoctlReq = 0x80082102;
     const SECCOMP_USER_NOTIF_FLAG_CONTINUE: u32 = 0x00000001;
 
     fn make_openat_filter() -> Vec<sock_filter> {
