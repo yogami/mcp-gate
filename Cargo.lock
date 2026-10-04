@@ -667,6 +667,7 @@ dependencies = [
  "libc",
  "mcpg-app",
  "mcpg-domain",
+ "sha2",
 ]
 
 [[package]]
