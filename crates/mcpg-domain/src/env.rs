@@ -29,11 +29,18 @@ impl Default for FixedEnv {
     }
 }
 
+/// The outcome of scrubbing environment variables.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnvOutcome {
+    pub vars: Vec<(OsString, OsString)>,
+    pub warnings: Vec<String>,
+}
+
 /// Errors occurring during environment variable scrubbing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EnvError {
     Forbidden(String),
-    SecretPassthrough(String),
+    SecretNeedsOptIn(String),
     InvalidSet(String),
 }
 
@@ -41,8 +48,11 @@ impl std::fmt::Display for EnvError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Forbidden(s) => write!(f, "forbidden environment variable: {s}"),
-            Self::SecretPassthrough(s) => {
-                write!(f, "secret-shaped passthrough variable disallowed: {s}")
+            Self::SecretNeedsOptIn(s) => {
+                write!(
+                    f,
+                    "secret-shaped passthrough variable disallowed without allow_secret_passthrough: {s}"
+                )
             }
             Self::InvalidSet(s) => write!(f, "invalid set environment variable: {s}"),
         }
@@ -79,6 +89,40 @@ fn is_ci_deny_var(name: &str) -> bool {
 
 fn is_forbidden_token(name: &str) -> bool {
     name == "ACTIONS_RUNTIME_TOKEN" || name.starts_with("ACTIONS_ID_TOKEN_REQUEST")
+}
+
+fn contains_secret_word(name: &str) -> bool {
+    name.contains("TOKEN") || name.contains("SECRET") || name.contains("PASSWORD")
+}
+
+fn matches_secret_affix(name: &str) -> bool {
+    name.ends_with("_KEY") || name.starts_with("AWS_")
+}
+
+fn is_secret_shaped(name: &str) -> bool {
+    let clean = name.strip_suffix('*').unwrap_or(name);
+    contains_secret_word(clean) || matches_secret_affix(clean)
+}
+
+fn validate_secret_pat(pat: &str, allow: bool, warnings: &mut Vec<String>) -> Result<(), EnvError> {
+    if !is_secret_shaped(pat) {
+        return Ok(());
+    }
+    if !allow {
+        return Err(EnvError::SecretNeedsOptIn(pat.to_string()));
+    }
+    warnings.push(format!("secret-shaped passthrough variable allowed: {pat}"));
+    Ok(())
+}
+
+fn check_secret_passthrough(passthrough: &[String], allow: bool) -> Result<Vec<String>, EnvError> {
+    let mut warnings = Vec::new();
+    for pat in passthrough {
+        if !is_ci_deny_var(pat) {
+            validate_secret_pat(pat, allow, &mut warnings)?;
+        }
+    }
+    Ok(warnings)
 }
 
 fn check_forbidden_passthrough(passthrough: &[String]) -> Result<(), EnvError> {
@@ -129,8 +173,9 @@ pub fn build_env(
     cfg: &EnvConfig,
     fixed: &FixedEnv,
     decoys: &[(OsString, OsString)],
-) -> Result<Vec<(OsString, OsString)>, EnvError> {
+) -> Result<EnvOutcome, EnvError> {
     check_forbidden_passthrough(&cfg.passthrough)?;
+    let warnings = check_secret_passthrough(&cfg.passthrough, cfg.allow_secret_passthrough)?;
 
     let mut env = BTreeMap::new();
 
@@ -139,5 +184,8 @@ pub fn build_env(
     add_set_vars(&mut env, &cfg.set);
     add_decoy_vars(&mut env, decoys);
 
-    Ok(env.into_iter().collect())
+    Ok(EnvOutcome {
+        vars: env.into_iter().collect(),
+        warnings,
+    })
 }

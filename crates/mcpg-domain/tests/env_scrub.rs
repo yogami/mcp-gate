@@ -33,7 +33,9 @@ fn p1_env_01_empty_config_yields_only_fixed_vars() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    let env = build_env(&host, &cfg, &fixed, &decoys)
+        .expect("build_env succeeds")
+        .vars;
 
     let keys: Vec<String> = env
         .iter()
@@ -100,7 +102,9 @@ fn p1_env_02_passthrough_copies_value() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    let env = build_env(&host, &cfg, &fixed, &decoys)
+        .expect("build_env succeeds")
+        .vars;
 
     let found = env
         .iter()
@@ -119,7 +123,9 @@ fn p1_env_03_absent_passthrough_is_omitted() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    let env = build_env(&host, &cfg, &fixed, &decoys)
+        .expect("build_env succeeds")
+        .vars;
 
     assert!(
         !env.iter().any(|(k, _)| k == "NON_EXISTENT_VAR"),
@@ -141,7 +147,9 @@ fn p1_env_04_trailing_wildcard_prefix_match() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    let env = build_env(&host, &cfg, &fixed, &decoys)
+        .expect("build_env succeeds")
+        .vars;
 
     assert!(env.iter().any(|(k, v)| k == "LC_ALL" && v == "en_US.UTF-8"));
     assert!(env
@@ -166,7 +174,9 @@ fn p1_env_10_set_overrides_passthrough() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    let env = build_env(&host, &cfg, &fixed, &decoys)
+        .expect("build_env succeeds")
+        .vars;
 
     let found = env
         .iter()
@@ -194,7 +204,9 @@ fn p1_env_11_user_set_name_skips_decoy() {
         OsString::from("decoy_value"),
     )];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    let env = build_env(&host, &cfg, &fixed, &decoys)
+        .expect("build_env succeeds")
+        .vars;
 
     let found = env
         .iter()
@@ -229,7 +241,9 @@ fn p1_env_05_ci_vars_dropped() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    let env = build_env(&host, &cfg, &fixed, &decoys)
+        .expect("build_env succeeds")
+        .vars;
 
     assert!(!env.iter().any(|(k, _)| k == "GITHUB_TOKEN"));
     assert!(!env.iter().any(|(k, _)| k == "CI"));
@@ -264,4 +278,43 @@ fn p1_env_06_actions_tokens_forbidden() {
         err_id,
         EnvError::Forbidden("ACTIONS_ID_TOKEN_REQUEST_URL".to_string())
     );
+}
+
+#[test]
+fn p1_env_07_secret_name_needs_opt_in() {
+    let host = make_host_vars();
+    let cfg = EnvConfig {
+        passthrough: vec!["MY_API_KEY".to_string()],
+        allow_secret_passthrough: false,
+        ..Default::default()
+    };
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let err = build_env(&host, &cfg, &fixed, &decoys).expect_err("MY_API_KEY must need opt-in");
+    assert_eq!(err, EnvError::SecretNeedsOptIn("MY_API_KEY".to_string()));
+}
+
+#[test]
+fn p1_env_08_opt_in_passes_with_warning() {
+    let mut host = make_host_vars();
+    host.push((OsString::from("MY_API_KEY"), OsString::from("key_12345")));
+
+    let cfg = EnvConfig {
+        passthrough: vec!["MY_API_KEY".to_string()],
+        allow_secret_passthrough: true,
+        ..Default::default()
+    };
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let outcome = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    assert_eq!(outcome.warnings.len(), 1);
+    assert!(outcome.warnings[0].contains("MY_API_KEY"));
+    let found = outcome
+        .vars
+        .iter()
+        .find(|(k, _)| k == "MY_API_KEY")
+        .expect("MY_API_KEY should be present");
+    assert_eq!(found.1.to_string_lossy(), "key_12345");
 }
