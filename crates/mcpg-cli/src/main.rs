@@ -63,6 +63,11 @@ fn handle_cli_error(err: clap::Error) -> ! {
 }
 
 fn main() {
+    #[cfg(target_os = "linux")]
+    if let Err(err) = mcpg_linux::self_harden::harden_self() {
+        eprintln!("Warning: failed to harden runner process: {err}");
+    }
+
     let cli = match Cli::try_parse() {
         Ok(c) => c,
         Err(err) => handle_cli_error(err),

@@ -4,3 +4,4 @@ pub mod canary_plant;
 pub mod entropy;
 pub mod probe;
 pub mod rundir;
+pub mod self_harden;
