@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 use mcpg_domain::config::model::EnvConfig;
-use mcpg_domain::env::{build_env, FixedEnv};
+use mcpg_domain::env::{build_env, EnvError, FixedEnv};
 
 fn default_fixed() -> FixedEnv {
     FixedEnv {
@@ -201,4 +201,67 @@ fn p1_env_11_user_set_name_skips_decoy() {
         .find(|(k, _)| k == "AWS_SECRET_ACCESS_KEY")
         .expect("AWS_SECRET_ACCESS_KEY should be present");
     assert_eq!(found.1.to_string_lossy(), "user_value");
+}
+
+#[test]
+fn p1_env_05_ci_vars_dropped() {
+    let mut host = make_host_vars();
+    host.push((
+        OsString::from("GITHUB_TOKEN"),
+        OsString::from("ghp_secret123"),
+    ));
+    host.push((OsString::from("CI"), OsString::from("true")));
+    host.push((OsString::from("RUNNER_OS"), OsString::from("Linux")));
+    host.push((
+        OsString::from("ACTIONS_RUNNER_NAME"),
+        OsString::from("runner-1"),
+    ));
+
+    let cfg = EnvConfig {
+        passthrough: vec![
+            "GITHUB_TOKEN".to_string(),
+            "CI".to_string(),
+            "RUNNER_OS".to_string(),
+            "ACTIONS_RUNNER_NAME".to_string(),
+        ],
+        ..Default::default()
+    };
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+
+    assert!(!env.iter().any(|(k, _)| k == "GITHUB_TOKEN"));
+    assert!(!env.iter().any(|(k, _)| k == "CI"));
+    assert!(!env.iter().any(|(k, _)| k == "RUNNER_OS"));
+    assert!(!env.iter().any(|(k, _)| k == "ACTIONS_RUNNER_NAME"));
+}
+
+#[test]
+fn p1_env_06_actions_tokens_forbidden() {
+    let host = make_host_vars();
+    let cfg = EnvConfig {
+        passthrough: vec!["ACTIONS_RUNTIME_TOKEN".to_string()],
+        ..Default::default()
+    };
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let err = build_env(&host, &cfg, &fixed, &decoys)
+        .expect_err("ACTIONS_RUNTIME_TOKEN must be forbidden");
+    assert_eq!(
+        err,
+        EnvError::Forbidden("ACTIONS_RUNTIME_TOKEN".to_string())
+    );
+
+    let cfg_id = EnvConfig {
+        passthrough: vec!["ACTIONS_ID_TOKEN_REQUEST_URL".to_string()],
+        ..Default::default()
+    };
+    let err_id = build_env(&host, &cfg_id, &fixed, &decoys)
+        .expect_err("ACTIONS_ID_TOKEN_REQUEST_URL must be forbidden");
+    assert_eq!(
+        err_id,
+        EnvError::Forbidden("ACTIONS_ID_TOKEN_REQUEST_URL".to_string())
+    );
 }

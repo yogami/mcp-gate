@@ -66,6 +66,30 @@ fn matches_passthrough_pattern(pattern: &str, candidate: &str) -> bool {
     }
 }
 
+fn matches_ci_prefix(name: &str) -> bool {
+    name.starts_with("GITHUB_") || name.starts_with("RUNNER_") || name.starts_with("ACTIONS_")
+}
+
+fn is_ci_deny_var(name: &str) -> bool {
+    if name == "CI" {
+        return true;
+    }
+    matches_ci_prefix(name)
+}
+
+fn is_forbidden_token(name: &str) -> bool {
+    name == "ACTIONS_RUNTIME_TOKEN" || name.starts_with("ACTIONS_ID_TOKEN_REQUEST")
+}
+
+fn check_forbidden_passthrough(passthrough: &[String]) -> Result<(), EnvError> {
+    for pat in passthrough {
+        if is_forbidden_token(pat) {
+            return Err(EnvError::Forbidden(pat.clone()));
+        }
+    }
+    Ok(())
+}
+
 fn add_passthrough_vars(
     env: &mut BTreeMap<OsString, OsString>,
     host: &[(OsString, OsString)],
@@ -73,6 +97,9 @@ fn add_passthrough_vars(
 ) {
     for (k, v) in host {
         let key_str = k.to_string_lossy();
+        if is_ci_deny_var(&key_str) {
+            continue;
+        }
         let matches = passthrough
             .iter()
             .any(|pat| matches_passthrough_pattern(pat, &key_str));
@@ -103,6 +130,8 @@ pub fn build_env(
     fixed: &FixedEnv,
     decoys: &[(OsString, OsString)],
 ) -> Result<Vec<(OsString, OsString)>, EnvError> {
+    check_forbidden_passthrough(&cfg.passthrough)?;
+
     let mut env = BTreeMap::new();
 
     add_fixed_vars(&mut env, fixed);
