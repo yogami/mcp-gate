@@ -1641,10 +1641,212 @@ mod linux_probe {
             }
         }
     }
+
+    pub fn check_overhead(iterations: u64) -> Value {
+        unsafe {
+            let dev_null = b"/dev/null\0".as_ptr() as *const _;
+
+            // 1. Baseline without seccomp filter
+            let t_start = std::time::Instant::now();
+            for _ in 0..iterations {
+                let fd = libc::openat(libc::AT_FDCWD, dev_null, libc::O_RDONLY);
+                if fd >= 0 {
+                    libc::close(fd);
+                }
+            }
+            let without_ns = t_start.elapsed().as_nanos().max(1);
+
+            // 2. With seccomp user notification
+            let mut sv: [c_int; 2] = [-1, -1];
+            if libc::socketpair(libc::AF_UNIX, libc::SOCK_SEQPACKET, 0, sv.as_mut_ptr()) != 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("socketpair failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            let pid = libc::fork();
+            if pid < 0 {
+                libc::close(sv[0]);
+                libc::close(sv[1]);
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("fork failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            if pid == 0 {
+                libc::close(sv[0]);
+
+                if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 {
+                    libc::_exit(1);
+                }
+
+                let filter = make_openat_filter();
+                let prog = sock_fprog {
+                    len: filter.len() as c_ushort,
+                    filter: filter.as_ptr(),
+                };
+
+                let listener_fd = libc::syscall(
+                    libc::SYS_seccomp,
+                    SECCOMP_SET_MODE_FILTER,
+                    SECCOMP_FILTER_FLAG_NEW_LISTENER,
+                    &prog as *const sock_fprog,
+                ) as c_int;
+
+                if listener_fd < 0 {
+                    libc::_exit(2);
+                }
+
+                if send_fd(sv[1], listener_fd).is_err() {
+                    libc::close(listener_fd);
+                    libc::_exit(3);
+                }
+                libc::close(listener_fd);
+
+                // Wait for sync byte from parent
+                let mut sync = [0u8; 1];
+                if libc::read(sv[1], sync.as_mut_ptr() as *mut _, 1) != 1 {
+                    libc::_exit(4);
+                }
+
+                let dev_null = b"/dev/null\0".as_ptr() as *const _;
+                let t_child = std::time::Instant::now();
+                for _ in 0..iterations {
+                    let fd = libc::openat(libc::AT_FDCWD, dev_null, libc::O_RDONLY);
+                    if fd >= 0 {
+                        libc::close(fd);
+                    }
+                }
+                let with_ns = t_child.elapsed().as_nanos();
+
+                let mut buf = [0u8; 16];
+                buf.copy_from_slice(&with_ns.to_le_bytes());
+                libc::write(sv[1], buf.as_ptr() as *const _, 16);
+                libc::close(sv[1]);
+                libc::_exit(0);
+            }
+
+            // Parent
+            libc::close(sv[1]);
+
+            let listener_fd = match recv_fd(sv[0]) {
+                Ok(fd) => fd,
+                Err(e) => {
+                    libc::close(sv[0]);
+                    return json!({
+                        "status": "fail",
+                        "detail": {
+                            "error": format!("recv_fd failed: {e}")
+                        }
+                    });
+                }
+            };
+
+            // Wake child with sync byte
+            let sync = [1u8; 1];
+            libc::write(sv[0], sync.as_ptr() as *const _, 1);
+
+            let mut req = mem::zeroed::<seccomp_notif>();
+            let mut resp = mem::zeroed::<seccomp_notif_resp>();
+
+            let mut pfd = libc::pollfd {
+                fd: listener_fd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+
+            let mut notifs_seen: u64 = 0;
+            while notifs_seen < iterations {
+                let mut poll_res;
+                loop {
+                    poll_res = libc::poll(&mut pfd, 1, 10_000);
+                    if poll_res < 0
+                        && std::io::Error::last_os_error().raw_os_error() == Some(libc::EINTR)
+                    {
+                        continue;
+                    }
+                    break;
+                }
+
+                if poll_res <= 0 || (pfd.revents & libc::POLLIN) == 0 {
+                    break;
+                }
+
+                let ret = libc::ioctl(
+                    listener_fd,
+                    SECCOMP_IOCTL_NOTIF_RECV as _,
+                    &mut req as *mut _,
+                );
+                if ret == 0 {
+                    resp.id = req.id;
+                    resp.flags = SECCOMP_USER_NOTIF_FLAG_CONTINUE;
+                    resp.val = 0;
+                    resp.error = 0;
+                    let _ = libc::ioctl(
+                        listener_fd,
+                        SECCOMP_IOCTL_NOTIF_SEND as _,
+                        &mut resp as *mut _,
+                    );
+                    notifs_seen += 1;
+                }
+            }
+
+            libc::close(listener_fd);
+
+            let mut buf = [0u8; 16];
+            let mut total_read = 0;
+            while total_read < buf.len() {
+                let n = libc::read(
+                    sv[0],
+                    buf.as_mut_ptr().add(total_read) as *mut _,
+                    buf.len() - total_read,
+                );
+                if n <= 0 {
+                    break;
+                }
+                total_read += n as usize;
+            }
+            libc::close(sv[0]);
+
+            let mut status: c_int = 0;
+            libc::waitpid(pid, &mut status, 0);
+
+            if notifs_seen == iterations && total_read == 16 {
+                let with_ns = u128::from_le_bytes(buf);
+                let ratio = (with_ns as f64) / (without_ns as f64);
+                json!({
+                    "status": "info",
+                    "detail": {
+                        "iterations": iterations,
+                        "without_ns": without_ns as u64,
+                        "with_ns": with_ns as u64,
+                        "ratio": (ratio * 100.0).round() / 100.0
+                    }
+                })
+            } else {
+                json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": "timed out or missed notifications",
+                        "notifs_seen": notifs_seen,
+                        "iterations": iterations,
+                        "child_status": status
+                    }
+                })
+            }
+        }
+    }
 }
 
 /// Run one check. Checks are added here by TASK-0.3 to TASK-0.12.
-fn run_check(id: &str, _args: &Args) -> Value {
+fn run_check(id: &str, args: &Args) -> Value {
+    let _ = args;
     match id {
         #[cfg(target_os = "linux")]
         "P0-SPIKE-01" => linux_probe::check_listener(),
@@ -1664,9 +1866,11 @@ fn run_check(id: &str, _args: &Args) -> Value {
         "P0-SPIKE-08" => linux_probe::check_inotify_mmap(),
         #[cfg(target_os = "linux")]
         "P0-SPIKE-09" => linux_probe::check_dumpable(),
+        #[cfg(target_os = "linux")]
+        "P0-SPIKE-10" => linux_probe::check_overhead(args.iterations),
         #[cfg(not(target_os = "linux"))]
         "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" | "P0-SPIKE-05"
-        | "P0-SPIKE-06" | "P0-SPIKE-07" | "P0-SPIKE-08" | "P0-SPIKE-09" => json!({
+        | "P0-SPIKE-06" | "P0-SPIKE-07" | "P0-SPIKE-08" | "P0-SPIKE-09" | "P0-SPIKE-10" => json!({
             "status": "unsupported",
             "detail": { "reason": "Linux-only" }
         }),

@@ -246,3 +246,19 @@ fn p0_spike_09_dumpable_zero_hides_environ() {
         "detail.secret_seen must be false"
     );
 }
+
+/// TASK-0.12: P0-SPIKE-10, notification overhead benchmark.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_10_overhead_ratio() {
+    let report = probe(&["--check", "P0-SPIKE-10", "--iterations", "10000", "--json"]);
+    let c = &report["checks"]["P0-SPIKE-10"];
+    assert_eq!(
+        c["status"], "info",
+        "P0-SPIKE-10 status must be info, got: {:?}",
+        c
+    );
+    let ratio = c["detail"]["ratio"].as_f64().expect("ratio is a float");
+    assert!(ratio.is_finite(), "ratio must be finite: {ratio}");
+    assert!(ratio > 0.0, "ratio must be > 0: {ratio}");
+}
