@@ -10,3 +10,7 @@ repository.workspace = true
 mcpg-domain = { path = "../mcpg-domain" }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_yml = { workspace = true }
+saphyr = { workspace = true }
+jsonschema = { workspace = true }
+
