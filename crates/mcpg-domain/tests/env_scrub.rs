@@ -26,6 +26,10 @@ fn make_host_vars() -> Vec<(OsString, OsString)> {
     vars
 }
 
+fn allow_all(_: &std::path::Path) -> bool {
+    true
+}
+
 #[test]
 fn p1_env_01_empty_config_yields_only_fixed_vars() {
     let host = make_host_vars();
@@ -33,7 +37,7 @@ fn p1_env_01_empty_config_yields_only_fixed_vars() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys)
+    let env = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
         .expect("build_env succeeds")
         .vars;
 
@@ -102,7 +106,7 @@ fn p1_env_02_passthrough_copies_value() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys)
+    let env = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
         .expect("build_env succeeds")
         .vars;
 
@@ -123,7 +127,7 @@ fn p1_env_03_absent_passthrough_is_omitted() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys)
+    let env = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
         .expect("build_env succeeds")
         .vars;
 
@@ -147,7 +151,7 @@ fn p1_env_04_trailing_wildcard_prefix_match() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys)
+    let env = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
         .expect("build_env succeeds")
         .vars;
 
@@ -174,7 +178,7 @@ fn p1_env_10_set_overrides_passthrough() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys)
+    let env = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
         .expect("build_env succeeds")
         .vars;
 
@@ -204,7 +208,7 @@ fn p1_env_11_user_set_name_skips_decoy() {
         OsString::from("decoy_value"),
     )];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys)
+    let env = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
         .expect("build_env succeeds")
         .vars;
 
@@ -241,7 +245,7 @@ fn p1_env_05_ci_vars_dropped() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let env = build_env(&host, &cfg, &fixed, &decoys)
+    let env = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
         .expect("build_env succeeds")
         .vars;
 
@@ -261,7 +265,7 @@ fn p1_env_06_actions_tokens_forbidden() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let err = build_env(&host, &cfg, &fixed, &decoys)
+    let err = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
         .expect_err("ACTIONS_RUNTIME_TOKEN must be forbidden");
     assert_eq!(
         err,
@@ -272,7 +276,7 @@ fn p1_env_06_actions_tokens_forbidden() {
         passthrough: vec!["ACTIONS_ID_TOKEN_REQUEST_URL".to_string()],
         ..Default::default()
     };
-    let err_id = build_env(&host, &cfg_id, &fixed, &decoys)
+    let err_id = build_env(&host, &cfg_id, &fixed, &decoys, &allow_all)
         .expect_err("ACTIONS_ID_TOKEN_REQUEST_URL must be forbidden");
     assert_eq!(
         err_id,
@@ -291,7 +295,8 @@ fn p1_env_07_secret_name_needs_opt_in() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let err = build_env(&host, &cfg, &fixed, &decoys).expect_err("MY_API_KEY must need opt-in");
+    let err = build_env(&host, &cfg, &fixed, &decoys, &allow_all)
+        .expect_err("MY_API_KEY must need opt-in");
     assert_eq!(err, EnvError::SecretNeedsOptIn("MY_API_KEY".to_string()));
 }
 
@@ -308,7 +313,7 @@ fn p1_env_08_opt_in_passes_with_warning() {
     let fixed = default_fixed();
     let decoys = [];
 
-    let outcome = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+    let outcome = build_env(&host, &cfg, &fixed, &decoys, &allow_all).expect("build_env succeeds");
     assert_eq!(outcome.warnings.len(), 1);
     assert!(outcome.warnings[0].contains("MY_API_KEY"));
     let found = outcome
@@ -317,4 +322,64 @@ fn p1_env_08_opt_in_passes_with_warning() {
         .find(|(k, _)| k == "MY_API_KEY")
         .expect("MY_API_KEY should be present");
     assert_eq!(found.1.to_string_lossy(), "key_12345");
+}
+
+#[test]
+fn p1_env_09_reserved_names_rejected() {
+    let host = make_host_vars();
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let mut set_home = std::collections::BTreeMap::new();
+    set_home.insert("HOME".to_string(), "/root".to_string());
+    let cfg_home = EnvConfig {
+        set: set_home,
+        ..Default::default()
+    };
+    let err_home = build_env(&host, &cfg_home, &fixed, &decoys, &|_| true)
+        .expect_err("HOME in set must be rejected");
+    assert_eq!(err_home, EnvError::InvalidSet("HOME".to_string()));
+
+    let mut set_tmp = std::collections::BTreeMap::new();
+    set_tmp.insert("TMPDIR".to_string(), "/x".to_string());
+    let cfg_tmp = EnvConfig {
+        set: set_tmp,
+        ..Default::default()
+    };
+    let err_tmp = build_env(&host, &cfg_tmp, &fixed, &decoys, &|_| true)
+        .expect_err("TMPDIR in set must be rejected");
+    assert_eq!(err_tmp, EnvError::InvalidSet("TMPDIR".to_string()));
+}
+
+#[test]
+fn path_set_requires_reachable_entries() {
+    let host = make_host_vars();
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let mut set_bad = std::collections::BTreeMap::new();
+    set_bad.insert("PATH".to_string(), "/usr/bin:/opt/evil".to_string());
+    let cfg_bad = EnvConfig {
+        set: set_bad,
+        ..Default::default()
+    };
+    let is_reachable = |p: &std::path::Path| p != std::path::Path::new("/opt/evil");
+    let err = build_env(&host, &cfg_bad, &fixed, &decoys, &is_reachable)
+        .expect_err("unreachable PATH entry must be rejected");
+    assert_eq!(err, EnvError::InvalidSet("PATH".to_string()));
+
+    let mut set_good = std::collections::BTreeMap::new();
+    set_good.insert("PATH".to_string(), "/usr/bin:/bin".to_string());
+    let cfg_good = EnvConfig {
+        set: set_good,
+        ..Default::default()
+    };
+    let outcome = build_env(&host, &cfg_good, &fixed, &decoys, &is_reachable)
+        .expect("reachable PATH entries must be accepted");
+    let found = outcome
+        .vars
+        .iter()
+        .find(|(k, _)| k == "PATH")
+        .expect("PATH should be present");
+    assert_eq!(found.1.to_string_lossy(), "/usr/bin:/bin");
 }

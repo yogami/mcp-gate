@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 use std::ffi::OsString;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::config::model::EnvConfig;
 
@@ -167,15 +167,50 @@ fn add_decoy_vars(env: &mut BTreeMap<OsString, OsString>, decoys: &[(OsString, O
     }
 }
 
+fn validate_path_entries(val: &str, is_reachable: &dyn Fn(&Path) -> bool) -> Result<(), EnvError> {
+    for part in val.split(':') {
+        if part.is_empty() || !is_reachable(Path::new(part)) {
+            return Err(EnvError::InvalidSet("PATH".to_string()));
+        }
+    }
+    Ok(())
+}
+
+fn validate_set_entry(
+    key: &str,
+    val: &str,
+    is_reachable: &dyn Fn(&Path) -> bool,
+) -> Result<(), EnvError> {
+    if key == "HOME" || key == "TMPDIR" {
+        return Err(EnvError::InvalidSet(key.to_string()));
+    }
+    if key == "PATH" {
+        validate_path_entries(val, is_reachable)?;
+    }
+    Ok(())
+}
+
+fn validate_set(
+    set: &BTreeMap<String, String>,
+    is_reachable: &dyn Fn(&Path) -> bool,
+) -> Result<(), EnvError> {
+    for (k, v) in set {
+        validate_set_entry(k, v, is_reachable)?;
+    }
+    Ok(())
+}
+
 /// Build the scrubbed capsule environment from host environment, configuration, and decoys.
 pub fn build_env(
     host: &[(OsString, OsString)],
     cfg: &EnvConfig,
     fixed: &FixedEnv,
     decoys: &[(OsString, OsString)],
+    is_reachable: &dyn Fn(&Path) -> bool,
 ) -> Result<EnvOutcome, EnvError> {
     check_forbidden_passthrough(&cfg.passthrough)?;
     let warnings = check_secret_passthrough(&cfg.passthrough, cfg.allow_secret_passthrough)?;
+    validate_set(&cfg.set, is_reachable)?;
 
     let mut env = BTreeMap::new();
 
