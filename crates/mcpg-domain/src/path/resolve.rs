@@ -3,6 +3,9 @@ use std::path::{Component, Path, PathBuf};
 
 use crate::fs_view::FsView;
 use crate::path::contain::is_within;
+use crate::path::proc_map::{
+    build_proc_prefix, classify_proc_target, parse_fd, ProcCtx, ProcTarget,
+};
 
 /// Error occurring during path resolution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -100,16 +103,11 @@ pub fn escape_bytes(bytes: &[u8]) -> String {
     out
 }
 
-fn initial_state(root: &Path, base: &Path, raw: &[u8]) -> (PathBuf, Option<EscapeKind>) {
+fn initial_state(base: &Path, raw: &[u8]) -> PathBuf {
     if raw.starts_with(b"/") {
-        let esc = if is_within(Path::new("/"), root) {
-            None
-        } else {
-            Some(EscapeKind::Absolute)
-        };
-        (PathBuf::from("/"), esc)
+        PathBuf::from("/")
     } else {
-        (base.to_path_buf(), None)
+        base.to_path_buf()
     }
 }
 
@@ -161,10 +159,155 @@ fn check_is_symlink(fs: &dyn FsView, path: &Path, follow: bool) -> bool {
     fs.lstat(path).map(|m| m.is_symlink()).unwrap_or(false)
 }
 
+fn apply_fd_target(
+    target: Option<&Path>,
+    fd: i32,
+    current: &mut PathBuf,
+    root: &Path,
+    escaped_via: &mut Option<EscapeKind>,
+) {
+    if let Some(p) = target {
+        *current = p.to_path_buf();
+        if !is_within(current, root) {
+            *escaped_via = Some(EscapeKind::ProcFd);
+        }
+    } else {
+        current.push(fd.to_string());
+    }
+}
+
+fn intercept_dev_fd(
+    ctx: &ProcCtx,
+    root: &Path,
+    current: &mut PathBuf,
+    pending: &mut VecDeque<StepComp>,
+    escaped_via: &mut Option<EscapeKind>,
+) -> bool {
+    let next_str = match pending.front() {
+        Some(StepComp::Normal(s)) => s.to_str(),
+        _ => None,
+    };
+    let Some(fd) = next_str.and_then(parse_fd) else {
+        return false;
+    };
+    pending.pop_front();
+    let target = ctx.resolve_fd(None, fd);
+    apply_fd_target(target, fd, current, root, escaped_via);
+    true
+}
+
+fn check_is_fd_component(comp: Option<&StepComp>) -> bool {
+    match comp {
+        Some(StepComp::Normal(s)) => s == "fd",
+        _ => false,
+    }
+}
+
+fn try_pop_fd_num(pending: &mut VecDeque<StepComp>) -> Option<i32> {
+    let s = match pending.front() {
+        Some(StepComp::Normal(os)) => os.to_str(),
+        _ => None,
+    }?;
+    let fd = parse_fd(s)?;
+    pending.pop_front();
+    Some(fd)
+}
+
+fn finish_proc_logical(
+    target: ProcTarget,
+    current: &mut PathBuf,
+    pending: &mut VecDeque<StepComp>,
+    escaped_via: &mut Option<EscapeKind>,
+) {
+    if matches!(target, ProcTarget::Foreign(_)) {
+        *escaped_via = Some(EscapeKind::ProcFd);
+    }
+    *current = build_proc_prefix(&target);
+    while let Some(comp) = pending.pop_front() {
+        match comp {
+            StepComp::Normal(s) => current.push(s),
+            StepComp::ParentDir => {
+                current.pop();
+            }
+        }
+    }
+}
+
+fn handle_classified_proc(
+    target: ProcTarget,
+    name: &str,
+    ctx: &ProcCtx,
+    root: &Path,
+    current: &mut PathBuf,
+    pending: &mut VecDeque<StepComp>,
+    escaped_via: &mut Option<EscapeKind>,
+) {
+    if check_is_fd_component(pending.front()) {
+        pending.pop_front();
+        if let Some(fd) = try_pop_fd_num(pending) {
+            let pid = name.parse::<u32>().ok();
+            let target_path = ctx.resolve_fd(pid, fd);
+            apply_fd_target(target_path, fd, current, root, escaped_via);
+            return;
+        }
+    }
+    finish_proc_logical(target, current, pending, escaped_via);
+}
+
+fn peek_target_name(pending: &VecDeque<StepComp>) -> Option<String> {
+    match pending.front() {
+        Some(StepComp::Normal(s)) => s.to_str().map(|s| s.to_string()),
+        _ => None,
+    }
+}
+
+fn intercept_proc(
+    ctx: &ProcCtx,
+    root: &Path,
+    current: &mut PathBuf,
+    pending: &mut VecDeque<StepComp>,
+    escaped_via: &mut Option<EscapeKind>,
+) -> bool {
+    let Some(target_name) = peek_target_name(pending) else {
+        return false;
+    };
+    let Some(proc_target) = classify_proc_target(&target_name, ctx) else {
+        return false;
+    };
+    pending.pop_front();
+    handle_classified_proc(
+        proc_target,
+        &target_name,
+        ctx,
+        root,
+        current,
+        pending,
+        escaped_via,
+    );
+    true
+}
+
+fn check_proc_intercept(
+    ctx: &ProcCtx,
+    root: &Path,
+    current: &mut PathBuf,
+    pending: &mut VecDeque<StepComp>,
+    escaped_via: &mut Option<EscapeKind>,
+) -> bool {
+    if current == Path::new("/dev/fd") {
+        return intercept_dev_fd(ctx, root, current, pending, escaped_via);
+    }
+    if current == Path::new("/proc") {
+        return intercept_proc(ctx, root, current, pending, escaped_via);
+    }
+    false
+}
+
 struct Walker<'a> {
     fs: &'a dyn FsView,
     root: &'a Path,
     follow_last: bool,
+    proc_ctx: Option<&'a ProcCtx>,
     current: PathBuf,
     pending: VecDeque<StepComp>,
     symlinks_followed: u8,
@@ -210,9 +353,25 @@ impl<'a> Walker<'a> {
         }
     }
 
+    fn step(&mut self) -> Option<ResolveError> {
+        if let Some(ctx) = self.proc_ctx {
+            if check_proc_intercept(
+                ctx,
+                self.root,
+                &mut self.current,
+                &mut self.pending,
+                &mut self.escaped_via,
+            ) {
+                return None;
+            }
+        }
+        let comp = self.pending.pop_front()?;
+        self.step_component(comp)
+    }
+
     fn run(&mut self) -> Option<ResolveError> {
-        while let Some(comp) = self.pending.pop_front() {
-            if let Some(err) = self.step_component(comp) {
+        while !self.pending.is_empty() {
+            if let Some(err) = self.step() {
                 return Some(err);
             }
         }
@@ -258,6 +417,32 @@ fn compute_lexical(base: &Path, raw: &[u8]) -> PathBuf {
     current
 }
 
+fn is_proc_capsule(current: &Path) -> bool {
+    current.to_string_lossy().starts_with("proc:capsule")
+}
+
+fn is_uncontained_absolute(raw: &[u8], root: &Path, current: &Path) -> bool {
+    raw.starts_with(b"/") && !is_within(current, root)
+}
+
+fn finalize_escape(
+    raw: &[u8],
+    root: &Path,
+    current: &Path,
+    escaped_via: Option<EscapeKind>,
+) -> Option<EscapeKind> {
+    if escaped_via.is_some() {
+        return escaped_via;
+    }
+    if is_proc_capsule(current) {
+        return None;
+    }
+    if is_uncontained_absolute(raw, root, current) {
+        return Some(EscapeKind::Absolute);
+    }
+    None
+}
+
 /// Resolve a path following kernel-like semantics.
 pub fn resolve(
     fs: &dyn FsView,
@@ -265,8 +450,9 @@ pub fn resolve(
     base: &Path,
     raw: &[u8],
     follow_last: bool,
+    proc_ctx: Option<&ProcCtx>,
 ) -> Resolution {
-    let (current, escaped_via) = initial_state(root, base, raw);
+    let current = initial_state(base, raw);
     let raw_path = raw_to_path(raw);
     let pending: VecDeque<StepComp> = raw_path.components().filter_map(to_step_comp).collect();
 
@@ -274,22 +460,28 @@ pub fn resolve(
         fs,
         root,
         follow_last,
+        proc_ctx,
         current,
         pending,
         symlinks_followed: 0,
-        escaped_via,
+        escaped_via: None,
     };
 
     let error = walker.run();
-    let exists = fs.lstat(&walker.current).is_ok();
+    let exists = if walker.current.to_string_lossy().starts_with("proc:") {
+        false
+    } else {
+        fs.lstat(&walker.current).is_ok()
+    };
     let lexical = compute_lexical(base, raw);
+    let escaped_via = finalize_escape(raw, root, &walker.current, walker.escaped_via);
 
     Resolution {
         resolved: walker.current,
         lexical,
         symlinks_followed: walker.symlinks_followed,
         exists,
-        escaped_via: walker.escaped_via,
+        escaped_via,
         error,
     }
 }
