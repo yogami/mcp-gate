@@ -126,6 +126,26 @@ fn p0_spike_04_wait_killable_recv() {
     );
 }
 
+/// TASK-0.7: P0-SPIKE-05, check Landlock ABI and restriction.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_05_landlock_abi() {
+    let report = probe(&["--check", "P0-SPIKE-05", "--json"]);
+    let c = &report["checks"]["P0-SPIKE-05"];
+    assert_eq!(
+        c["status"], "pass",
+        "P0-SPIKE-05 status must be pass, got: {:?}",
+        c
+    );
+    let abi = c["detail"]["abi"].as_i64().expect("abi is integer");
+    assert!(abi >= 1, "Landlock ABI must be >= 1, got: {abi}");
+    assert_eq!(
+        c["detail"]["enforced"], true,
+        "Landlock restriction must be enforced"
+    );
+}
+
+
 
 
 

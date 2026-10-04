@@ -832,6 +832,151 @@ mod linux_probe {
             }
         }
     }
+
+    pub fn check_landlock() -> Value {
+        unsafe {
+            const SYS_LANDLOCK_CREATE_RULESET: libc::c_long = 444;
+            const SYS_LANDLOCK_ADD_RULE: libc::c_long = 445;
+            const SYS_LANDLOCK_RESTRICT_SELF: libc::c_long = 446;
+
+            const LANDLOCK_CREATE_RULESET_VERSION: u32 = 1;
+            const LANDLOCK_RULE_PATH_BENEATH: u32 = 1;
+            const LANDLOCK_ACCESS_FS_READ_FILE: u64 = 1 << 2;
+
+            #[repr(C)]
+            #[derive(Debug, Clone, Copy)]
+            struct landlock_ruleset_attr {
+                handled_access_fs: u64,
+            }
+
+            #[repr(C, packed)]
+            #[derive(Debug, Clone, Copy)]
+            struct landlock_path_beneath_attr {
+                allowed_access: u64,
+                parent_fd: i32,
+            }
+
+            let abi = libc::syscall(
+                SYS_LANDLOCK_CREATE_RULESET,
+                std::ptr::null::<libc::c_void>(),
+                0usize,
+                LANDLOCK_CREATE_RULESET_VERSION,
+            );
+
+            if abi <= 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "abi": 0,
+                        "error": format!("landlock_create_ruleset version failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            let pid = libc::fork();
+            if pid < 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "abi": abi,
+                        "error": format!("fork failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            if pid == 0 {
+                if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 {
+                    libc::_exit(1);
+                }
+
+                let attr = landlock_ruleset_attr {
+                    handled_access_fs: LANDLOCK_ACCESS_FS_READ_FILE,
+                };
+
+                let ruleset_fd = libc::syscall(
+                    SYS_LANDLOCK_CREATE_RULESET,
+                    &attr as *const landlock_ruleset_attr,
+                    mem::size_of::<landlock_ruleset_attr>(),
+                    0u32,
+                ) as c_int;
+
+                if ruleset_fd < 0 {
+                    libc::_exit(2);
+                }
+
+                // Allow reading /tmp
+                let tmp_fd = libc::open(b"/tmp\0".as_ptr() as *const _, libc::O_RDONLY | libc::O_DIRECTORY | libc::O_CLOEXEC);
+                if tmp_fd < 0 {
+                    libc::close(ruleset_fd);
+                    libc::_exit(3);
+                }
+
+                let path_beneath = landlock_path_beneath_attr {
+                    allowed_access: LANDLOCK_ACCESS_FS_READ_FILE,
+                    parent_fd: tmp_fd,
+                };
+
+                let add_res = libc::syscall(
+                    SYS_LANDLOCK_ADD_RULE,
+                    ruleset_fd,
+                    LANDLOCK_RULE_PATH_BENEATH,
+                    &path_beneath as *const landlock_path_beneath_attr,
+                    0u32,
+                );
+                libc::close(tmp_fd);
+
+                if add_res != 0 {
+                    libc::close(ruleset_fd);
+                    libc::_exit(4);
+                }
+
+                let restrict_res = libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, ruleset_fd, 0u32);
+                libc::close(ruleset_fd);
+
+                if restrict_res != 0 {
+                    libc::_exit(5);
+                }
+
+                // Attempt to open /etc/passwd outside /tmp
+                let fd = libc::open(b"/etc/passwd\0".as_ptr() as *const _, libc::O_RDONLY);
+                if fd < 0 {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
+                    if err == libc::EACCES {
+                        libc::_exit(0); // Expected: access denied by Landlock!
+                    } else {
+                        libc::_exit(6);
+                    }
+                } else {
+                    libc::close(fd);
+                    libc::_exit(7); // Unexpected: access was allowed!
+                }
+            }
+
+            let mut status: c_int = 0;
+            libc::waitpid(pid, &mut status, 0);
+
+            let enforced = libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0;
+            if enforced {
+                json!({
+                    "status": "pass",
+                    "detail": {
+                        "abi": abi,
+                        "enforced": true
+                    }
+                })
+            } else {
+                let code = if libc::WIFEXITED(status) { libc::WEXITSTATUS(status) } else { -1 };
+                json!({
+                    "status": "fail",
+                    "detail": {
+                        "abi": abi,
+                        "enforced": false,
+                        "child_exit_code": code
+                    }
+                })
+            }
+        }
+    }
 }
 
 /// Run one check. Checks are added here by TASK-0.3 to TASK-0.12.
@@ -845,10 +990,12 @@ fn run_check(id: &str, _args: &Args) -> Value {
         "P0-SPIKE-03" => linux_probe::check_read_path(),
         #[cfg(target_os = "linux")]
         "P0-SPIKE-04" => linux_probe::check_wait_killable(),
+        #[cfg(target_os = "linux")]
+        "P0-SPIKE-05" => linux_probe::check_landlock(),
         #[cfg(not(target_os = "linux"))]
-        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" => json!({
+        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" | "P0-SPIKE-05" => json!({
             "status": "unsupported",
-            "detail": { "reason": "seccomp is Linux-only" }
+            "detail": { "reason": "Linux-only" }
         }),
         _ => json!({ "status": "not_implemented", "detail": { "check": id } }),
     }
