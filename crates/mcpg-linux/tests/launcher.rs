@@ -82,6 +82,50 @@ fn run_probe_subcommand(subcmd: &str, args: &[&str], workspace: &Path) -> serde_
 }
 
 #[test]
+fn p2_launch_01_environ_only_expected_keys() {
+    let tmp = tempfile_helper::TempDir::new("mcpg_launch_env");
+
+    std::env::set_var("MCPG_HOST_SECRET", "supersecret");
+    std::env::set_var("GITHUB_TOKEN", "ghp_supersecret");
+
+    let mut plan = make_plan("env", &[], tmp.path());
+    plan.envp = vec![
+        CString::new("DECOY_AWS_KEY=fake_key").unwrap(),
+        CString::new("HOME=/capsule/home").unwrap(),
+        CString::new("LANG=C.UTF-8").unwrap(),
+        CString::new("PATH=/usr/bin:/bin").unwrap(),
+        CString::new("TMPDIR=/capsule/tmp").unwrap(),
+    ];
+
+    let launcher = LinuxLauncher::new();
+    let running = launcher.launch(&plan).expect("launch failed");
+    let output = running.child.wait_with_output().expect("wait output");
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).expect("utf8");
+    let val: serde_json::Value = serde_json::from_str(text.trim()).expect("valid json");
+
+    let actual_keys: std::collections::BTreeSet<String> = val["keys"]
+        .as_array()
+        .expect("keys array")
+        .iter()
+        .filter_map(|v| v.as_str().map(String::from))
+        .collect();
+
+    let expected_keys: std::collections::BTreeSet<String> =
+        ["DECOY_AWS_KEY", "HOME", "LANG", "PATH", "TMPDIR"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+
+    assert_eq!(
+        actual_keys, expected_keys,
+        "capsule environment must contain only expected keys"
+    );
+    assert!(!actual_keys.contains("MCPG_HOST_SECRET"));
+    assert!(!actual_keys.contains("GITHUB_TOKEN"));
+}
+
+#[test]
 fn p2_launch_02_only_stdio_fds() {
     let tmp = tempfile_helper::TempDir::new("mcpg_launch_fds");
     let extra_fd1 = unsafe { libc::dup(1) };
