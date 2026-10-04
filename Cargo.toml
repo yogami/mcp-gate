@@ -32,4 +32,8 @@ predicates = "3.1"
 proptest = "1.5"
 insta = { version = "1.39", features = ["yaml"] }
 getrandom = "0.3"
+hkdf = "0.12"
+sha2 = "0.10"
+rand_chacha = "0.9"
+rand_core = "0.9"
 

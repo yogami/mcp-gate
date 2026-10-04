@@ -13,6 +13,10 @@ testing = []
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
+hkdf = { workspace = true }
+sha2 = { workspace = true }
+rand_chacha = { workspace = true }
+rand_core = { workspace = true }
 
 [dev-dependencies]
 mcpg-domain = { path = ".", features = ["testing"] }
