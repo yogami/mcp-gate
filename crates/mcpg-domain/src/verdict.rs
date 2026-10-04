@@ -54,3 +54,47 @@ pub fn combine(codes: impl IntoIterator<Item = ExitCode>) -> ExitCode {
         .max_by_key(|c| c.precedence())
         .unwrap_or(ExitCode::Pass)
 }
+
+/// High-level verdict produced by a run.
+///
+/// SPEC 3.4.5:
+/// - Any finding at or above fail_on: FAIL_SECURITY.
+/// - Otherwise any scenario expectation failed: FAIL_FUNCTIONAL.
+/// - Otherwise handshake failed, crash, or timeout: INCONCLUSIVE.
+/// - Otherwise: PASS.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Verdict {
+    Pass,
+    FailSecurity,
+    FailFunctional,
+    Inconclusive,
+}
+
+impl Verdict {
+    /// Return the canonical string representation of the verdict.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Pass => "PASS",
+            Self::FailSecurity => "FAIL_SECURITY",
+            Self::FailFunctional => "FAIL_FUNCTIONAL",
+            Self::Inconclusive => "INCONCLUSIVE",
+        }
+    }
+
+    /// Map the verdict to its corresponding process exit code.
+    pub const fn to_exit_code(self) -> ExitCode {
+        match self {
+            Self::Pass => ExitCode::Pass,
+            Self::FailSecurity => ExitCode::FailSecurity,
+            Self::FailFunctional => ExitCode::FailFunctional,
+            Self::Inconclusive => ExitCode::Inconclusive,
+        }
+    }
+}
+
+impl std::fmt::Display for Verdict {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
