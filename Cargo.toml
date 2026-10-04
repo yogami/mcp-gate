@@ -7,6 +7,7 @@ members = [
     "crates/mcpg-mcp",
     "crates/mcpg-report",
     "crates/mcpg-cli",
+    "fixtures/servers/syscall-probe",
 ]
 exclude = [
     "spikes/runner-probe",
