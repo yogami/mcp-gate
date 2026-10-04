@@ -3,3 +3,4 @@
 pub mod catalogue;
 pub mod derive;
 pub mod render;
+pub mod ssh;

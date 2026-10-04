@@ -415,3 +415,100 @@ fn p1_can_02_different_seeds_all_secrets_differ() {
         );
     }
 }
+
+#[test]
+fn p1_can_03_ssh_pub_derivable() {
+    use mcpg_domain::canary::catalogue::CanaryKind;
+    use mcpg_domain::canary::render::plan;
+    use std::io::Write;
+    use std::process::Command;
+
+    let seed = Seed::from_bytes([55u8; 32]);
+    let canary_plan = plan(&seed, &[CanaryKind::Ssh]);
+
+    let priv_file = canary_plan
+        .files
+        .iter()
+        .find(|f| f.path.to_str() == Some(".ssh/id_ed25519"))
+        .expect("private key file planned");
+    let pub_file = canary_plan
+        .files
+        .iter()
+        .find(|f| f.path.to_str() == Some(".ssh/id_ed25519.pub"))
+        .expect("public key file planned");
+
+    let temp_dir = std::env::temp_dir();
+    let temp_priv_path = temp_dir.join(format!("test_ssh_priv_{}", std::process::id()));
+    {
+        let mut f = std::fs::File::create(&temp_priv_path).expect("create temp priv file");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = f.metadata().expect("metadata").permissions();
+            perms.set_mode(0o600);
+            f.set_permissions(perms).expect("set 0600 mode");
+        }
+        f.write_all(&priv_file.content).expect("write priv key");
+    }
+
+    let output = Command::new("ssh-keygen")
+        .args(["-y", "-f", temp_priv_path.to_str().unwrap()])
+        .output();
+
+    let _ = std::fs::remove_file(&temp_priv_path);
+
+    match output {
+        Ok(out) if out.status.success() => {
+            let derived_pub = String::from_utf8_lossy(&out.stdout);
+            let planned_pub = String::from_utf8_lossy(&pub_file.content);
+            let derived_parts: Vec<&str> = derived_pub.split_whitespace().collect();
+            let planned_parts: Vec<&str> = planned_pub.split_whitespace().collect();
+            assert!(derived_parts.len() >= 2);
+            assert!(planned_parts.len() >= 2);
+            assert_eq!(derived_parts[0], planned_parts[0]);
+            assert_eq!(derived_parts[1], planned_parts[1]);
+        }
+        Ok(out) => {
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            panic!("ssh-keygen failed with status {}: {stderr}", out.status);
+        }
+        Err(err) => {
+            println!("Skipping ssh-keygen validation: command not available: {err}");
+        }
+    }
+}
+
+#[test]
+fn ssh_key_byte_identical_for_same_seed() {
+    use mcpg_domain::canary::catalogue::CanaryKind;
+    use mcpg_domain::canary::render::plan;
+
+    let seed = Seed::from_bytes([77u8; 32]);
+    let plan1 = plan(&seed, &[CanaryKind::Ssh]);
+    let plan2 = plan(&seed, &[CanaryKind::Ssh]);
+
+    assert_eq!(plan1.files, plan2.files);
+    assert_eq!(plan1.secrets, plan2.secrets);
+}
+
+#[test]
+fn ssh_key_differs_for_other_seed() {
+    use mcpg_domain::canary::catalogue::CanaryKind;
+    use mcpg_domain::canary::render::plan;
+
+    let seed1 = Seed::from_bytes([77u8; 32]);
+    let seed2 = Seed::from_bytes([88u8; 32]);
+    let plan1 = plan(&seed1, &[CanaryKind::Ssh]);
+    let plan2 = plan(&seed2, &[CanaryKind::Ssh]);
+
+    assert_eq!(plan1.files.len(), 2);
+    assert_eq!(plan2.files.len(), 2);
+
+    let priv1 = &plan1.files[0].content;
+    let priv2 = &plan2.files[0].content;
+    assert_ne!(priv1, priv2);
+
+    let pub1 = &plan1.files[1].content;
+    let pub2 = &plan2.files[1].content;
+    assert_ne!(pub1, pub2);
+}

@@ -383,6 +383,33 @@ fn render_env(seed: &Seed, env: &mut Vec<(OsString, OsString)>, secrets: &mut Ve
     }
 }
 
+fn render_ssh(seed: &Seed, files: &mut Vec<PlannedFile>, secrets: &mut Vec<Secret>) {
+    let entry = entry_for_kind(CanaryKind::Ssh);
+    let key_pair = crate::canary::ssh::generate_ssh_key(seed);
+
+    secrets.push(Secret {
+        field: "ssh_ed25519_key".to_string(),
+        value: to_base64(&key_pair.secret_raw),
+        kind: CanaryKind::Ssh,
+    });
+
+    files.push(PlannedFile {
+        path: PathBuf::from(".ssh/id_ed25519"),
+        content: key_pair.private_key,
+        mode: entry.file_mode,
+        kind: CanaryKind::Ssh,
+        tier: entry.tier,
+    });
+
+    files.push(PlannedFile {
+        path: PathBuf::from(".ssh/id_ed25519.pub"),
+        content: key_pair.public_key,
+        mode: entry.file_mode,
+        kind: CanaryKind::Ssh,
+        tier: entry.tier,
+    });
+}
+
 /// Plan canaries for the given seed and set of canary kinds.
 pub fn plan(seed: &Seed, kinds: &[CanaryKind]) -> CanaryPlan {
     let mut plan = CanaryPlan::default();
@@ -401,7 +428,7 @@ pub fn plan(seed: &Seed, kinds: &[CanaryKind]) -> CanaryPlan {
             CanaryKind::Npmrc => render_npmrc(seed, &mut plan.files, &mut plan.secrets),
             CanaryKind::Pypirc => render_pypirc(seed, &mut plan.files, &mut plan.secrets),
             CanaryKind::Dotenv => render_dotenv(seed, &mut plan.files, &mut plan.secrets),
-            CanaryKind::Ssh => {} // Ssh canary rendered in TASK-1.32
+            CanaryKind::Ssh => render_ssh(seed, &mut plan.files, &mut plan.secrets),
         }
     }
     plan
