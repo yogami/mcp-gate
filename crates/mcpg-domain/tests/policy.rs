@@ -223,3 +223,60 @@ fn root_command_always_executable() {
     assert!(!pol.is_exec_allowed(Path::new("/usr/bin/python3"), false));
     assert!(pol.is_exec_allowed(Path::new("/usr/bin/git"), false));
 }
+
+#[test]
+fn p1_pol_03_baseline_python_snapshot() {
+    use mcpg_domain::policy::baseline::expand_baseline;
+
+    let mut fs = FakeFs::new();
+    fs.add_file("/dev/null", b"");
+    fs.add_file("/dev/urandom", b"");
+    fs.add_file("/dev/zero", b"");
+    fs.add_file("/etc/ld.so.cache", b"");
+    fs.add_file("/etc/localtime", b"");
+    fs.add_dir("/etc/ssl/certs");
+    fs.add_dir("/lib");
+    fs.add_dir("/lib64");
+    fs.add_dir("/usr");
+    fs.add_dir("/bin");
+    fs.add_dir("/etc/python3");
+    fs.add_dir("/usr/lib/python3");
+    fs.add_dir("/usr/local/lib/python3");
+
+    let entries = expand_baseline(Baseline::Python, &fs);
+    let str_entries: Vec<String> = entries
+        .iter()
+        .map(|e| match e {
+            PathEntry::Dir(d) => format!("Dir({})", d.display()),
+            PathEntry::File(f) => format!("File({})", f.display()),
+        })
+        .collect();
+
+    insta::assert_yaml_snapshot!(str_entries);
+}
+
+#[test]
+fn baseline_none_adds_nothing() {
+    use mcpg_domain::policy::baseline::expand_baseline;
+
+    let mut fs = FakeFs::new();
+    fs.add_dir("/usr");
+    let entries = expand_baseline(Baseline::None, &fs);
+    assert!(entries.is_empty());
+}
+
+#[test]
+fn pol_capsule_tmp_always_rw() {
+    let mut fs = FakeFs::new();
+    fs.add_dir("/capsule");
+    fs.add_dir("/capsule/workspace");
+    fs.add_dir("/capsule/tmp");
+
+    let vars = test_vars();
+    let policy = empty_policy();
+
+    let resolved = ResolvedPolicy::from_config(&policy, &vars, &fs).expect("resolve policy");
+
+    assert!(resolved.is_read_allowed(Path::new("/capsule/tmp/test.txt")));
+    assert!(resolved.is_write_allowed(Path::new("/capsule/tmp/test.txt")));
+}

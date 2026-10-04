@@ -7,6 +7,7 @@ use crate::config::vars::{expand, VarError, VarTable};
 use crate::fs_view::{FileType, FsView};
 use crate::path::contain::is_within;
 use crate::path::resolve::resolve;
+use crate::policy::baseline::expand_baseline;
 
 /// Typed policy entry: a file or a directory granting its whole subtree.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -199,6 +200,8 @@ pub struct ResolvedPolicy {
     pub read_paths: Vec<PathEntry>,
     pub write_paths: Vec<PathEntry>,
     pub allowed_child_binaries: Vec<PathBuf>,
+    pub baseline_paths: Vec<PathEntry>,
+    pub capsule_tmp: PathBuf,
     pub allow_network: bool,
     pub allowed_unix_sockets: Vec<String>,
     pub to_create: Vec<PathBuf>,
@@ -228,6 +231,15 @@ impl ResolvedPolicy {
         // REQ-POL-003: write_paths implies read on the same paths
         merge_write_into_read(&mut read_paths, &write_paths);
 
+        // REQ-POL-005: baseline adds runtime read paths
+        let baseline_paths = expand_baseline(policy.baseline, fs);
+
+        // REQ-POL-006: CAPSULE_TMP is scheduled for creation if missing
+        let tmp_missing = fs.lstat(&vars.capsule_tmp).is_err();
+        if tmp_missing && !to_create.contains(&vars.capsule_tmp) {
+            to_create.push(vars.capsule_tmp.clone());
+        }
+
         // REQ-POL-004: allowed_child_binaries resolved through capsule PATH
         let allowed_child_binaries =
             resolve_child_binaries(&policy.allowed_child_binaries, capsule_path, fs)?;
@@ -236,26 +248,34 @@ impl ResolvedPolicy {
             read_paths,
             write_paths,
             allowed_child_binaries,
+            baseline_paths,
+            capsule_tmp: vars.capsule_tmp.clone(),
             allow_network: policy.allow_network,
             allowed_unix_sockets: policy.allowed_unix_sockets.clone(),
             to_create,
         })
     }
 
-    /// Check if reading `path` is permitted by any read path entry.
+    /// Check if reading `path` is permitted by policy, baseline, or capsule tmp.
     pub fn is_read_allowed(&self, path: &Path) -> bool {
-        self.read_paths.iter().any(|entry| match entry {
-            PathEntry::Dir(d) => is_within(path, d),
-            PathEntry::File(f) => path == f,
-        })
+        is_within(path, &self.capsule_tmp)
+            || self.baseline_paths.iter().any(|entry| match entry {
+                PathEntry::Dir(d) => is_within(path, d),
+                PathEntry::File(f) => path == f,
+            })
+            || self.read_paths.iter().any(|entry| match entry {
+                PathEntry::Dir(d) => is_within(path, d),
+                PathEntry::File(f) => path == f,
+            })
     }
 
-    /// Check if writing `path` is permitted by any write path entry.
+    /// Check if writing `path` is permitted by write paths or capsule tmp (REQ-POL-006).
     pub fn is_write_allowed(&self, path: &Path) -> bool {
-        self.write_paths.iter().any(|entry| match entry {
-            PathEntry::Dir(d) => is_within(path, d),
-            PathEntry::File(f) => path == f,
-        })
+        is_within(path, &self.capsule_tmp)
+            || self.write_paths.iter().any(|entry| match entry {
+                PathEntry::Dir(d) => is_within(path, d),
+                PathEntry::File(f) => path == f,
+            })
     }
 
     /// Check if executing `binary` is permitted. Root process is always permitted (REQ-POL-004).

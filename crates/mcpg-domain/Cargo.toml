@@ -17,3 +17,4 @@ serde_json = { workspace = true }
 [dev-dependencies]
 mcpg-domain = { path = ".", features = ["testing"] }
 proptest = { workspace = true }
+insta = { workspace = true }
