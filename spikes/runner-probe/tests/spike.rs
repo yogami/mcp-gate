@@ -87,4 +87,27 @@ fn p0_spike_02_notification_continue() {
     );
 }
 
+/// TASK-0.5: P0-SPIKE-03, read the child's path argument and verify NOTIF_ID_VALID.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_03_read_path_arg() {
+    let report = probe(&["--check", "P0-SPIKE-03", "--json"]);
+    let c = &report["checks"]["P0-SPIKE-03"];
+    assert_eq!(
+        c["status"], "pass",
+        "P0-SPIKE-03 status must be pass, got: {:?}",
+        c
+    );
+    let path = c["detail"]["path"].as_str().expect("path is string");
+    assert!(
+        path == "/etc/hostname" || path == "/etc/hosts",
+        "path read from /proc/<pid>/mem must match opened file, got: {path}"
+    );
+    assert_eq!(
+        c["detail"]["id_valid"], true,
+        "SECCOMP_IOCTL_NOTIF_ID_VALID must be true"
+    );
+}
+
+
 

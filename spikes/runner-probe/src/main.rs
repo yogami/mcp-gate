@@ -255,7 +255,7 @@ mod linux_probe {
         msg.msg_iov = &mut iov;
         msg.msg_iovlen = 1;
         msg.msg_control = cmsg_buf.as_mut_ptr() as *mut _;
-        msg.msg_controllen = cmsg_space;
+        msg.msg_controllen = cmsg_space as _;
 
         let cmsg = libc::CMSG_FIRSTHDR(&msg);
         if cmsg.is_null() {
@@ -290,7 +290,7 @@ mod linux_probe {
         msg.msg_iov = &mut iov;
         msg.msg_iovlen = 1;
         msg.msg_control = cmsg_buf.as_mut_ptr() as *mut _;
-        msg.msg_controllen = cmsg_space;
+        msg.msg_controllen = cmsg_space as _;
 
         let res = libc::recvmsg(sock, &mut msg, 0);
         if res <= 0 {
@@ -529,7 +529,7 @@ mod linux_probe {
             let poll_res = libc::poll(&mut pfd, 1, 2000);
             if poll_res > 0 && (pfd.revents & libc::POLLIN) != 0 {
                 let mut notif: seccomp_notif = mem::zeroed();
-                if libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_RECV, &mut notif) == 0 {
+                if libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_RECV as _, &mut notif) == 0 {
                     notifications += 1;
                     // Send CONTINUE response
                     let mut resp = seccomp_notif_resp {
@@ -538,7 +538,7 @@ mod linux_probe {
                         error: 0,
                         flags: SECCOMP_USER_NOTIF_FLAG_CONTINUE,
                     };
-                    libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_SEND, &mut resp);
+                    libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_SEND as _, &mut resp);
                 }
             }
 
@@ -568,6 +568,184 @@ mod linux_probe {
             }
         }
     }
+
+    pub fn check_read_path() -> Value {
+        unsafe {
+            let mut sv: [c_int; 2] = [-1, -1];
+            if libc::socketpair(libc::AF_UNIX, libc::SOCK_SEQPACKET, 0, sv.as_mut_ptr()) != 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("socketpair failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            let pid = libc::fork();
+            if pid < 0 {
+                libc::close(sv[0]);
+                libc::close(sv[1]);
+                return json!({
+                    "status": "fail",
+                    "detail": {
+                        "error": format!("fork failed: {}", std::io::Error::last_os_error())
+                    }
+                });
+            }
+
+            if pid == 0 {
+                // Child process
+                libc::close(sv[0]);
+
+                if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(1);
+                    libc::_exit(10 + (err & 0x7f));
+                }
+
+                let filter = make_openat_filter();
+                let prog = sock_fprog {
+                    len: filter.len() as c_ushort,
+                    filter: filter.as_ptr(),
+                };
+
+                let listener_fd = libc::syscall(
+                    libc::SYS_seccomp,
+                    SECCOMP_SET_MODE_FILTER,
+                    SECCOMP_FILTER_FLAG_NEW_LISTENER,
+                    &prog as *const sock_fprog,
+                ) as c_int;
+
+                if listener_fd < 0 {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(1);
+                    libc::_exit(20 + (err & 0x7f));
+                }
+
+                if let Err(_) = send_fd(sv[1], listener_fd) {
+                    libc::close(listener_fd);
+                    libc::_exit(2);
+                }
+                libc::close(listener_fd);
+
+                // Wait for parent ACK
+                let mut ack: [u8; 1] = [0];
+                if libc::read(sv[1], ack.as_mut_ptr() as *mut _, 1) != 1 {
+                    libc::_exit(3);
+                }
+                libc::close(sv[1]);
+
+                // Call openat on known file
+                let mut fd = libc::openat(libc::AT_FDCWD, b"/etc/hostname\0".as_ptr() as *const _, libc::O_RDONLY);
+                if fd < 0 {
+                    fd = libc::openat(libc::AT_FDCWD, b"/etc/hosts\0".as_ptr() as *const _, libc::O_RDONLY);
+                }
+
+                if fd >= 0 {
+                    libc::close(fd);
+                    libc::_exit(0);
+                } else {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(1);
+                    libc::_exit(50 + (err & 0x7f));
+                }
+            }
+
+            // Parent process
+            libc::close(sv[1]);
+
+            let listener_fd = match recv_fd(sv[0]) {
+                Ok(fd) => fd,
+                Err(e) => {
+                    libc::close(sv[0]);
+                    let mut st: c_int = 0;
+                    libc::waitpid(pid, &mut st, 0);
+                    return json!({
+                        "status": "fail",
+                        "detail": { "error": format!("recv_fd failed: {e}") }
+                    });
+                }
+            };
+
+            // Send ACK to child so it knows parent is listening
+            let ack: [u8; 1] = [b'G'];
+            libc::write(sv[0], ack.as_ptr() as *const _, 1);
+            libc::close(sv[0]);
+
+            let mut notifications = 0;
+            let mut path_str = String::new();
+            let mut id_valid = false;
+
+            let mut pfd = libc::pollfd {
+                fd: listener_fd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+
+            // Wait up to 2000ms for notification
+            let poll_res = libc::poll(&mut pfd, 1, 2000);
+            if poll_res > 0 && (pfd.revents & libc::POLLIN) != 0 {
+                let mut notif: seccomp_notif = mem::zeroed();
+                if libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_RECV as _, &mut notif) == 0 {
+                    notifications += 1;
+
+                    // Read child path from /proc/<pid>/mem
+                    let mem_path = format!("/proc/{}/mem\0", notif.pid);
+                    let mem_fd = libc::open(mem_path.as_ptr() as *const _, libc::O_RDONLY);
+                    if mem_fd >= 0 {
+                        let mut buf = [0u8; 4096];
+                        let path_ptr = notif.data.args[1];
+                        let n = libc::pread(mem_fd, buf.as_mut_ptr() as *mut _, buf.len(), path_ptr as libc::off_t);
+                        libc::close(mem_fd);
+                        if n > 0 {
+                            let end = buf.iter().position(|&b| b == 0).unwrap_or(n as usize);
+                            path_str = String::from_utf8_lossy(&buf[..end]).into_owned();
+                        }
+                    }
+
+                    // Verify NOTIF_ID_VALID
+                    let mut id_check = notif.id;
+                    if libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_ID_VALID as _, &mut id_check) == 0 {
+                        id_valid = true;
+                    }
+
+                    // Send CONTINUE response
+                    let mut resp = seccomp_notif_resp {
+                        id: notif.id,
+                        val: 0,
+                        error: 0,
+                        flags: SECCOMP_USER_NOTIF_FLAG_CONTINUE,
+                    };
+                    libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_SEND as _, &mut resp);
+                }
+            }
+
+            libc::close(listener_fd);
+
+            let mut status: c_int = 0;
+            libc::waitpid(pid, &mut status, 0);
+            let child_ok = libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0;
+
+            if notifications == 1 && child_ok && !path_str.is_empty() && id_valid {
+                json!({
+                    "status": "pass",
+                    "detail": {
+                        "path": path_str,
+                        "id_valid": id_valid,
+                        "child_open_ok": child_ok
+                    }
+                })
+            } else {
+                json!({
+                    "status": "fail",
+                    "detail": {
+                        "notifications": notifications,
+                        "path": path_str,
+                        "id_valid": id_valid,
+                        "child_open_ok": child_ok,
+                        "child_exit_code": if libc::WIFEXITED(status) { libc::WEXITSTATUS(status) } else { -1 }
+                    }
+                })
+            }
+        }
+    }
 }
 
 /// Run one check. Checks are added here by TASK-0.3 to TASK-0.12.
@@ -577,8 +755,10 @@ fn run_check(id: &str, _args: &Args) -> Value {
         "P0-SPIKE-01" => linux_probe::check_listener(),
         #[cfg(target_os = "linux")]
         "P0-SPIKE-02" => linux_probe::check_continue(),
+        #[cfg(target_os = "linux")]
+        "P0-SPIKE-03" => linux_probe::check_read_path(),
         #[cfg(not(target_os = "linux"))]
-        "P0-SPIKE-01" | "P0-SPIKE-02" => json!({
+        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" => json!({
             "status": "unsupported",
             "detail": { "reason": "seccomp is Linux-only" }
         }),
