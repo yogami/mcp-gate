@@ -1306,6 +1306,131 @@ mod linux_probe {
             }
         }
     }
+
+    pub fn check_inotify_mmap() -> Value {
+        unsafe {
+            let test_file = b"/tmp/probe_inotify_mmap.txt\0";
+            let create_fd = libc::open(test_file.as_ptr() as *const _, libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC, 0o644);
+            if create_fd >= 0 {
+                let page = [b'A'; 4096];
+                libc::write(create_fd, page.as_ptr() as *const _, page.len());
+                libc::close(create_fd);
+            }
+
+            let ifd = libc::inotify_init1(libc::IN_NONBLOCK | libc::IN_CLOEXEC);
+            if ifd < 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": { "error": format!("inotify_init1 failed: {}", std::io::Error::last_os_error()) }
+                });
+            }
+
+            let mask = libc::IN_OPEN | libc::IN_ACCESS | libc::IN_CLOSE_NOWRITE;
+            let wd = libc::inotify_add_watch(ifd, test_file.as_ptr() as *const _, mask);
+            if wd < 0 {
+                libc::close(ifd);
+                return json!({
+                    "status": "fail",
+                    "detail": { "error": format!("inotify_add_watch failed: {}", std::io::Error::last_os_error()) }
+                });
+            }
+
+            let pid = libc::fork();
+            if pid < 0 {
+                libc::close(ifd);
+                return json!({
+                    "status": "fail",
+                    "detail": { "error": format!("fork failed: {}", std::io::Error::last_os_error()) }
+                });
+            }
+
+            if pid == 0 {
+                let rfd = libc::open(test_file.as_ptr() as *const _, libc::O_RDONLY);
+                if rfd < 0 {
+                    libc::_exit(1);
+                }
+                let ptr = libc::mmap(
+                    std::ptr::null_mut(),
+                    4096,
+                    libc::PROT_READ,
+                    libc::MAP_SHARED,
+                    rfd,
+                    0,
+                );
+                if ptr == libc::MAP_FAILED {
+                    libc::close(rfd);
+                    libc::_exit(2);
+                }
+
+                let byte = std::ptr::read_volatile(ptr as *const u8);
+                let _ = byte;
+
+                libc::munmap(ptr, 4096);
+                libc::close(rfd);
+                libc::_exit(0);
+            }
+
+            let mut status: c_int = 0;
+            libc::waitpid(pid, &mut status, 0);
+
+            let mut open_seen = false;
+            let mut access_seen = false;
+
+            let mut pfd = libc::pollfd {
+                fd: ifd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+
+            for _ in 0..10 {
+                let poll_res = libc::poll(&mut pfd, 1, 500);
+                if poll_res > 0 && (pfd.revents & libc::POLLIN) != 0 {
+                    let mut event_buf = [0u8; 4096];
+                    let len = libc::read(ifd, event_buf.as_mut_ptr() as *mut _, event_buf.len());
+                    if len > 0 {
+                        let mut offset = 0;
+                        while offset + mem::size_of::<libc::inotify_event>() <= len as usize {
+                            let ev_ptr = event_buf.as_ptr().add(offset) as *const libc::inotify_event;
+                            let ev = &*ev_ptr;
+                            if (ev.mask & libc::IN_OPEN) != 0 {
+                                open_seen = true;
+                            }
+                            if (ev.mask & libc::IN_ACCESS) != 0 {
+                                access_seen = true;
+                            }
+                            offset += mem::size_of::<libc::inotify_event>() + ev.len as usize;
+                        }
+                    }
+                }
+                if open_seen {
+                    break;
+                }
+            }
+
+            libc::close(ifd);
+            libc::unlink(test_file.as_ptr() as *const _);
+
+            let child_ok = libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0;
+            if open_seen && child_ok {
+                json!({
+                    "status": "pass",
+                    "detail": {
+                        "open_seen": open_seen,
+                        "access_seen": access_seen
+                    }
+                })
+            } else {
+                json!({
+                    "status": "fail",
+                    "detail": {
+                        "open_seen": open_seen,
+                        "access_seen": access_seen,
+                        "child_exit_code": if libc::WIFEXITED(status) { libc::WEXITSTATUS(status) } else { -1 }
+                    }
+                })
+            }
+        }
+    }
 }
 
 /// Run one check. Checks are added here by TASK-0.3 to TASK-0.12.
@@ -1325,8 +1450,10 @@ fn run_check(id: &str, _args: &Args) -> Value {
         "P0-SPIKE-06" => linux_probe::check_combo(),
         #[cfg(target_os = "linux")]
         "P0-SPIKE-07" => linux_probe::check_inotify_reads(),
+        #[cfg(target_os = "linux")]
+        "P0-SPIKE-08" => linux_probe::check_inotify_mmap(),
         #[cfg(not(target_os = "linux"))]
-        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" | "P0-SPIKE-05" | "P0-SPIKE-06" | "P0-SPIKE-07" => json!({
+        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" | "P0-SPIKE-05" | "P0-SPIKE-06" | "P0-SPIKE-07" | "P0-SPIKE-08" => json!({
             "status": "unsupported",
             "detail": { "reason": "Linux-only" }
         }),

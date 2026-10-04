@@ -177,6 +177,21 @@ fn p0_spike_07_inotify_catches_reads() {
     assert_eq!(c["detail"]["access_seen"], true, "IN_ACCESS must be observed");
 }
 
+/// TASK-0.10: P0-SPIKE-08, inotify on mmap read.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_08_inotify_mmap_read() {
+    let report = probe(&["--check", "P0-SPIKE-08", "--json"]);
+    let c = &report["checks"]["P0-SPIKE-08"];
+    assert_eq!(
+        c["status"], "pass",
+        "P0-SPIKE-08 status must be pass, got: {:?}",
+        c
+    );
+    assert_eq!(c["detail"]["open_seen"], true, "IN_OPEN must be observed on mmap read");
+}
+
+
 
 
 
