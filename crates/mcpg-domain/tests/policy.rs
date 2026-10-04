@@ -46,7 +46,10 @@ fn pol_entries_canonicalized() {
 
     assert_eq!(
         resolved.read_paths,
-        vec![PathEntry::Dir(PathBuf::from("/real/path/data"))]
+        vec![
+            PathEntry::Dir(PathBuf::from("/real/path/data")),
+            PathEntry::File(PathBuf::from("/real/file.txt")),
+        ]
     );
     assert_eq!(
         resolved.write_paths,
@@ -94,7 +97,10 @@ fn pol_missing_under_workspace_scheduled_for_creation() {
     );
     assert_eq!(
         resolved.read_paths,
-        vec![PathEntry::Dir(PathBuf::from("/capsule/workspace/notes"))]
+        vec![
+            PathEntry::Dir(PathBuf::from("/capsule/workspace/notes")),
+            PathEntry::Dir(PathBuf::from("/capsule/tmp/scratch")),
+        ]
     );
     assert_eq!(
         resolved.write_paths,
@@ -149,4 +155,71 @@ fn policy_error_display_and_conversions() {
         e_var.to_string(),
         "variable expansion error: unknown variable: UNKNOWN"
     );
+}
+
+#[test]
+fn p1_pol_01_write_path_grants_read() {
+    let mut fs = FakeFs::new();
+    fs.add_dir("/ws");
+    fs.add_dir("/ws/out");
+    fs.add_file("/ws/out/f", b"content");
+
+    let vars = test_vars();
+    let mut policy = empty_policy();
+    policy.write_paths = vec!["/ws/out".to_string()];
+
+    let resolved = ResolvedPolicy::from_config(&policy, &vars, &fs).expect("resolve policy");
+
+    assert!(resolved
+        .read_paths
+        .contains(&PathEntry::Dir(PathBuf::from("/ws/out"))));
+    assert!(resolved
+        .write_paths
+        .contains(&PathEntry::Dir(PathBuf::from("/ws/out"))));
+    assert!(resolved.is_read_allowed(Path::new("/ws/out/f")));
+}
+
+#[test]
+fn p1_pol_02_child_binary_name_resolved_via_path() {
+    use mcpg_domain::policy::resolve::resolve_binary;
+
+    let mut fs = FakeFs::new();
+    fs.add_dir("/bin");
+    fs.add_dir("/usr");
+    fs.add_dir("/usr/bin");
+    fs.add_file("/usr/bin/git-real", b"elf");
+    fs.add_symlink("/usr/bin/git", "/usr/bin/git-real");
+
+    let capsule_path = "/usr/local/bin:/usr/bin:/bin";
+    let resolved = resolve_binary("git", capsule_path, &fs).expect("git should resolve");
+    assert_eq!(resolved, PathBuf::from("/usr/bin/git-real"));
+
+    let vars = test_vars();
+    let mut policy = empty_policy();
+    policy.allowed_child_binaries = vec!["git".to_string()];
+    let pol = ResolvedPolicy::from_config_with_path(&policy, &vars, capsule_path, &fs)
+        .expect("resolve policy with binary");
+    assert_eq!(
+        pol.allowed_child_binaries,
+        vec![PathBuf::from("/usr/bin/git-real")]
+    );
+}
+
+#[test]
+fn root_command_always_executable() {
+    let mut fs = FakeFs::new();
+    fs.add_dir("/usr");
+    fs.add_dir("/usr/bin");
+    fs.add_file("/usr/bin/python3", b"elf");
+    fs.add_file("/usr/bin/git", b"elf");
+
+    let vars = test_vars();
+    let mut policy = empty_policy();
+    policy.allowed_child_binaries = vec!["/usr/bin/git".to_string()];
+
+    let pol = ResolvedPolicy::from_config(&policy, &vars, &fs).expect("resolve policy");
+
+    assert!(pol.is_exec_allowed(Path::new("/usr/bin/python3"), true));
+    assert!(!pol.is_exec_allowed(Path::new("/usr/bin/python3"), false));
+    assert!(pol.is_exec_allowed(Path::new("/usr/bin/git"), false));
 }
