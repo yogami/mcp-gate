@@ -663,10 +663,12 @@ dependencies = [
 name = "mcpg-linux"
 version = "0.1.0"
 dependencies = [
+ "assert_cmd",
  "getrandom",
  "libc",
  "mcpg-app",
  "mcpg-domain",
+ "serde_json",
  "sha2",
 ]
 
