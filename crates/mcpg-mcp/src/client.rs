@@ -8,7 +8,7 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::framing::{FrameItem, JsonRpc};
+use crate::framing::JsonRpc;
 use crate::transport::McpTransport;
 
 /// Errors produced during MCP driver operations.
@@ -118,6 +118,8 @@ pub struct McpClient<T: McpTransport> {
     pub(crate) transport: T,
     pub(crate) next_id: u64,
     pub(crate) server_info: Option<ServerInfo>,
+    pub(crate) workspace_uri: Option<String>,
+    pub(crate) transcript: Vec<JsonRpc>,
 }
 
 impl<T: McpTransport> McpClient<T> {
@@ -127,7 +129,35 @@ impl<T: McpTransport> McpClient<T> {
             transport,
             next_id: 1,
             server_info: None,
+            workspace_uri: None,
+            transcript: Vec::new(),
         }
+    }
+
+    /// Set the workspace URI on client builder.
+    pub fn with_workspace_uri(mut self, uri: impl Into<String>) -> Self {
+        self.workspace_uri = Some(uri.into());
+        self
+    }
+
+    /// Set the workspace URI on client.
+    pub fn set_workspace_uri(&mut self, uri: impl Into<String>) {
+        self.workspace_uri = Some(uri.into());
+    }
+
+    /// Get configured workspace URI if any.
+    pub fn workspace_uri(&self) -> Option<&str> {
+        self.workspace_uri.as_deref()
+    }
+
+    /// Get all received notifications and messages in transcript.
+    pub fn transcript(&self) -> &[JsonRpc] {
+        &self.transcript
+    }
+
+    /// Get all received notifications in transcript.
+    pub fn notifications(&self) -> &[JsonRpc] {
+        &self.transcript
     }
 
     /// Access the underlying transport.
@@ -143,34 +173,6 @@ impl<T: McpTransport> McpClient<T> {
     /// Access the negotiated server info if handshake completed.
     pub fn server_info(&self) -> Option<&ServerInfo> {
         self.server_info.as_ref()
-    }
-
-    fn read_init_response(&mut self) -> Result<Value, DriverError> {
-        let item = self
-            .transport
-            .receive()
-            .map_err(|e| DriverError::Io(e.to_string()))?
-            .ok_or(DriverError::TransportClosed)?;
-
-        let msg = match item {
-            FrameItem::Message(m) => m,
-            FrameItem::Violation(v) => {
-                return Err(DriverError::Protocol(format!(
-                    "protocol violation during handshake: {}",
-                    v.reason
-                )));
-            }
-        };
-
-        if let Some(err) = msg.error {
-            return Err(DriverError::Inconclusive(format!(
-                "server rejected initialize: {}",
-                err.message
-            )));
-        }
-
-        msg.result
-            .ok_or_else(|| DriverError::Protocol("initialize response missing result".to_string()))
     }
 
     /// Execute the initialize handshake with protocol version negotiation.
@@ -192,7 +194,7 @@ impl<T: McpTransport> McpClient<T> {
             .send(&req)
             .map_err(|e| DriverError::Io(e.to_string()))?;
 
-        let result = self.read_init_response()?;
+        let result = self.wait_for_response(id, "initialize")?;
         let negotiated_version = validate_protocol_version(&result, versions)?;
         let info = extract_server_info(&result, &negotiated_version);
 

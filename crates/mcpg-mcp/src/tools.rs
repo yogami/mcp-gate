@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use crate::client::{DriverError, McpClient};
-use crate::framing::{FrameItem, JsonRpc};
+use crate::framing::JsonRpc;
 use crate::transport::McpTransport;
 
 /// MCP tool definition returned by tools/list.
@@ -78,34 +78,6 @@ fn build_list_params(cursor: Option<&str>) -> Option<Value> {
 }
 
 impl<T: McpTransport> McpClient<T> {
-    fn read_response(&mut self, context: &str) -> Result<Value, DriverError> {
-        let item = self
-            .transport
-            .receive()
-            .map_err(|e| DriverError::Io(e.to_string()))?
-            .ok_or(DriverError::TransportClosed)?;
-
-        let msg = match item {
-            FrameItem::Message(m) => m,
-            FrameItem::Violation(v) => {
-                return Err(DriverError::Protocol(format!(
-                    "protocol violation reading {context} response: {}",
-                    v.reason
-                )));
-            }
-        };
-
-        if let Some(err) = msg.error {
-            return Err(DriverError::Protocol(format!(
-                "{context} returned error {}: {}",
-                err.code, err.message
-            )));
-        }
-
-        msg.result
-            .ok_or_else(|| DriverError::Protocol(format!("{context} response missing result")))
-    }
-
     fn request_page(&mut self, cursor: Option<&str>) -> Result<Value, DriverError> {
         let id = self.next_id;
         self.next_id += 1;
@@ -116,7 +88,7 @@ impl<T: McpTransport> McpClient<T> {
             .send(&req)
             .map_err(|e| DriverError::Io(e.to_string()))?;
 
-        self.read_response("tools/list")
+        self.wait_for_response(id, "tools/list")
     }
 
     /// Retrieve all tool definitions by following pagination cursors.
@@ -164,7 +136,7 @@ impl<T: McpTransport> McpClient<T> {
             .send(&req)
             .map_err(|e| DriverError::Io(e.to_string()))?;
 
-        let result = self.read_response("tools/call")?;
+        let result = self.wait_for_response(id, "tools/call")?;
         serde_json::from_value::<ToolCallResult>(result)
             .map_err(|e| DriverError::Protocol(format!("failed to parse tools/call result: {e}")))
     }

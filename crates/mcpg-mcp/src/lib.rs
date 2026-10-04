@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 pub mod client;
+pub mod dispatch;
 pub mod framing;
 pub mod testing;
 pub mod tools;
