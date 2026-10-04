@@ -126,3 +126,79 @@ fn p1_env_03_absent_passthrough_is_omitted() {
         "absent passthrough variable must be omitted, not set to empty"
     );
 }
+
+#[test]
+fn p1_env_04_trailing_wildcard_prefix_match() {
+    let mut host = make_host_vars();
+    host.push((OsString::from("LC_ALL"), OsString::from("en_US.UTF-8")));
+    host.push((OsString::from("LC_TIME"), OsString::from("de_DE.UTF-8")));
+    host.push((OsString::from("LCX"), OsString::from("should_not_match")));
+
+    let cfg = EnvConfig {
+        passthrough: vec!["LC_*".to_string()],
+        ..Default::default()
+    };
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+
+    assert!(env.iter().any(|(k, v)| k == "LC_ALL" && v == "en_US.UTF-8"));
+    assert!(env
+        .iter()
+        .any(|(k, v)| k == "LC_TIME" && v == "de_DE.UTF-8"));
+    assert!(!env.iter().any(|(k, _)| k == "LCX"));
+}
+
+#[test]
+fn p1_env_10_set_overrides_passthrough() {
+    let mut host = make_host_vars();
+    host.push((OsString::from("TARGET_VAR"), OsString::from("from_host")));
+
+    let mut set = std::collections::BTreeMap::new();
+    set.insert("TARGET_VAR".to_string(), "from_set".to_string());
+
+    let cfg = EnvConfig {
+        passthrough: vec!["TARGET_VAR".to_string()],
+        set,
+        ..Default::default()
+    };
+    let fixed = default_fixed();
+    let decoys = [];
+
+    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+
+    let found = env
+        .iter()
+        .find(|(k, _)| k == "TARGET_VAR")
+        .expect("TARGET_VAR should be present");
+    assert_eq!(found.1.to_string_lossy(), "from_set");
+}
+
+#[test]
+fn p1_env_11_user_set_name_skips_decoy() {
+    let host = make_host_vars();
+    let mut set = std::collections::BTreeMap::new();
+    set.insert(
+        "AWS_SECRET_ACCESS_KEY".to_string(),
+        "user_value".to_string(),
+    );
+
+    let cfg = EnvConfig {
+        set,
+        ..Default::default()
+    };
+    let fixed = default_fixed();
+    let decoys = [(
+        OsString::from("AWS_SECRET_ACCESS_KEY"),
+        OsString::from("decoy_value"),
+    )];
+
+    let env = build_env(&host, &cfg, &fixed, &decoys).expect("build_env succeeds");
+
+    let found = env
+        .iter()
+        .find(|(k, _)| k == "AWS_SECRET_ACCESS_KEY")
+        .expect("AWS_SECRET_ACCESS_KEY should be present");
+    assert_eq!(found.1.to_string_lossy(), "user_value");
+}
