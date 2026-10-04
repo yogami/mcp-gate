@@ -41,4 +41,3 @@ mod tests {
         run_command(cli.command);
     }
 }
-
