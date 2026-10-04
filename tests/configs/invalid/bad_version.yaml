@@ -1,0 +1,14 @@
+version: 2
+server:
+  name: test-server
+  command: python3
+  workspace:
+    source: ./fixtures/workspace
+policy:
+  baseline: minimal
+  read_paths:
+    - ${WORKSPACE}
+  write_paths:
+    - ${WORKSPACE}
+  allowed_child_binaries: []
+  allow_network: false

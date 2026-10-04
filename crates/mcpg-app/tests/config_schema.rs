@@ -1,0 +1,74 @@
+use std::fs;
+use std::path::Path;
+
+use mcpg_app::config::{load_str, ConfigError};
+
+#[test]
+fn p1_cfg_02_invalid_configs_rejected() {
+    let invalid_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("tests/configs/invalid");
+
+    let expected_files = [
+        "unknown_key.yaml",
+        "bad_version.yaml",
+        "missing_policy.yaml",
+        "glob_in_path.yaml",
+    ];
+
+    for filename in &expected_files {
+        let path = invalid_dir.join(filename);
+        let content = fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("failed to read {}: {e}", path.display()));
+        let res = load_str(&content);
+        match res {
+            Err(ConfigError::Schema(_)) | Err(ConfigError::Semantic(_)) => {
+                // Expected rejection
+            }
+            Err(ConfigError::Yaml(err)) => {
+                panic!(
+                    "expected Schema or Semantic error for {}, got Yaml error: {err}",
+                    path.display()
+                );
+            }
+            Ok(_) => {
+                panic!(
+                    "expected config rejection for {}, but it loaded successfully",
+                    path.display()
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn p1_seed_02_seed_key_rejected() {
+    let invalid_file = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("tests/configs/invalid/canaries_seed.yaml");
+
+    let content = fs::read_to_string(&invalid_file)
+        .unwrap_or_else(|e| panic!("failed to read {}: {e}", invalid_file.display()));
+
+    let res = load_str(&content);
+    match res {
+        Err(ConfigError::Schema(err)) => {
+            assert!(
+                err.contains("seed"),
+                "expected schema error to name 'seed', got: {err}"
+            );
+        }
+        other => {
+            panic!(
+                "expected ConfigError::Schema naming 'seed' for canaries_seed.yaml, got: {:?}",
+                other
+            );
+        }
+    }
+}

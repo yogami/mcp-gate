@@ -95,7 +95,7 @@ These do not block work, but they should land in SPEC v0.3 before the affected t
 | TASK-1.2 | CI pipeline and traceability script | 2 | [x] |
 | TASK-1.3 | Exit codes and precedence | 2 | [x] |
 | TASK-1.4 | YAML parser ADR and config model | 2 | [x] |
-| TASK-1.5 | JSON Schema validation | 2 | [ ] |
+| TASK-1.5 | JSON Schema validation | 2 | [x] |
 | TASK-1.6 | YAML span map | 3 | [ ] |
 | TASK-1.7 | Path variable expansion | 3 | [ ] |
 | TASK-1.8 | `mcp-gate validate` | 3 | [ ] |

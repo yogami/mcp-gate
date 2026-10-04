@@ -1,0 +1,17 @@
+version: 1
+server:
+  name: test-server
+  command: python3
+  workspace:
+    source: ./fixtures/workspace
+policy:
+  baseline: minimal
+  read_paths:
+    - ${WORKSPACE}
+  write_paths:
+    - ${WORKSPACE}
+  allowed_child_binaries: []
+  allow_network: false
+canaries:
+  enabled: true
+  seed: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
