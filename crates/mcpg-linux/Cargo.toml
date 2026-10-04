@@ -1,0 +1,12 @@
+[package]
+name = "mcpg-linux"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+mcpg-domain = { path = "../mcpg-domain" }
+mcpg-app = { path = "../mcpg-app" }
+libc = "0.2"

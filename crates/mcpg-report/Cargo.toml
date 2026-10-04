@@ -1,0 +1,13 @@
+[package]
+name = "mcpg-report"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+mcpg-domain = { path = "../mcpg-domain" }
+mcpg-app = { path = "../mcpg-app" }
+serde = { workspace = true }
+serde_json = { workspace = true }

@@ -1,0 +1,2 @@
+# SPEC 3.0: Functions in mcpg-domain target a cyclomatic complexity of 3 or less.
+cognitive-complexity-threshold = 3

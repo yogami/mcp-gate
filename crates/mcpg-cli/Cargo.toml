@@ -1,0 +1,23 @@
+[package]
+name = "mcpg-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "mcp-gate"
+path = "src/main.rs"
+
+[dependencies]
+mcpg-domain = { path = "../mcpg-domain" }
+mcpg-app = { path = "../mcpg-app" }
+mcpg-linux = { path = "../mcpg-linux" }
+mcpg-mcp = { path = "../mcpg-mcp" }
+mcpg-report = { path = "../mcpg-report" }
+clap = { workspace = true }
+
+[dev-dependencies]
+assert_cmd = { workspace = true }
+predicates = { workspace = true }
