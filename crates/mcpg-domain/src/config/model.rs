@@ -260,6 +260,8 @@ pub struct ScenarioExpect {
     pub outcome: Option<String>,
     #[serde(default)]
     pub content_contains: Vec<String>,
+    #[serde(default)]
+    pub content_not_contains: Vec<String>,
 }
 
 /// Operational timeouts and process limits.

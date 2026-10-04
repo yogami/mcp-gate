@@ -97,3 +97,64 @@ fn repeated_cursor_is_protocol_error() {
         other => panic!("expected Protocol error, got: {other:?}"),
     }
 }
+
+#[test]
+fn call_tool_returns_result_and_is_error() {
+    let mut server = ScriptedServer::new();
+    // First call: successful tool invocation
+    server.push_json_message(JsonRpc::success(
+        1,
+        json!({
+            "content": [
+                {
+                    "type": "text",
+                    "text": "File note content line 1\nline 2"
+                }
+            ],
+            "isError": false
+        }),
+    ));
+    // Second call: tool error invocation (e.g. file not found)
+    server.push_json_message(JsonRpc::success(
+        2,
+        json!({
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Error: no such file or directory"
+                }
+            ],
+            "isError": true
+        }),
+    ));
+
+    let mut client = McpClient::new(server);
+
+    let res1 = client
+        .call_tool("read_note", &json!({ "name": "hello.md" }))
+        .expect("call_tool 1 should succeed");
+    assert!(!res1.is_error);
+    assert_eq!(res1.text_content(), "File note content line 1\nline 2");
+
+    let res2 = client
+        .call_tool("read_note", &json!({ "name": "missing.md" }))
+        .expect("call_tool 2 should succeed");
+    assert!(res2.is_error);
+    assert_eq!(res2.text_content(), "Error: no such file or directory");
+
+    let sent = client.transport().sent_messages();
+    assert_eq!(sent.len(), 2);
+    assert_eq!(sent[0].method.as_deref(), Some("tools/call"));
+    assert_eq!(sent[0].params.as_ref().unwrap()["name"], "read_note");
+    assert_eq!(
+        sent[0].params.as_ref().unwrap()["arguments"]["name"],
+        "hello.md"
+    );
+
+    assert_eq!(sent[1].method.as_deref(), Some("tools/call"));
+    assert_eq!(sent[1].params.as_ref().unwrap()["name"], "read_note");
+    assert_eq!(
+        sent[1].params.as_ref().unwrap()["arguments"]["name"],
+        "missing.md"
+    );
+}
