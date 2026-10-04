@@ -1,0 +1,73 @@
+name: spike
+
+# Phase 0 hosted-runner spike (SPEC 4.1.1). Expected to be red until the gating
+# checks P0-SPIKE-01, 02, 03 and 07 are implemented (TASK-0.3 to 0.12).
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: probe (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustc --version
+          cargo --version
+
+      - name: Host facts
+        run: |
+          uname -a
+          id
+          cat /proc/sys/kernel/unprivileged_userns_clone 2>/dev/null || true
+          cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null || true
+          grep -E 'Seccomp' /proc/self/status
+          cat /sys/kernel/security/lsm 2>/dev/null || true
+
+      - name: Build probe
+        run: cargo build --release --manifest-path spikes/runner-probe/Cargo.toml
+
+      - name: Unit tests
+        run: cargo test --manifest-path spikes/runner-probe/Cargo.toml
+
+      - name: Run all checks
+        run: |
+          mkdir -p out
+          spikes/runner-probe/target/release/runner-probe --check all --json > out/probe.json
+          jq . out/probe.json
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-${{ matrix.os }}
+          path: out/probe.json
+          if-no-files-found: warn
+
+      - name: Gate on required checks
+        run: |
+          fail=0
+          for c in P0-SPIKE-01 P0-SPIKE-02 P0-SPIKE-03 P0-SPIKE-07; do
+            if scripts/spike-result.sh --file out/probe.json "$c"; then
+              :
+            else
+              echo "::error::$c did not pass on ${{ matrix.os }}"
+              fail=1
+            fi
+          done
+          exit "$fail"

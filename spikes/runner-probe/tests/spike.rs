@@ -1,0 +1,50 @@
+//! Phase 0 runner probe tests (SPEC 4.1.1, TASKS Phase 0).
+//!
+//! Each test runs the compiled `runner-probe` binary and parses its JSON
+//! report. Tests never `fork` inside the multi-threaded test harness.
+
+use std::process::Command;
+
+use serde_json::Value;
+
+/// Run `runner-probe` with the given arguments and parse stdout as JSON.
+fn probe(args: &[&str]) -> Value {
+    let out = Command::new(env!("CARGO_BIN_EXE_runner-probe"))
+        .args(args)
+        .output()
+        .expect("runner-probe should start");
+    assert!(
+        out.status.success(),
+        "runner-probe {:?} exited with {:?}, stderr: {}",
+        args,
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    serde_json::from_slice(&out.stdout).expect("stdout should be valid JSON")
+}
+
+/// TASK-0.1: the envelope carries host fields and an empty `checks` object.
+#[test]
+fn p0_envelope_has_host_fields() {
+    let report = probe(&["--check", "none", "--json"]);
+
+    assert_eq!(report["schema"], "runner-probe/v1");
+
+    let kernel = report["kernel"].as_str().expect("kernel is a string");
+    assert!(!kernel.is_empty(), "kernel must not be empty");
+    let uname = Command::new("uname")
+        .arg("-r")
+        .output()
+        .expect("uname should run");
+    assert_eq!(
+        kernel,
+        String::from_utf8_lossy(&uname.stdout).trim(),
+        "kernel must match `uname -r`"
+    );
+
+    let arch = report["arch"].as_str().expect("arch is a string");
+    assert!(!arch.is_empty(), "arch must not be empty");
+
+    let checks = report["checks"].as_object().expect("checks is an object");
+    assert!(checks.is_empty(), "`--check none` must report no checks");
+}
