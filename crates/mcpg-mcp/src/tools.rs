@@ -124,6 +124,7 @@ impl<T: McpTransport> McpClient<T> {
         name: &str,
         arguments: &Value,
     ) -> Result<ToolCallResult, DriverError> {
+        let start = self.deadline_tracker.as_ref().map(|dt| dt.clock().now());
         let id = self.next_id;
         self.next_id += 1;
 
@@ -137,6 +138,12 @@ impl<T: McpTransport> McpClient<T> {
             .map_err(|e| DriverError::Io(e.to_string()))?;
 
         let result = self.wait_for_response(id, "tools/call")?;
+        if let Some(start) = start {
+            if let Some(dt) = &self.deadline_tracker {
+                dt.check_call(start)?;
+            }
+        }
+
         serde_json::from_value::<ToolCallResult>(result)
             .map_err(|e| DriverError::Protocol(format!("failed to parse tools/call result: {e}")))
     }

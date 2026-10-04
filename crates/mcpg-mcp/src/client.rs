@@ -120,6 +120,7 @@ pub struct McpClient<T: McpTransport> {
     pub(crate) server_info: Option<ServerInfo>,
     pub(crate) workspace_uri: Option<String>,
     pub(crate) transcript: Vec<JsonRpc>,
+    pub(crate) deadline_tracker: Option<crate::deadline::DeadlineTracker>,
 }
 
 impl<T: McpTransport> McpClient<T> {
@@ -131,7 +132,24 @@ impl<T: McpTransport> McpClient<T> {
             server_info: None,
             workspace_uri: None,
             transcript: Vec::new(),
+            deadline_tracker: None,
         }
+    }
+
+    /// Set deadline tracker on client builder.
+    pub fn with_deadline_tracker(mut self, tracker: crate::deadline::DeadlineTracker) -> Self {
+        self.deadline_tracker = Some(tracker);
+        self
+    }
+
+    /// Set deadline tracker on client.
+    pub fn set_deadline_tracker(&mut self, tracker: crate::deadline::DeadlineTracker) {
+        self.deadline_tracker = Some(tracker);
+    }
+
+    /// Access configured deadline tracker if any.
+    pub fn deadline_tracker(&self) -> Option<&crate::deadline::DeadlineTracker> {
+        self.deadline_tracker.as_ref()
     }
 
     /// Set the workspace URI on client builder.
@@ -185,6 +203,7 @@ impl<T: McpTransport> McpClient<T> {
             DriverError::Inconclusive("no protocol versions configured".to_string())
         })?;
 
+        let start = self.deadline_tracker.as_ref().map(|dt| dt.clock().now());
         let id = self.next_id;
         self.next_id += 1;
 
@@ -195,6 +214,12 @@ impl<T: McpTransport> McpClient<T> {
             .map_err(|e| DriverError::Io(e.to_string()))?;
 
         let result = self.wait_for_response(id, "initialize")?;
+        if let Some(start) = start {
+            if let Some(dt) = &self.deadline_tracker {
+                dt.check_startup(start)?;
+            }
+        }
+
         let negotiated_version = validate_protocol_version(&result, versions)?;
         let info = extract_server_info(&result, &negotiated_version);
 
