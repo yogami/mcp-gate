@@ -18,19 +18,29 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Run a server in a capsule and evaluate it against its policy
+    Run {
+        /// Config file to run
+        #[arg(short = 'c', long = "config", default_value = "./mcp-gate.yaml")]
+        config: PathBuf,
+    },
     /// Check a config file against the schema and resolve all paths
     Validate {
         /// Config file to validate
         #[arg(short = 'c', long = "config", default_value = "./mcp-gate.yaml")]
         config: PathBuf,
     },
+    /// Print host isolation capabilities as JSON
+    Probe,
     /// Print version, commit, build target and supported MCP protocol versions
     Version,
 }
 
 fn run_command(cmd: Commands) -> ExitCode {
     match cmd {
+        Commands::Run { .. } => cmd::run::execute(),
         Commands::Validate { config } => cmd::validate::execute(&config),
+        Commands::Probe => cmd::probe::execute(),
         Commands::Version => {
             println!("mcp-gate 0.1.0");
             println!("Supported MCP protocol versions: 2025-06-18, 2024-11-05");

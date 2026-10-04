@@ -487,6 +487,7 @@ dependencies = [
  "mcpg-mcp",
  "mcpg-report",
  "predicates",
+ "serde_json",
 ]
 
 [[package]]
