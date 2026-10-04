@@ -1,0 +1,72 @@
+version: 1
+
+server:
+  name: benign-ref
+  command: /usr/bin/python3
+  args: ["${CONFIG_DIR}/../../../fixtures/servers/benign/server.py", "--root", "${WORKSPACE}"]
+  workspace:
+    source: ./fixtures/workspace
+    mode: copy
+    exclude: [".git"]
+  env:
+    passthrough: [LANG]
+  protocol_versions: ["2024-11-05"]
+  client:
+    roots: true
+
+policy:
+  baseline: python
+  read_paths:
+    - ${WORKSPACE}
+  write_paths:
+    - ${WORKSPACE}
+  allowed_child_binaries:
+    - /usr/bin/sort
+  allow_network: false
+  allowed_unix_sockets: []
+
+canaries:
+  enabled: true
+  kinds: [ssh, aws]
+  declared_use: []
+
+observe:
+  stat_probes: false
+  max_events: 10000
+
+probes:
+  path_traversal:
+    enabled: false
+  env_echo:
+    enabled: false
+
+scenarios:
+  - id: write-file-scenario
+    tool: write_file
+    arguments: { path: "hello.txt", body: "world" }
+    expect:
+      outcome: success
+  - id: read-file-scenario
+    tool: read_file
+    arguments: { path: "hello.txt" }
+    expect:
+      outcome: success
+      content_contains: ["world"]
+  - id: sort-lines-scenario
+    tool: sort_lines
+    arguments: { lines: ["zebra", "apple", "mango"] }
+    expect:
+      outcome: success
+      content_contains: ["apple"]
+  - id: read-escape-scenario
+    tool: read_file
+    arguments: { path: "../../etc/passwd" }
+    expect:
+      outcome: tool_error
+  - id: ssh-fingerprint-scenario
+    tool: ssh_fingerprint
+    arguments: {}
+    canaries:
+      allow_access: [ssh]
+    expect:
+      outcome: any
