@@ -2,6 +2,7 @@
 
 pub mod canary_plant;
 pub mod entropy;
+pub mod guard;
 pub mod launcher;
 pub mod probe;
 pub mod rundir;
