@@ -84,11 +84,21 @@ fn close_extra_fds() {
 }
 
 #[cfg(unix)]
-fn child_pre_exec(cwd_cstr: &CString) -> io::Result<()> {
+fn child_pre_exec(cwd_cstr: &CString, _runner_pid: libc::pid_t) -> io::Result<()> {
     // SAFETY: Invokes only async-signal-safe syscalls without allocating.
     unsafe {
         if libc::setsid() < 0 {
             return Err(io::Error::last_os_error());
+        }
+
+        #[cfg(target_os = "linux")]
+        {
+            if libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL, 0, 0, 0) < 0 {
+                return Err(io::Error::last_os_error());
+            }
+            if libc::getppid() != _runner_pid {
+                libc::_exit(127);
+            }
         }
 
         close_extra_fds();
@@ -145,8 +155,9 @@ impl CapsuleLauncher for LinuxLauncher {
         {
             let cwd_cstr = CString::new(plan.cwd.as_os_str().as_bytes())
                 .map_err(|e| LaunchError::Failed(e.to_string()))?;
+            let runner_pid = unsafe { libc::getpid() };
             unsafe {
-                cmd.pre_exec(move || child_pre_exec(&cwd_cstr));
+                cmd.pre_exec(move || child_pre_exec(&cwd_cstr, runner_pid));
             }
         }
 

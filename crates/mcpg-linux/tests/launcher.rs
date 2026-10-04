@@ -130,6 +130,77 @@ fn p2_launch_04_capsule_cannot_read_runner_environ() {
 }
 
 #[test]
+#[ignore]
+#[cfg(target_os = "linux")]
+fn helper_runner() {
+    use std::io::Write;
+
+    if std::env::var("MCPG_HELPER").as_deref() != Ok("runner") {
+        return;
+    }
+
+    mcpg_linux::self_harden::harden_self().expect("harden self");
+
+    let tmp = tempfile_helper::TempDir::new("mcpg_helper_runner");
+    let plan = make_plan("sleep", &["60"], tmp.path());
+    let launcher = LinuxLauncher::new();
+    let running = launcher.launch(&plan).expect("launch failed");
+
+    println!("capsule_pid:{}", running.pid);
+    let _ = std::io::stdout().flush();
+
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(60));
+    }
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn p2_launch_05_capsule_dies_with_runner() {
+    use std::io::BufRead;
+
+    let current_exe = std::env::current_exe().expect("current exe");
+    let mut child = std::process::Command::new(current_exe)
+        .env("MCPG_HELPER", "runner")
+        .args(["--exact", "helper_runner", "--ignored", "--nocapture"])
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn helper runner");
+
+    let helper_pid = child.id() as i32;
+    let stdout = child.stdout.take().expect("take stdout");
+    let mut reader = std::io::BufReader::new(stdout);
+    let mut line = String::new();
+
+    let mut capsule_pid = 0i32;
+    while reader.read_line(&mut line).unwrap() > 0 {
+        if let Some(rest) = line.trim().strip_prefix("capsule_pid:") {
+            capsule_pid = rest.parse::<i32>().expect("parse capsule pid");
+            break;
+        }
+        line.clear();
+    }
+    assert!(capsule_pid > 0, "failed to get capsule pid");
+
+    assert_eq!(unsafe { libc::kill(capsule_pid, 0) }, 0);
+
+    unsafe {
+        libc::kill(helper_pid, libc::SIGKILL);
+    }
+    let _ = child.wait();
+
+    let mut died = false;
+    for _ in 0..20 {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        if unsafe { libc::kill(capsule_pid, 0) } != 0 {
+            died = true;
+            break;
+        }
+    }
+    assert!(died, "capsule should die within 1s after runner is killed");
+}
+
+#[test]
 fn p2_launch_01_environ_only_expected_keys() {
     let tmp = tempfile_helper::TempDir::new("mcpg_launch_env");
 
