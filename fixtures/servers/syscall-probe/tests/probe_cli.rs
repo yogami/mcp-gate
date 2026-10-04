@@ -76,6 +76,26 @@ fn test_read() {
 }
 
 #[test]
+fn test_write() {
+    let tmp = std::env::temp_dir().join(format!("probe_write_{}", std::process::id()));
+    let _ = std::fs::remove_file(&tmp);
+
+    let mut cmd = AssertCommand::cargo_bin("syscall-probe").unwrap();
+    let assert = cmd
+        .arg("write")
+        .arg(&tmp)
+        .arg("hello probe")
+        .assert()
+        .success();
+    let output = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let val: Value = serde_json::from_str(output.trim()).expect("valid json line");
+    assert_eq!(val["status"], "ok");
+    assert_eq!(val["ok"], true);
+    assert_eq!(std::fs::read_to_string(&tmp).unwrap(), "hello probe");
+    let _ = std::fs::remove_file(&tmp);
+}
+
+#[test]
 fn test_exec() {
     let mut cmd = AssertCommand::cargo_bin("syscall-probe").unwrap();
     let assert = cmd

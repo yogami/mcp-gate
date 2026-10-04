@@ -16,7 +16,9 @@ use mcpg_app::ports::{CapsuleLauncher, LaunchError, RunningCapsule};
 
 /// Linux capsule launcher implementing the CapsuleLauncher port.
 #[derive(Debug, Default, Clone, Copy)]
-pub struct LinuxLauncher;
+pub struct LinuxLauncher {
+    landlock_fd: Option<std::os::fd::RawFd>,
+}
 
 impl LinuxLauncher {
     /// Create a new Linux launcher and configure subreaper.
@@ -25,7 +27,13 @@ impl LinuxLauncher {
         unsafe {
             let _ = libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0);
         }
-        Self
+        Self { landlock_fd: None }
+    }
+
+    /// Attach a pre-built Landlock ruleset file descriptor to restrict the child.
+    pub fn with_landlock_fd(mut self, fd: std::os::fd::RawFd) -> Self {
+        self.landlock_fd = Some(fd);
+        self
     }
 }
 
@@ -66,29 +74,61 @@ fn apply_argv(cmd: &mut Command, argv: &[CString]) {
     }
 }
 
-#[cfg(unix)]
-fn close_extra_fds() {
-    #[cfg(target_os = "linux")]
-    unsafe {
-        let res = libc::syscall(libc::SYS_close_range, 3, !0u32, 0);
-        if res < 0 {
-            let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
-            for fd in 3..max_fd {
-                libc::close(fd);
-            }
-        }
-    }
-    #[cfg(not(target_os = "linux"))]
-    unsafe {
-        let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
-        for fd in 3..max_fd {
+#[cfg(target_os = "linux")]
+unsafe fn close_fds_fallback(start: i32, keep_fd: i32) {
+    let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
+    for fd in start..max_fd {
+        if fd != keep_fd {
             libc::close(fd);
         }
     }
 }
 
 #[cfg(unix)]
-fn child_pre_exec(cwd_cstr: &CString, _runner_pid: libc::pid_t) -> io::Result<()> {
+fn close_extra_fds_except(keep_fd: std::os::fd::RawFd) {
+    #[cfg(target_os = "linux")]
+    unsafe {
+        if keep_fd < 3 {
+            let res = libc::syscall(libc::SYS_close_range, 3, !0u32, 0);
+            if res < 0 {
+                close_fds_fallback(3, -1);
+            }
+        } else {
+            if keep_fd > 3 {
+                let _ = libc::syscall(libc::SYS_close_range, 3, (keep_fd - 1) as u32, 0);
+            }
+            let _ = libc::syscall(libc::SYS_close_range, (keep_fd + 1) as u32, !0u32, 0);
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    unsafe {
+        let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
+        for fd in 3..max_fd {
+            if fd != keep_fd {
+                libc::close(fd);
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+unsafe fn apply_landlock_in_child(fd: std::os::fd::RawFd) -> io::Result<()> {
+    if fd >= 0 {
+        let res = libc::syscall(crate::landlock::SYS_LANDLOCK_RESTRICT_SELF, fd, 0u32);
+        libc::close(fd);
+        if res != 0 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+fn child_pre_exec(
+    cwd_cstr: &CString,
+    _runner_pid: libc::pid_t,
+    _landlock_fd: std::os::fd::RawFd,
+) -> io::Result<()> {
     // SAFETY: Invokes only async-signal-safe syscalls without allocating.
     unsafe {
         if libc::setsid() < 0 {
@@ -105,7 +145,7 @@ fn child_pre_exec(cwd_cstr: &CString, _runner_pid: libc::pid_t) -> io::Result<()
             }
         }
 
-        close_extra_fds();
+        close_extra_fds_except(_landlock_fd);
 
         if libc::chdir(cwd_cstr.as_ptr()) < 0 {
             return Err(io::Error::last_os_error());
@@ -122,11 +162,13 @@ fn child_pre_exec(cwd_cstr: &CString, _runner_pid: libc::pid_t) -> io::Result<()
         }
 
         #[cfg(target_os = "linux")]
-        if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 {
-            return Err(io::Error::last_os_error());
-        }
+        {
+            if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 {
+                return Err(io::Error::last_os_error());
+            }
 
-        // SeccompStep seam: Month 3 fills observer and landlock rules
+            apply_landlock_in_child(_landlock_fd)?;
+        }
 
         Ok(())
     }
@@ -160,8 +202,9 @@ impl CapsuleLauncher for LinuxLauncher {
             let cwd_cstr = CString::new(plan.cwd.as_os_str().as_bytes())
                 .map_err(|e| LaunchError::Failed(e.to_string()))?;
             let runner_pid = unsafe { libc::getpid() };
+            let landlock_fd = self.landlock_fd.unwrap_or(-1);
             unsafe {
-                cmd.pre_exec(move || child_pre_exec(&cwd_cstr, runner_pid));
+                cmd.pre_exec(move || child_pre_exec(&cwd_cstr, runner_pid, landlock_fd));
             }
         }
 

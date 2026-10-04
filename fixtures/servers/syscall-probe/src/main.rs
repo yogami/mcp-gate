@@ -132,6 +132,19 @@ fn cmd_read(path: &str) {
     }
 }
 
+fn cmd_write(path: &str, content: &str) {
+    match std::fs::write(path, content) {
+        Ok(_) => println!("{}", serde_json::json!({ "status": "ok", "ok": true })),
+        Err(e) => {
+            let name = e.raw_os_error().map_or("EIO", errno_name);
+            println!(
+                "{}",
+                serde_json::json!({ "status": "error", "error": name, "ok": false })
+            );
+        }
+    }
+}
+
 fn cmd_exec(path: &str, args: &[String]) {
     #[cfg(unix)]
     {
@@ -264,6 +277,7 @@ fn main() {
         "cwd" => cmd_cwd(),
         "ids" => cmd_ids(),
         "read" => cmd_read(target),
+        "write" => cmd_write(target, rest.first().map_or("", |s| s.as_str())),
         "exec" => cmd_exec(target, rest),
         "sleep" => cmd_sleep(target),
         "wait-stdin-eof" => cmd_wait_stdin_eof(),

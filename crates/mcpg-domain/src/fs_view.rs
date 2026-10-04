@@ -58,3 +58,28 @@ pub trait FsView {
     fn lstat(&self, p: &Path) -> io::Result<Meta>;
     fn readlink(&self, p: &Path) -> io::Result<PathBuf>;
 }
+
+/// Standard filesystem implementation backed by std::fs.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct StdFs;
+
+impl FsView for StdFs {
+    fn lstat(&self, p: &Path) -> io::Result<Meta> {
+        let meta = std::fs::symlink_metadata(p)?;
+        let file_type = if meta.is_symlink() {
+            FileType::Symlink
+        } else if meta.is_dir() {
+            FileType::Dir
+        } else {
+            FileType::File
+        };
+        Ok(Meta {
+            file_type,
+            len: meta.len(),
+        })
+    }
+
+    fn readlink(&self, p: &Path) -> io::Result<PathBuf> {
+        std::fs::read_link(p)
+    }
+}
