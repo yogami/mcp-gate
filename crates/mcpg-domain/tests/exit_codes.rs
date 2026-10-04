@@ -72,3 +72,14 @@ fn p1_exit_01_precedence_table() {
         );
     }
 }
+
+#[test]
+fn exit_code_as_i32() {
+    assert_eq!(ExitCode::Pass.as_i32(), 0);
+    assert_eq!(ExitCode::FailSecurity.as_i32(), 1);
+    assert_eq!(ExitCode::FailFunctional.as_i32(), 2);
+    assert_eq!(ExitCode::Inconclusive.as_i32(), 3);
+    assert_eq!(ExitCode::Usage.as_i32(), 64);
+    assert_eq!(ExitCode::UnsupportedHost.as_i32(), 69);
+    assert_eq!(ExitCode::Internal.as_i32(), 70);
+}

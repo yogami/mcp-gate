@@ -72,3 +72,30 @@ fn p1_seed_02_seed_key_rejected() {
         }
     }
 }
+
+#[test]
+fn config_error_methods() {
+    let err_yaml = ConfigError::yaml("bad yaml", Some(12));
+    assert_eq!(err_yaml.line(), Some(12));
+    assert_eq!(err_yaml.message(), "bad yaml");
+    assert_eq!(
+        err_yaml.to_string(),
+        "YAML parse error on line 12: bad yaml"
+    );
+
+    let err_schema = ConfigError::schema("bad schema", None);
+    assert_eq!(err_schema.line(), None);
+    assert_eq!(err_schema.message(), "bad schema");
+    assert_eq!(
+        err_schema.to_string(),
+        "schema validation error: bad schema"
+    );
+
+    let err_sem = ConfigError::semantic("bad semantics", Some(5));
+    assert_eq!(err_sem.line(), Some(5));
+    assert_eq!(err_sem.message(), "bad semantics");
+    assert_eq!(
+        err_sem.to_string(),
+        "semantic configuration error on line 5: bad semantics"
+    );
+}

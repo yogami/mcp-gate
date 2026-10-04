@@ -166,47 +166,65 @@ mod linux_impl {
         }
     }
 
+    fn read_proc_mem(pid: libc::pid_t, addr: u64, expected: &[u8]) -> bool {
+        use std::os::unix::fs::FileExt;
+        let Ok(file) = std::fs::File::open(format!("/proc/{pid}/mem")) else {
+            return false;
+        };
+        let mut buf = vec![0u8; expected.len()];
+        file.read_exact_at(&mut buf, addr).is_ok() && buf == expected
+    }
+
+    unsafe fn child_mem_server(sock: c_int) -> ! {
+        libc::prctl(0x59616d61, libc::getppid() as libc::c_ulong, 0, 0, 0);
+        let _ = libc::write(sock, b"R".as_ptr() as *const libc::c_void, 1);
+        let mut byte = [0u8; 1];
+        let _ = libc::read(sock, byte.as_mut_ptr() as *mut libc::c_void, 1);
+        libc::close(sock);
+        libc::_exit(0);
+    }
+
+    unsafe fn parent_check_child_mem(
+        sock: c_int,
+        pid: libc::pid_t,
+        addr: usize,
+        magic: [u8; 8],
+    ) -> bool {
+        let mut ready = [0u8; 1];
+        let ok = libc::read(sock, ready.as_mut_ptr() as *mut libc::c_void, 1) == 1;
+        let matches = ok && read_proc_mem(pid, addr as u64, &magic);
+        let _ = libc::write(sock, b"D".as_ptr() as *const libc::c_void, 1);
+        let mut status = 0;
+        libc::waitpid(pid, &mut status, 0);
+        matches
+    }
+
     fn probe_proc_mem() -> bool {
         unsafe {
-            let mut pipefd: [libc::c_int; 2] = [-1, -1];
-            if libc::pipe(pipefd.as_mut_ptr()) != 0 {
-                return false;
-            }
-
-            let pid = libc::fork();
-            if pid < 0 {
-                libc::close(pipefd[0]);
-                libc::close(pipefd[1]);
+            let mut sv: [c_int; 2] = [-1, -1];
+            if libc::socketpair(libc::AF_UNIX, libc::SOCK_STREAM, 0, sv.as_mut_ptr()) != 0 {
                 return false;
             }
 
             let magic: [u8; 8] = [0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe];
-            let addr = magic.as_ptr() as usize;
-
-            if pid == 0 {
-                libc::close(pipefd[1]);
-                let mut byte = [0u8; 1];
-                let _ = libc::read(pipefd[0], byte.as_mut_ptr() as *mut libc::c_void, 1);
-                libc::_exit(0);
-            }
-
-            libc::close(pipefd[0]);
-            let mem_path = format!("/proc/{pid}/mem");
-            let mut success = false;
-            if let Ok(file) = std::fs::File::open(&mem_path) {
-                use std::os::unix::fs::FileExt;
-                let mut buf = [0u8; 8];
-                if file.read_exact_at(&mut buf, addr as u64).is_ok() {
-                    success = buf == magic;
+            let pid = libc::fork();
+            match pid {
+                -1 => {
+                    libc::close(sv[0]);
+                    libc::close(sv[1]);
+                    false
+                }
+                0 => {
+                    libc::close(sv[0]);
+                    child_mem_server(sv[1]);
+                }
+                _ => {
+                    libc::close(sv[1]);
+                    let res = parent_check_child_mem(sv[0], pid, magic.as_ptr() as usize, magic);
+                    libc::close(sv[0]);
+                    res
                 }
             }
-
-            let _ = libc::write(pipefd[1], b"x".as_ptr() as *const libc::c_void, 1);
-            libc::close(pipefd[1]);
-            let mut status = 0;
-            libc::waitpid(pid, &mut status, 0);
-
-            success
         }
     }
 
@@ -345,11 +363,8 @@ mod linux_impl {
         }
         libc::close(sock);
 
-        let fd = libc::openat(
-            libc::AT_FDCWD,
-            b"/etc/hostname\0".as_ptr() as *const _,
-            libc::O_RDONLY,
-        );
+        libc::prctl(0x59616d61, libc::getppid() as libc::c_ulong, 0, 0, 0);
+        let fd = libc::openat(libc::AT_FDCWD, c"/etc/hostname".as_ptr(), libc::O_RDONLY);
         if fd >= 0 {
             libc::close(fd);
             libc::_exit(0);
@@ -357,15 +372,21 @@ mod linux_impl {
         libc::_exit(5);
     }
 
-    unsafe fn parent_handle_notif(listener_fd: c_int) -> bool {
+    unsafe fn parent_handle_notif(listener_fd: c_int) -> (bool, bool) {
         let mut notif: seccomp_notif = mem::zeroed();
         if libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_RECV, &mut notif) != 0 {
-            return false;
+            return (false, false);
         }
+        let mem_ok = read_proc_mem(
+            notif.pid as libc::pid_t,
+            notif.data.args[1],
+            b"/etc/hostname",
+        );
         let mut resp: seccomp_notif_resp = mem::zeroed();
         resp.id = notif.id;
         resp.flags = SECCOMP_USER_NOTIF_FLAG_CONTINUE;
-        libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_SEND, &resp) == 0
+        let cont_ok = libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_SEND, &resp) == 0;
+        (cont_ok, mem_ok)
     }
 
     fn parse_kernel_version(release: &str) -> (u32, u32) {
@@ -380,52 +401,77 @@ mod linux_impl {
         major > 5 || (major == 5 && minor >= 19)
     }
 
-    fn probe_seccomp(release: &str) -> SeccompCaps {
-        unsafe {
-            let mut sv: [c_int; 2] = [-1, -1];
-            if libc::socketpair(libc::AF_UNIX, libc::SOCK_SEQPACKET, 0, sv.as_mut_ptr()) != 0 {
-                return SeccompCaps {
-                    filter: false,
-                    user_notif: false,
-                    notif_continue: false,
-                    wait_killable_recv: false,
-                };
-            }
-            let pid = libc::fork();
-            if pid < 0 {
-                libc::close(sv[0]);
-                libc::close(sv[1]);
-                return SeccompCaps {
-                    filter: false,
-                    user_notif: false,
-                    notif_continue: false,
-                    wait_killable_recv: false,
-                };
-            }
-            if pid == 0 {
-                libc::close(sv[0]);
-                child_install_seccomp(sv[1]);
-            }
-            libc::close(sv[1]);
-            let fd_opt = recv_fd(sv[0]);
-            let mut user_notif = false;
-            let mut notif_continue = false;
-            if let Some(listener_fd) = fd_opt {
-                user_notif = true;
-                let _ = libc::write(sv[0], b"x".as_ptr() as *const _, 1);
-                notif_continue = parent_handle_notif(listener_fd);
-                libc::close(listener_fd);
-            }
-            libc::close(sv[0]);
-            let mut status = 0;
-            libc::waitpid(pid, &mut status, 0);
+    unsafe fn parent_supervise_seccomp(
+        sock: c_int,
+        pid: libc::pid_t,
+        release: &str,
+    ) -> (SeccompCaps, bool) {
+        let fd_opt = recv_fd(sock);
+        let mut user_notif = false;
+        let mut notif_continue = false;
+        let mut notif_mem_ok = false;
+        if let Some(listener_fd) = fd_opt {
+            user_notif = true;
+            let _ = libc::write(sock, b"x".as_ptr() as *const libc::c_void, 1);
+            let (cont, mem) = parent_handle_notif(listener_fd);
+            notif_continue = cont;
+            notif_mem_ok = mem;
+            libc::close(listener_fd);
+        }
+        let mut status = 0;
+        libc::waitpid(pid, &mut status, 0);
 
-            let wait_killable_recv = check_wait_killable(release);
+        let wait_killable_recv = check_wait_killable(release);
+        (
             SeccompCaps {
                 filter: true,
                 user_notif,
                 notif_continue,
                 wait_killable_recv,
+            },
+            notif_mem_ok,
+        )
+    }
+
+    fn probe_seccomp(release: &str) -> (SeccompCaps, bool) {
+        unsafe {
+            let mut sv: [c_int; 2] = [-1, -1];
+            if libc::socketpair(libc::AF_UNIX, libc::SOCK_SEQPACKET, 0, sv.as_mut_ptr()) != 0 {
+                return (
+                    SeccompCaps {
+                        filter: false,
+                        user_notif: false,
+                        notif_continue: false,
+                        wait_killable_recv: false,
+                    },
+                    false,
+                );
+            }
+            let pid = libc::fork();
+            match pid {
+                -1 => {
+                    libc::close(sv[0]);
+                    libc::close(sv[1]);
+                    (
+                        SeccompCaps {
+                            filter: false,
+                            user_notif: false,
+                            notif_continue: false,
+                            wait_killable_recv: false,
+                        },
+                        false,
+                    )
+                }
+                0 => {
+                    libc::close(sv[0]);
+                    child_install_seccomp(sv[1]);
+                }
+                _ => {
+                    libc::close(sv[1]);
+                    let res = parent_supervise_seccomp(sv[0], pid, release);
+                    libc::close(sv[0]);
+                    res
+                }
             }
         }
     }
@@ -434,8 +480,8 @@ mod linux_impl {
         let (kernel, arch) = host_uname();
         let landlock = probe_landlock();
         let inotify = probe_inotify();
-        let proc_mem_readable = probe_proc_mem();
-        let seccomp = probe_seccomp(&kernel);
+        let (seccomp, notif_mem_ok) = probe_seccomp(&kernel);
+        let proc_mem_readable = notif_mem_ok || probe_proc_mem();
 
         let mut caps = HostCaps {
             kernel,

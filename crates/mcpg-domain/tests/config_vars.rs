@@ -69,3 +69,18 @@ fn no_host_env_interpolation() {
     let literal_abs = expand("/usr/bin/git", &vars).expect("valid absolute path");
     assert_eq!(literal_abs, PathBuf::from("/usr/bin/git"));
 }
+
+#[test]
+fn var_error_display() {
+    let e1 = VarError::VariableNotAtStart("/foo/${BAR}".into());
+    assert_eq!(e1.to_string(), "variable not at start of path: /foo/${BAR}");
+
+    let e2 = VarError::UnknownVariable("UNKNOWN".into());
+    assert_eq!(e2.to_string(), "unknown variable: UNKNOWN");
+
+    let e3 = VarError::UnclosedVariable("${WORKSPACE".into());
+    assert_eq!(e3.to_string(), "unclosed variable in path: ${WORKSPACE");
+
+    let e4 = VarError::NotAbsolute(PathBuf::from("relative/path"));
+    assert_eq!(e4.to_string(), "path is not absolute: relative/path");
+}
