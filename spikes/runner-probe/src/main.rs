@@ -187,6 +187,27 @@ mod linux_probe {
     const SECCOMP_IOCTL_NOTIF_ID_VALID: IoctlReq = 0x80082102;
     const SECCOMP_USER_NOTIF_FLAG_CONTINUE: u32 = 0x00000001;
 
+    const SYS_LANDLOCK_CREATE_RULESET: libc::c_long = 444;
+    const SYS_LANDLOCK_ADD_RULE: libc::c_long = 445;
+    const SYS_LANDLOCK_RESTRICT_SELF: libc::c_long = 446;
+
+    const LANDLOCK_CREATE_RULESET_VERSION: u32 = 1;
+    const LANDLOCK_RULE_PATH_BENEATH: u32 = 1;
+    const LANDLOCK_ACCESS_FS_READ_FILE: u64 = 1 << 2;
+
+    #[repr(C)]
+    #[derive(Debug, Clone, Copy)]
+    struct landlock_ruleset_attr {
+        handled_access_fs: u64,
+    }
+
+    #[repr(C, packed)]
+    #[derive(Debug, Clone, Copy)]
+    struct landlock_path_beneath_attr {
+        allowed_access: u64,
+        parent_fd: i32,
+    }
+
     fn make_openat_filter() -> Vec<sock_filter> {
         vec![
             // 0: [arch]
@@ -835,27 +856,6 @@ mod linux_probe {
 
     pub fn check_landlock() -> Value {
         unsafe {
-            const SYS_LANDLOCK_CREATE_RULESET: libc::c_long = 444;
-            const SYS_LANDLOCK_ADD_RULE: libc::c_long = 445;
-            const SYS_LANDLOCK_RESTRICT_SELF: libc::c_long = 446;
-
-            const LANDLOCK_CREATE_RULESET_VERSION: u32 = 1;
-            const LANDLOCK_RULE_PATH_BENEATH: u32 = 1;
-            const LANDLOCK_ACCESS_FS_READ_FILE: u64 = 1 << 2;
-
-            #[repr(C)]
-            #[derive(Debug, Clone, Copy)]
-            struct landlock_ruleset_attr {
-                handled_access_fs: u64,
-            }
-
-            #[repr(C, packed)]
-            #[derive(Debug, Clone, Copy)]
-            struct landlock_path_beneath_attr {
-                allowed_access: u64,
-                parent_fd: i32,
-            }
-
             let abi = libc::syscall(
                 SYS_LANDLOCK_CREATE_RULESET,
                 std::ptr::null::<libc::c_void>(),
@@ -977,6 +977,217 @@ mod linux_probe {
             }
         }
     }
+
+    pub fn check_combo() -> Value {
+        unsafe {
+            let allowed_file = b"/tmp/probe_allowed.txt\0";
+            let create_fd = libc::open(allowed_file.as_ptr() as *const _, libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC, 0o644);
+            if create_fd >= 0 {
+                libc::write(create_fd, b"allowed\n".as_ptr() as *const _, 8);
+                libc::close(create_fd);
+            }
+
+            let mut sv: [c_int; 2] = [-1, -1];
+            if libc::socketpair(libc::AF_UNIX, libc::SOCK_SEQPACKET, 0, sv.as_mut_ptr()) != 0 {
+                return json!({
+                    "status": "fail",
+                    "detail": { "error": format!("socketpair failed: {}", std::io::Error::last_os_error()) }
+                });
+            }
+
+            let pid = libc::fork();
+            if pid < 0 {
+                libc::close(sv[0]);
+                libc::close(sv[1]);
+                return json!({
+                    "status": "fail",
+                    "detail": { "error": format!("fork failed: {}", std::io::Error::last_os_error()) }
+                });
+            }
+
+            if pid == 0 {
+                libc::close(sv[0]);
+
+                if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 {
+                    libc::_exit(1);
+                }
+
+                // 1. Seccomp filter first (SPEC 3.1.4 ordering)
+                let filter = make_openat_filter();
+                let prog = sock_fprog {
+                    len: filter.len() as c_ushort,
+                    filter: filter.as_ptr(),
+                };
+
+                let listener_fd = libc::syscall(
+                    libc::SYS_seccomp,
+                    SECCOMP_SET_MODE_FILTER,
+                    SECCOMP_FILTER_FLAG_NEW_LISTENER,
+                    &prog as *const sock_fprog,
+                ) as c_int;
+
+                if listener_fd < 0 {
+                    libc::_exit(2);
+                }
+
+                if let Err(_) = send_fd(sv[1], listener_fd) {
+                    libc::close(listener_fd);
+                    libc::_exit(3);
+                }
+                libc::close(listener_fd);
+
+                // Wait for parent ACK
+                let mut ack: [u8; 1] = [0];
+                if libc::read(sv[1], ack.as_mut_ptr() as *mut _, 1) != 1 {
+                    libc::_exit(4);
+                }
+                libc::close(sv[1]);
+
+                // 2. Landlock ruleset second (SPEC 3.1.4 ordering)
+                let attr = landlock_ruleset_attr {
+                    handled_access_fs: LANDLOCK_ACCESS_FS_READ_FILE,
+                };
+                let ruleset_fd = libc::syscall(
+                    SYS_LANDLOCK_CREATE_RULESET,
+                    &attr as *const landlock_ruleset_attr,
+                    mem::size_of::<landlock_ruleset_attr>(),
+                    0u32,
+                ) as c_int;
+
+                if ruleset_fd < 0 {
+                    libc::_exit(5);
+                }
+
+                let tmp_fd = libc::open(b"/tmp\0".as_ptr() as *const _, libc::O_RDONLY | libc::O_DIRECTORY | libc::O_CLOEXEC);
+                if tmp_fd < 0 {
+                    libc::close(ruleset_fd);
+                    libc::_exit(6);
+                }
+
+                let path_beneath = landlock_path_beneath_attr {
+                    allowed_access: LANDLOCK_ACCESS_FS_READ_FILE,
+                    parent_fd: tmp_fd,
+                };
+
+                let add_res = libc::syscall(
+                    SYS_LANDLOCK_ADD_RULE,
+                    ruleset_fd,
+                    LANDLOCK_RULE_PATH_BENEATH,
+                    &path_beneath as *const landlock_path_beneath_attr,
+                    0u32,
+                );
+                libc::close(tmp_fd);
+
+                if add_res != 0 {
+                    libc::close(ruleset_fd);
+                    libc::_exit(7);
+                }
+
+                let restrict_res = libc::syscall(SYS_LANDLOCK_RESTRICT_SELF, ruleset_fd, 0u32);
+                libc::close(ruleset_fd);
+                if restrict_res != 0 {
+                    libc::_exit(8);
+                }
+
+                // 3. Open allowed file (should succeed)
+                let fd_allowed = libc::openat(libc::AT_FDCWD, allowed_file.as_ptr() as *const _, libc::O_RDONLY);
+                if fd_allowed < 0 {
+                    libc::_exit(10);
+                }
+                libc::close(fd_allowed);
+
+                // 4. Open denied file (should fail with EACCES)
+                let fd_denied = libc::openat(libc::AT_FDCWD, b"/etc/passwd\0".as_ptr() as *const _, libc::O_RDONLY);
+                if fd_denied < 0 {
+                    let err = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
+                    if err == libc::EACCES {
+                        libc::_exit(0);
+                    } else {
+                        libc::_exit(11);
+                    }
+                } else {
+                    libc::close(fd_denied);
+                    libc::_exit(12);
+                }
+            }
+
+            // Parent
+            libc::close(sv[1]);
+
+            let listener_fd = match recv_fd(sv[0]) {
+                Ok(fd) => fd,
+                Err(e) => {
+                    libc::close(sv[0]);
+                    let mut st: c_int = 0;
+                    libc::waitpid(pid, &mut st, 0);
+                    return json!({ "status": "fail", "detail": { "error": e } });
+                }
+            };
+
+            let ack: [u8; 1] = [b'G'];
+            libc::write(sv[0], ack.as_ptr() as *const _, 1);
+            libc::close(sv[0]);
+
+            let mut notifs_seen = 0;
+            let mut pfd = libc::pollfd {
+                fd: listener_fd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+
+            for _ in 0..10 {
+                let poll_res = libc::poll(&mut pfd, 1, 1000);
+                if poll_res > 0 && (pfd.revents & libc::POLLIN) != 0 {
+                    let mut notif: seccomp_notif = mem::zeroed();
+                    if libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_RECV as _, &mut notif) == 0 {
+                        notifs_seen += 1;
+                        let mut resp = seccomp_notif_resp {
+                            id: notif.id,
+                            val: 0,
+                            error: 0,
+                            flags: SECCOMP_USER_NOTIF_FLAG_CONTINUE,
+                        };
+                        libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_SEND as _, &mut resp);
+                    }
+                } else {
+                    let mut st: c_int = 0;
+                    let wait_res = libc::waitpid(pid, &mut st, libc::WNOHANG);
+                    if wait_res > 0 {
+                        break;
+                    }
+                }
+            }
+
+            libc::close(listener_fd);
+            libc::unlink(allowed_file.as_ptr() as *const _);
+
+            let mut status: c_int = 0;
+            libc::waitpid(pid, &mut status, 0);
+
+            let child_ok = libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0;
+            if notifs_seen >= 2 && child_ok {
+                json!({
+                    "status": "pass",
+                    "detail": {
+                        "notifs_seen": notifs_seen,
+                        "allowed_ok": true,
+                        "denied_blocked": true
+                    }
+                })
+            } else {
+                let code = if libc::WIFEXITED(status) { libc::WEXITSTATUS(status) } else { -1 };
+                json!({
+                    "status": "fail",
+                    "detail": {
+                        "notifs_seen": notifs_seen,
+                        "child_exit_code": code,
+                        "allowed_ok": child_ok,
+                        "denied_blocked": child_ok
+                    }
+                })
+            }
+        }
+    }
 }
 
 /// Run one check. Checks are added here by TASK-0.3 to TASK-0.12.
@@ -992,8 +1203,10 @@ fn run_check(id: &str, _args: &Args) -> Value {
         "P0-SPIKE-04" => linux_probe::check_wait_killable(),
         #[cfg(target_os = "linux")]
         "P0-SPIKE-05" => linux_probe::check_landlock(),
+        #[cfg(target_os = "linux")]
+        "P0-SPIKE-06" => linux_probe::check_combo(),
         #[cfg(not(target_os = "linux"))]
-        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" | "P0-SPIKE-05" => json!({
+        "P0-SPIKE-01" | "P0-SPIKE-02" | "P0-SPIKE-03" | "P0-SPIKE-04" | "P0-SPIKE-05" | "P0-SPIKE-06" => json!({
             "status": "unsupported",
             "detail": { "reason": "Linux-only" }
         }),

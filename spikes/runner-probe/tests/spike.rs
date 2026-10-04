@@ -145,6 +145,24 @@ fn p0_spike_05_landlock_abi() {
     );
 }
 
+/// TASK-0.8: P0-SPIKE-06, Landlock plus seccomp in one child.
+#[test]
+#[cfg_attr(not(target_os = "linux"), ignore = "Linux only")]
+fn p0_spike_06_landlock_plus_seccomp() {
+    let report = probe(&["--check", "P0-SPIKE-06", "--json"]);
+    let c = &report["checks"]["P0-SPIKE-06"];
+    assert_eq!(
+        c["status"], "pass",
+        "P0-SPIKE-06 status must be pass, got: {:?}",
+        c
+    );
+    let notifs = c["detail"]["notifs_seen"].as_i64().expect("notifs_seen is integer");
+    assert!(notifs >= 2, "must see at least 2 notifications, got: {notifs}");
+    assert_eq!(c["detail"]["allowed_ok"], true, "allowed open must succeed");
+    assert_eq!(c["detail"]["denied_blocked"], true, "denied open must be blocked by Landlock");
+}
+
+
 
 
 
