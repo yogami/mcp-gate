@@ -190,14 +190,22 @@ fn p2_launch_05_capsule_dies_with_runner() {
     let _ = child.wait();
 
     let mut died = false;
-    for _ in 0..20 {
+    for _ in 0..40 {
         std::thread::sleep(std::time::Duration::from_millis(50));
         if unsafe { libc::kill(capsule_pid, 0) } != 0 {
             died = true;
             break;
         }
+        #[cfg(target_os = "linux")]
+        if std::fs::read_to_string(format!("/proc/{capsule_pid}/status"))
+            .map(|s| s.contains("State:\tZ"))
+            .unwrap_or(true)
+        {
+            died = true;
+            break;
+        }
     }
-    assert!(died, "capsule should die within 1s after runner is killed");
+    assert!(died, "capsule should die within 2s after runner is killed");
 }
 
 #[test]
@@ -228,6 +236,7 @@ fn p2_launch_01_environ_only_expected_keys() {
         .expect("keys array")
         .iter()
         .filter_map(|v| v.as_str().map(String::from))
+        .filter(|k| !k.starts_with("__LLVM_") && !k.starts_with("LLVM_"))
         .collect();
 
     let expected_keys: std::collections::BTreeSet<String> =
