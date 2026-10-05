@@ -61,8 +61,11 @@ fn list_mcpg_dirs() -> std::collections::HashSet<PathBuf> {
     dirs
 }
 
+static RUN_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[test]
 fn run_benign_exits_0() {
+    let _lock = RUN_LOCK.lock().unwrap();
     let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
     cmd.current_dir(workspace_root());
     cmd.args(["run", "--config", "tests/configs/valid/benign.yaml"]);
@@ -71,6 +74,7 @@ fn run_benign_exits_0() {
 
 #[test]
 fn run_prints_seed_line() {
+    let _lock = RUN_LOCK.lock().unwrap();
     let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
     cmd.current_dir(workspace_root());
     cmd.args(["run", "--config", "tests/configs/valid/benign.yaml"]);
@@ -82,6 +86,7 @@ fn run_prints_seed_line() {
 
 #[test]
 fn run_with_same_seed_gives_same_canary_fps() {
+    let _lock = RUN_LOCK.lock().unwrap();
     let seed_hex = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     let tmp = tempfile_helper::TempDir::new("test_same_seed");
     let out1 = tmp.path().join("run1");
@@ -130,6 +135,7 @@ fn run_with_same_seed_gives_same_canary_fps() {
 
 #[test]
 fn run_without_seed_gives_different_fps() {
+    let _lock = RUN_LOCK.lock().unwrap();
     let tmp = tempfile_helper::TempDir::new("test_diff_seed");
     let out1 = tmp.path().join("run1");
     let out2 = tmp.path().join("run2");
@@ -173,6 +179,10 @@ fn run_without_seed_gives_different_fps() {
 
 #[test]
 fn run_dir_deleted_unless_keep_capsule() {
+    let _lock = RUN_LOCK.lock().unwrap();
+    for dir in list_mcpg_dirs() {
+        let _ = fs::remove_dir_all(dir);
+    }
     let before_keep = list_mcpg_dirs();
     let mut cmd_keep = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
     cmd_keep
@@ -214,6 +224,7 @@ fn run_dir_deleted_unless_keep_capsule() {
 
 #[test]
 fn failed_expectation_exits_2() {
+    let _lock = RUN_LOCK.lock().unwrap();
     let tmp = tempfile_helper::TempDir::new("test_failed_expect");
     let server_path = workspace_root().join("fixtures/servers/benign/server.py");
     let base_cfg = fs::read_to_string(workspace_root().join("tests/configs/valid/benign.yaml"))
@@ -239,6 +250,7 @@ fn failed_expectation_exits_2() {
 
 #[test]
 fn server_exits_during_handshake_exits_3() {
+    let _lock = RUN_LOCK.lock().unwrap();
     let tmp = tempfile_helper::TempDir::new("test_handshake_crash");
     let server_path = workspace_root().join("fixtures/servers/benign/server.py");
     let base_cfg = fs::read_to_string(workspace_root().join("tests/configs/valid/benign.yaml"))
@@ -264,6 +276,7 @@ fn server_exits_during_handshake_exits_3() {
 
 #[test]
 fn reports_written_for_exit_2_and_3() {
+    let _lock = RUN_LOCK.lock().unwrap();
     let tmp = tempfile_helper::TempDir::new("test_reports_2_3");
     let server_path = workspace_root().join("fixtures/servers/benign/server.py");
     let base_cfg = fs::read_to_string(workspace_root().join("tests/configs/valid/benign.yaml"))
