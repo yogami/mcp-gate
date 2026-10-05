@@ -16,17 +16,53 @@ struct Cli {
     command: Commands,
 }
 
+#[derive(clap::Args)]
+struct RunArgs {
+    /// Config file to run
+    #[arg(short = 'c', long = "config", default_value = "./mcp-gate.yaml")]
+    config: PathBuf,
+    /// Where reports go
+    #[arg(long = "out-dir", default_value = "./mcp-gate-results")]
+    out_dir: PathBuf,
+    /// SARIF output path, '-' disables
+    #[arg(long = "sarif")]
+    sarif: Option<String>,
+    /// JUnit output path, '-' disables
+    #[arg(long = "junit")]
+    junit: Option<String>,
+    /// NDJSON evidence output path
+    #[arg(long = "evidence")]
+    evidence: Option<String>,
+    /// Operational mode: enforce or observe
+    #[arg(long = "mode", default_value = "enforce")]
+    mode: String,
+    /// Comma-separated list of required features
+    #[arg(long = "require")]
+    require: Option<String>,
+    /// Lowest SARIF level that makes the verdict FAIL
+    #[arg(long = "fail-on", default_value = "error")]
+    fail_on: String,
+    /// Seed for reproducible execution (64 hex characters)
+    #[arg(long = "seed")]
+    seed: Option<mcpg_domain::seed::Seed>,
+    /// Override total run timeout in seconds
+    #[arg(long = "timeout")]
+    timeout: Option<u64>,
+    /// Keep the run directory for debugging
+    #[arg(long = "keep-capsule")]
+    keep_capsule: bool,
+    /// Write raw canary values into evidence
+    #[arg(long = "evidence-include-values")]
+    evidence_include_values: bool,
+    /// Do not emit GitHub workflow commands
+    #[arg(long = "no-annotations")]
+    no_annotations: bool,
+}
+
 #[derive(Subcommand)]
 enum Commands {
     /// Run a server in a capsule and evaluate it against its policy
-    Run {
-        /// Config file to run
-        #[arg(short = 'c', long = "config", default_value = "./mcp-gate.yaml")]
-        config: PathBuf,
-        /// Seed for reproducible execution (64 hex characters)
-        #[arg(long = "seed")]
-        seed: Option<mcpg_domain::seed::Seed>,
-    },
+    Run(Box<RunArgs>),
     /// Check a config file against the schema and resolve all paths
     Validate {
         /// Config file to validate
@@ -39,9 +75,77 @@ enum Commands {
     Version,
 }
 
+fn parse_mode(s: &str) -> Result<mcpg_domain::mode::Mode, ExitCode> {
+    match s.to_lowercase().as_str() {
+        "enforce" => Ok(mcpg_domain::mode::Mode::Enforce),
+        "observe" => Ok(mcpg_domain::mode::Mode::Observe),
+        _ => {
+            eprintln!("Error: invalid mode '{s}', expected 'enforce' or 'observe'");
+            Err(ExitCode::Usage)
+        }
+    }
+}
+
+fn parse_feature_item(
+    item: &str,
+    out: &mut Vec<mcpg_domain::host::Feature>,
+) -> Result<(), ExitCode> {
+    let trimmed = item.trim();
+    if trimmed.is_empty() {
+        return Ok(());
+    }
+    match trimmed.parse::<mcpg_domain::host::Feature>() {
+        Ok(f) => {
+            out.push(f);
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("Error: {e}");
+            Err(ExitCode::Usage)
+        }
+    }
+}
+
+fn parse_require(raw_opt: Option<&str>) -> Result<Vec<mcpg_domain::host::Feature>, ExitCode> {
+    let mut features = Vec::new();
+    let Some(raw) = raw_opt else {
+        return Ok(features);
+    };
+    for part in raw.split(',') {
+        parse_feature_item(part, &mut features)?;
+    }
+    Ok(features)
+}
+
+fn build_run_options(args: RunArgs) -> Result<mcpg_app::orchestrator::RunOptions, ExitCode> {
+    let requested_mode = parse_mode(&args.mode)?;
+    let require = parse_require(args.require.as_deref())?;
+    Ok(mcpg_app::orchestrator::RunOptions {
+        config_path: args.config,
+        out_dir: args.out_dir,
+        sarif_path: args.sarif,
+        junit_path: args.junit,
+        evidence_path: args.evidence,
+        requested_mode,
+        require,
+        fail_on: args.fail_on,
+        seed: args.seed,
+        timeout: args.timeout,
+        keep_capsule: args.keep_capsule,
+        evidence_include_values: args.evidence_include_values,
+        no_annotations: args.no_annotations,
+    })
+}
+
 fn run_command(cmd: Commands) -> ExitCode {
     match cmd {
-        Commands::Run { config, seed } => cmd::run::execute(&config, seed),
+        Commands::Run(boxed_args) => {
+            let opts = match build_run_options(*boxed_args) {
+                Ok(o) => o,
+                Err(code) => return code,
+            };
+            cmd::run::execute(&opts)
+        }
         Commands::Validate { config } => cmd::validate::execute(&config),
         Commands::Probe => cmd::probe::execute(),
         Commands::Version => {

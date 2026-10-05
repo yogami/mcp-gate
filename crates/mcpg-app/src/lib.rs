@@ -4,6 +4,7 @@
 pub mod capsule_plan;
 pub mod config;
 pub mod hygiene;
+pub mod orchestrator;
 pub mod phase;
 pub mod plan_mode;
 pub mod ports;

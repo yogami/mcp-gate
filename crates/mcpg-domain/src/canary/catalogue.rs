@@ -143,3 +143,22 @@ pub fn entry_for_kind(kind: CanaryKind) -> &'static CatalogueEntry {
         .find(|e| e.kind == kind)
         .expect("all kinds have a catalogue entry")
 }
+
+impl From<crate::config::model::CanaryKind> for CanaryKind {
+    fn from(k: crate::config::model::CanaryKind) -> Self {
+        match k {
+            crate::config::model::CanaryKind::Ssh => Self::Ssh,
+            crate::config::model::CanaryKind::Aws => Self::Aws,
+            crate::config::model::CanaryKind::Gcloud => Self::Gcloud,
+            crate::config::model::CanaryKind::Kube => Self::Kube,
+            crate::config::model::CanaryKind::Docker => Self::Docker,
+            crate::config::model::CanaryKind::GitCredentials => Self::GitCredentials,
+            crate::config::model::CanaryKind::GhCli => Self::GhCli,
+            crate::config::model::CanaryKind::Netrc => Self::Netrc,
+            crate::config::model::CanaryKind::Npmrc => Self::Npmrc,
+            crate::config::model::CanaryKind::Pypirc => Self::Pypirc,
+            crate::config::model::CanaryKind::Dotenv => Self::Dotenv,
+            crate::config::model::CanaryKind::Env => Self::Env,
+        }
+    }
+}

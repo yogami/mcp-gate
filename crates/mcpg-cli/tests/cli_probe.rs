@@ -33,15 +33,3 @@ fn probe_json_has_spec_keys() {
     assert!(v.get("missing").is_some());
     assert_eq!(v["supported"], true);
 }
-
-#[test]
-#[cfg(target_os = "linux")]
-fn run_on_linux_exits_70_for_now() {
-    let bin = env!("CARGO_BIN_EXE_mcp-gate");
-    let output = Command::new(bin)
-        .arg("run")
-        .output()
-        .expect("failed to execute mcp-gate");
-
-    assert_eq!(output.status.code(), Some(70));
-}

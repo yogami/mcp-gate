@@ -19,6 +19,7 @@ struct EvidenceHeader<'a> {
     seed: String,
     claim: &'a str,
     tool_name: &'static str,
+    canary_fps: Vec<&'a str>,
 }
 
 #[derive(Serialize)]
@@ -35,11 +36,13 @@ impl ReportWriter for EvidenceWriter {
     }
 
     fn write(&self, run: &RunRecord, out: &mut dyn Write) -> io::Result<()> {
+        let canary_fps: Vec<&str> = run.registry.records.iter().map(|r| r.fp.as_str()).collect();
         let header = EvidenceHeader {
             record_type: "header",
             seed: run.seed.to_string(),
             claim: run.claim,
             tool_name: "mcp-gate",
+            canary_fps,
         };
         serde_json::to_writer(&mut *out, &header).map_err(io::Error::other)?;
         writeln!(out)?;
