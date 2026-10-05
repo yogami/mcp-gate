@@ -263,8 +263,12 @@ where
                 Err(serde::de::Error::custom("invalid timeout_s number"))
             }
         }
-        Some(serde_json::Value::String(s)) => s.parse::<u64>().map(Some).map_err(serde::de::Error::custom),
-        Some(_) => Err(serde::de::Error::custom("timeout_s must be a number or string")),
+        Some(serde_json::Value::String(s)) => {
+            s.parse::<u64>().map(Some).map_err(serde::de::Error::custom)
+        }
+        Some(_) => Err(serde::de::Error::custom(
+            "timeout_s must be a number or string",
+        )),
         None => Ok(None),
     }
 }

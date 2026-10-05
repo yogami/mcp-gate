@@ -334,7 +334,10 @@ fn launch_missing_program_is_err() {
     use mcpg_app::ports::CapsuleLauncher;
     let launcher = mcpg_linux::launcher::LinuxLauncher::new();
     let res = launcher.launch(&plan);
-    assert!(res.is_err(), "Launch of missing program should fail before returning from spawn");
+    assert!(
+        res.is_err(),
+        "Launch of missing program should fail before returning from spawn"
+    );
 }
 
 #[test]
@@ -353,6 +356,9 @@ fn launch_with_bad_landlock_fd_is_err() {
         // 9999 is highly likely an invalid FD
         let launcher = mcpg_linux::launcher::LinuxLauncher::new().with_landlock_fd(9999);
         let res = launcher.launch(&plan);
-        assert!(res.is_err(), "Launch with invalid landlock FD should fail in pre_exec and bubble up");
+        assert!(
+            res.is_err(),
+            "Launch with invalid landlock FD should fail in pre_exec and bubble up"
+        );
     }
 }

@@ -74,22 +74,12 @@ fn apply_argv(cmd: &mut Command, argv: &[CString]) {
     }
 }
 
-#[cfg(target_os = "linux")]
-unsafe fn close_fds_fallback(start: i32, keep_fd: i32) {
-    let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
-    for fd in start..max_fd {
-        if fd != keep_fd {
-            libc::close(fd);
-        }
-    }
-}
-
 #[cfg(unix)]
 fn close_extra_fds_except(keep_fd: std::os::fd::RawFd) {
     #[cfg(target_os = "linux")]
     unsafe {
         const CLOSE_RANGE_CLOEXEC: libc::c_uint = 4;
-        
+
         let set_cloexec_fallback = |start: i32, max: i32| {
             for fd in start..max {
                 if fd != keep_fd {
@@ -106,11 +96,23 @@ fn close_extra_fds_except(keep_fd: std::os::fd::RawFd) {
             }
         } else {
             let res1 = if keep_fd > 3 {
-                libc::syscall(libc::SYS_close_range, 3, (keep_fd - 1) as u32, CLOSE_RANGE_CLOEXEC)
-            } else { 0 };
-            
-            let res2 = libc::syscall(libc::SYS_close_range, (keep_fd + 1) as u32, !0u32, CLOSE_RANGE_CLOEXEC);
-            
+                libc::syscall(
+                    libc::SYS_close_range,
+                    3,
+                    (keep_fd - 1) as u32,
+                    CLOSE_RANGE_CLOEXEC,
+                )
+            } else {
+                0
+            };
+
+            let res2 = libc::syscall(
+                libc::SYS_close_range,
+                (keep_fd + 1) as u32,
+                !0u32,
+                CLOSE_RANGE_CLOEXEC,
+            );
+
             if res1 < 0 || res2 < 0 {
                 let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
                 set_cloexec_fallback(3, max_fd);

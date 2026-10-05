@@ -24,20 +24,15 @@ impl<W: Write> StdioTransport<W> {
     /// Create a new stdio transport by spawning a reader thread.
     pub fn new<R: BufRead + Send + 'static>(writer: W, mut reader: LineReader<R>) -> Self {
         let (tx, rx) = std::sync::mpsc::sync_channel(10);
-        std::thread::spawn(move || {
-            loop {
-                let res = reader.next_frame();
-                let is_err = res.is_err();
-                let is_none = match &res {
-                    Ok(None) => true,
-                    _ => false,
-                };
-                if tx.send(res).is_err() {
-                    break;
-                }
-                if is_err || is_none {
-                    break;
-                }
+        std::thread::spawn(move || loop {
+            let res = reader.next_frame();
+            let is_err = res.is_err();
+            let is_none = matches!(&res, Ok(None));
+            if tx.send(res).is_err() {
+                break;
+            }
+            if is_err || is_none {
+                break;
             }
         });
         Self { writer, rx }

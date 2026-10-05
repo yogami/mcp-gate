@@ -118,7 +118,11 @@ fn validate_secret_key(key: &str, allow: bool, warnings: &mut Vec<String>) -> Re
     Ok(())
 }
 
-fn check_secret_passthrough(passthrough: &[String], allow: bool, warnings: &mut Vec<String>) -> Result<(), EnvError> {
+fn check_secret_passthrough(
+    passthrough: &[String],
+    allow: bool,
+    warnings: &mut Vec<String>,
+) -> Result<(), EnvError> {
     for pat in passthrough {
         if !is_ci_deny_var(pat) {
             validate_secret_key(pat, allow, warnings)?;
@@ -223,15 +227,25 @@ pub fn build_env(
     validate_set(&cfg.set, is_reachable)?;
 
     let mut warnings = Vec::new();
-    check_secret_passthrough(&cfg.passthrough, cfg.allow_secret_passthrough, &mut warnings)?;
+    check_secret_passthrough(
+        &cfg.passthrough,
+        cfg.allow_secret_passthrough,
+        &mut warnings,
+    )?;
 
     let mut env = BTreeMap::new();
 
     add_fixed_vars(&mut env, fixed);
 
     // B-08: validate secret keys on the host keys actually matched.
-    add_passthrough_vars(&mut env, host, &cfg.passthrough, cfg.allow_secret_passthrough, &mut warnings)?;
-    
+    add_passthrough_vars(
+        &mut env,
+        host,
+        &cfg.passthrough,
+        cfg.allow_secret_passthrough,
+        &mut warnings,
+    )?;
+
     // add_set_vars can override PATH, but not HOME/TMPDIR/LANG (prevented by validate_set_entry)
     add_set_vars(&mut env, &cfg.set);
 

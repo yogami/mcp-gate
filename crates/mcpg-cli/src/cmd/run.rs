@@ -275,22 +275,46 @@ fn drive_session<T: McpTransport>(
         .initialize(&cfg.server.protocol_versions, cfg.server.client.roots)
         .is_err()
     {
-        return (Verdict::Inconclusive, ExitCode::Inconclusive, client.take_violations().into_iter().map(|v| (v.reason, v.raw)).collect());
+        return (
+            Verdict::Inconclusive,
+            ExitCode::Inconclusive,
+            client
+                .take_violations()
+                .into_iter()
+                .map(|v| (v.reason, v.raw))
+                .collect(),
+        );
     }
-    
+
     let tools_list = match client.list_tools() {
         Ok(t) => t,
         Err(_) => {
-            return (Verdict::Inconclusive, ExitCode::Inconclusive, client.take_violations().into_iter().map(|v| (v.reason, v.raw)).collect());
+            return (
+                Verdict::Inconclusive,
+                ExitCode::Inconclusive,
+                client
+                    .take_violations()
+                    .into_iter()
+                    .map(|v| (v.reason, v.raw))
+                    .collect(),
+            );
         }
     };
     let mut tools = std::collections::HashMap::new();
     for t in tools_list {
         tools.insert(t.name.clone(), t);
     }
-    
+
     let (v, e) = drive_scenarios_loop(&mut client, tracker, &cfg.scenarios, phase, &tools);
-    (v, e, client.take_violations().into_iter().map(|v| (v.reason, v.raw)).collect())
+    (
+        v,
+        e,
+        client
+            .take_violations()
+            .into_iter()
+            .map(|v| (v.reason, v.raw))
+            .collect(),
+    )
 }
 
 fn execute_capsule_run(
@@ -313,6 +337,17 @@ fn execute_capsule_run(
 
     let stdout = cap.child.stdout.take().expect("piped stdout");
     let stdin = cap.child.stdin.take().expect("piped stdin");
+    let stderr_drain = cap.child.stderr.take().map(|mut stderr| {
+        std::thread::spawn(move || {
+            use std::io::Read;
+            let mut buf = [0u8; 4096];
+            while let Ok(n) = stderr.read(&mut buf) {
+                if n == 0 {
+                    break;
+                }
+            }
+        })
+    });
     let reader = LineReader::new(BufReader::new(stdout), cfg.limits.max_stdout_line_bytes);
     let transport = StdioTransport::new(stdin, reader);
 
@@ -327,11 +362,18 @@ fn execute_capsule_run(
     let _ = phase.advance_to_shutdown();
     let grace = Duration::from_secs(cfg.limits.shutdown_grace_s);
     let _ = mcpg_linux::shutdown::shutdown(cap, grace);
+    if let Some(drain) = stderr_drain {
+        let _ = drain.join();
+    }
 
     result
 }
 
-fn write_run_reports(record: &RunRecord, out_dir: &Path, evidence_path_opt: Option<&str>) -> Result<(), ExitCode> {
+fn write_run_reports(
+    record: &RunRecord,
+    out_dir: &Path,
+    evidence_path_opt: Option<&str>,
+) -> Result<(), ExitCode> {
     let _ = ConsoleWriter.write(record, &mut std::io::stdout());
     let _ = fs::create_dir_all(out_dir);
     let ev_path = match evidence_path_opt {
@@ -431,11 +473,12 @@ fn prepare_plan(ctx: &RunContext) -> Result<(CapsulePlan, Option<std::os::fd::Ow
 fn run_pipeline(opts: &RunOptions) -> Result<ExitCode, ExitCode> {
     let ctx = prepare_context(opts)?;
     let (plan, ruleset) = prepare_plan(&ctx)?;
-    let (exec_verdict, exec_code, violations) = execute_capsule_run(&plan, ruleset.as_ref(), &ctx.cfg, &ctx.vars);
-    
+    let (exec_verdict, exec_code, violations) =
+        execute_capsule_run(&plan, ruleset.as_ref(), &ctx.cfg, &ctx.vars);
+
     let mut final_code = exec_code;
     let mut final_verdict = exec_verdict;
-    
+
     if !violations.is_empty() {
         final_code = mcpg_domain::verdict::combine(vec![final_code, ExitCode::FailSecurity]);
         if final_code == ExitCode::FailSecurity {

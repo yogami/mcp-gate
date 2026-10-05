@@ -317,13 +317,13 @@ fn build_ruleset_with_python_baseline_succeeds() {
     if abi == 0 {
         return;
     }
-    
-    use mcpg_domain::policy::baseline::expand_baseline;
+
     use mcpg_domain::config::model::Baseline;
     use mcpg_domain::fs_view::StdFs;
     use mcpg_domain::landlock_plan::plan;
+    use mcpg_domain::policy::baseline::expand_baseline;
     use mcpg_domain::policy::sets::EnforcementSet;
-    
+
     let baseline_paths = expand_baseline(Baseline::Python, &StdFs);
     let sets = EnforcementSet {
         read_paths: baseline_paths,
@@ -331,8 +331,12 @@ fn build_ruleset_with_python_baseline_succeeds() {
         capsule_home: PathBuf::from("/tmp"),
         capsule_tmp: PathBuf::from("/tmp"),
     };
-    
+
     let plan = plan(&sets, &[], abi, mcpg_domain::mode::Mode::Enforce, false);
     let ruleset = mcpg_linux::landlock::build(&plan);
-    assert!(ruleset.is_ok(), "Failed to build Landlock ruleset with Python baseline: {:?}", ruleset.err());
+    assert!(
+        ruleset.is_ok(),
+        "Failed to build Landlock ruleset with Python baseline: {:?}",
+        ruleset.err()
+    );
 }

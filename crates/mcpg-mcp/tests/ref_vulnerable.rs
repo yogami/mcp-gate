@@ -3,7 +3,7 @@ use std::io::{BufReader, Read};
 use std::os::unix::fs::symlink;
 use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
+use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 

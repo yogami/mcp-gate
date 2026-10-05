@@ -359,7 +359,7 @@ fn reports_written_for_exit_2_and_3() {
 
 #[test]
 fn run_enforce_denies_read_outside_policy() {
-    // Only run on Linux when Landlock is actually available. 
+    // Only run on Linux when Landlock is actually available.
     // We add a switch or just skip if missing, but bug_report says "with a switch that makes Landlock unavailable a failure in CI".
     // We'll use mcpg_linux::landlock::get_landlock_abi().
     #[cfg(target_os = "linux")]
@@ -396,9 +396,10 @@ fn run_enforce_denies_read_outside_policy() {
         .arg("run")
         .arg("--config")
         .arg(&cfg_path)
-        .arg("--mode").arg("enforce") // Use enforce mode
+        .arg("--mode")
+        .arg("enforce") // Use enforce mode
         .assert()
-        // `cat` should fail to read the file and exit non-zero. 
+        // `cat` should fail to read the file and exit non-zero.
         // mcp-gate will capture this non-zero exit from the server handshake or execution and exit 3.
-        .code(3); 
+        .code(3);
 }

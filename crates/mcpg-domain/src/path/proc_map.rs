@@ -14,6 +14,16 @@ pub struct ProcCtx {
     pub capsule_pids: BTreeSet<u32>,
     pub fds: BTreeMap<(u32, i32), PathBuf>,
     pub current_pid: Option<u32>,
+    /// Targets of the `/proc/<pid>/{cwd,root,exe}` magic links, keyed by pid and link name.
+    pub links: BTreeMap<(u32, String), PathBuf>,
+}
+
+/// Names under `/proc/<pid>` that the kernel treats as symlinks to a real path.
+pub const MAGIC_LINKS: [&str; 3] = ["cwd", "root", "exe"];
+
+/// Whether `name` is one of the `/proc/<pid>` magic link names.
+pub fn is_magic_link(name: &str) -> bool {
+    MAGIC_LINKS.contains(&name)
 }
 
 impl ProcCtx {
@@ -23,11 +33,18 @@ impl ProcCtx {
             capsule_pids,
             fds,
             current_pid,
+            links: BTreeMap::new(),
         }
     }
 
     pub fn with_current_pid(mut self, pid: u32) -> Self {
         self.current_pid = Some(pid);
+        self
+    }
+
+    /// Record where `/proc/<pid>/<name>` points (`name` is `cwd`, `root` or `exe`).
+    pub fn with_link(mut self, pid: u32, name: &str, target: impl Into<PathBuf>) -> Self {
+        self.links.insert((pid, name.to_string()), target.into());
         self
     }
 
@@ -38,6 +55,14 @@ impl ProcCtx {
     pub fn resolve_fd(&self, pid: Option<u32>, fd: i32) -> Option<&Path> {
         let target_pid = pid.or(self.current_pid)?;
         self.fds.get(&(target_pid, fd)).map(|p| p.as_path())
+    }
+
+    /// Resolve a `cwd`, `root` or `exe` magic link for `pid` (or the current process).
+    pub fn resolve_link(&self, pid: Option<u32>, name: &str) -> Option<&Path> {
+        let target_pid = pid.or(self.current_pid)?;
+        self.links
+            .get(&(target_pid, name.to_string()))
+            .map(|p| p.as_path())
     }
 }
 

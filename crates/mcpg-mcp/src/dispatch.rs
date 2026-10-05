@@ -9,6 +9,8 @@ use crate::client::{DriverError, McpClient};
 use crate::framing::{FrameItem, JsonRpc};
 use crate::transport::McpTransport;
 
+const FALLBACK_TOTAL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
+
 impl<T: McpTransport> McpClient<T> {
     /// Wait for a response with the expected request ID, dispatching incoming
     /// server requests and recording notifications along the way.
@@ -18,10 +20,12 @@ impl<T: McpTransport> McpClient<T> {
         context: &str,
     ) -> Result<Value, DriverError> {
         loop {
-            let deadline = self.deadline_tracker.as_ref()
+            let deadline = self
+                .deadline_tracker
+                .as_ref()
                 .map(|t| t.total_deadline())
-                .unwrap_or_else(|| std::time::Instant::now() + std::time::Duration::from_secs(31536000));
-            
+                .unwrap_or_else(|| std::time::Instant::now() + FALLBACK_TOTAL_TIMEOUT);
+
             let item = self
                 .transport
                 .receive(deadline)

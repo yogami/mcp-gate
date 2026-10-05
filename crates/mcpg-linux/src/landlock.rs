@@ -49,12 +49,18 @@ struct LandlockPathBeneathAttr {
 #[cfg(target_os = "linux")]
 fn add_single_fs_rule(ruleset_fd: RawFd, path: &Path, allowed_access: u64) -> std::io::Result<()> {
     if path.is_relative() {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Landlock path must be absolute"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Landlock path must be absolute",
+        ));
     }
     let Ok(cpath) = std::ffi::CString::new(path.as_os_str().as_bytes()) else {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "path contains null bytes"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "path contains null bytes",
+        ));
     };
-    
+
     let fd = unsafe { libc::open(cpath.as_ptr(), libc::O_PATH | libc::O_CLOEXEC) };
     if fd < 0 {
         let err = std::io::Error::last_os_error();
@@ -63,17 +69,19 @@ fn add_single_fs_rule(ruleset_fd: RawFd, path: &Path, allowed_access: u64) -> st
         }
         return Err(err);
     }
-    
+
     let mut stat: libc::stat = unsafe { std::mem::zeroed() };
     if unsafe { libc::fstat(fd, &mut stat) } < 0 {
         let err = std::io::Error::last_os_error();
-        unsafe { libc::close(fd); }
+        unsafe {
+            libc::close(fd);
+        }
         return Err(err);
     }
-    
+
     let is_dir = (stat.st_mode & libc::S_IFMT) == libc::S_IFDIR;
-    let dir_rights: u64 = AccessFs::READ_DIR.bits() 
-        | AccessFs::REMOVE_DIR.bits() 
+    let dir_rights: u64 = AccessFs::READ_DIR.bits()
+        | AccessFs::REMOVE_DIR.bits()
         | AccessFs::MAKE_DIR.bits()
         | AccessFs::MAKE_CHAR.bits()
         | AccessFs::MAKE_REG.bits()
@@ -81,15 +89,17 @@ fn add_single_fs_rule(ruleset_fd: RawFd, path: &Path, allowed_access: u64) -> st
         | AccessFs::MAKE_FIFO.bits()
         | AccessFs::MAKE_BLOCK.bits()
         | AccessFs::MAKE_SYM.bits();
-        
+
     let actual_access = if !is_dir {
         allowed_access & !dir_rights
     } else {
         allowed_access
     };
-    
+
     if actual_access == 0 {
-        unsafe { libc::close(fd); }
+        unsafe {
+            libc::close(fd);
+        }
         return Ok(());
     }
 

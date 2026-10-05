@@ -58,13 +58,28 @@ fn collect_tree_pids(root_pid: u32) -> Vec<u32> {
     pids
 }
 
-fn kill_survivor_pid(pid: u32, survivors: &mut Vec<u32>) {
-    unsafe {
-        if libc::kill(pid as i32, 0) == 0 {
-            libc::kill(pid as i32, libc::SIGKILL);
-            if !survivors.contains(&pid) {
-                survivors.push(pid);
+fn is_process_alive(pid: u32) -> bool {
+    let status_path = format!("/proc/{pid}/status");
+    if let Ok(content) = std::fs::read_to_string(status_path) {
+        if let Some(state_line) = content.lines().find(|l| l.starts_with("State:")) {
+            // State: Z (zombie) or X (dead)
+            if state_line.contains('Z') || state_line.contains('X') {
+                return false;
             }
+        }
+        true
+    } else {
+        unsafe { libc::kill(pid as i32, 0) == 0 }
+    }
+}
+
+fn kill_survivor_pid(pid: u32, survivors: &mut Vec<u32>) {
+    if is_process_alive(pid) {
+        unsafe {
+            libc::kill(pid as i32, libc::SIGKILL);
+        }
+        if !survivors.contains(&pid) {
+            survivors.push(pid);
         }
     }
 }
@@ -73,11 +88,6 @@ fn kill_known_pids(pids: &[u32], survivors: &mut Vec<u32>) {
     for &pid in pids {
         kill_survivor_pid(pid, survivors);
     }
-}
-
-fn reap_specific(pid: u32) {
-    let mut status = 0;
-    unsafe { libc::waitpid(pid as i32, &mut status, 0) };
 }
 
 fn collect_subreaper_adopted_children(runner_pid: u32, main_pid: u32) -> Vec<u32> {
@@ -127,25 +137,25 @@ pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport {
     let orphans = collect_subreaper_adopted_children(runner_pid, cap.pid);
     let mut all_known = collect_tree_pids(cap.pid);
     all_known.extend(orphans);
-    
-    // We only reap processes that actually belong to this capsule's process group.
-    // Since concurrent tests run, we don't want to kill siblings. We filter by PGID.
-    let mut capsule_pids = Vec::new();
-    for pid in all_known {
-        let p_pgid = unsafe { libc::getpgid(pid as i32) };
-        if p_pgid == pgid {
-            capsule_pids.push(pid);
-        }
-    }
-    
-    capsule_pids.sort_unstable();
-    capsule_pids.dedup();
+    all_known.sort_unstable();
+    all_known.dedup();
 
-    kill_known_pids(&capsule_pids, &mut survivors);
-    for pid in &capsule_pids {
-        if *pid != cap.pid {
-            reap_specific(*pid);
+    // SPEC 3.1.6 step 4: SIGKILL every pid in the observed process tree that is still alive
+    kill_known_pids(&all_known, &mut survivors);
+
+    // SPEC 3.1.6 step 5: Reap with waitpid(-1, WNOHANG) until no children remain
+    let start = Instant::now();
+    let timeout = Duration::from_millis(500);
+    while start.elapsed() < timeout {
+        let mut status = 0;
+        let res = unsafe { libc::waitpid(-1, &mut status, libc::WNOHANG) };
+        if res > 0 {
+            continue;
         }
+        if res < 0 {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(10));
     }
 
     ShutdownReport { stage, survivors }

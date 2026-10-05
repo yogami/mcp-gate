@@ -38,7 +38,7 @@ jobs:
         run: cargo test --workspace
 
       - name: Check traceability coverage
-        run: ./scripts/check-test-ids.sh TASK-1.10-1.63
+        run: ./scripts/check-test-ids.sh P0-SPIKE-01..10 P1-ENV-01..13 P1-PATH-01..15 P1-CONT-01..05 P1-CFG-01..03 P1-EXIT-01 P1-CAN-01..06 P1-SEED-01..04 P1-POL-01..04 P2-LAUNCH-01..06
 
       - name: Safety check (forbid unsafe)
         run: bash scripts/tests/forbid_unsafe_test.sh

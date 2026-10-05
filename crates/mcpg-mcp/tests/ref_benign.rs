@@ -2,7 +2,7 @@ use std::fs;
 use std::io::BufReader;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
+use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use mcpg_mcp::client::McpClient;

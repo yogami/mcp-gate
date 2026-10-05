@@ -29,7 +29,12 @@ pub struct RunRecord {
 
 impl RunRecord {
     /// Construct a new RunRecord with the default claim sentence.
-    pub fn new(seed: Seed, verdict: Verdict, registry: CanaryRegistry, protocol_violations: Vec<(String, String)>) -> Self {
+    pub fn new(
+        seed: Seed,
+        verdict: Verdict,
+        registry: CanaryRegistry,
+        protocol_violations: Vec<(String, String)>,
+    ) -> Self {
         Self {
             seed,
             verdict,

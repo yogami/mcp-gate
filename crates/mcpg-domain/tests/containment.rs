@@ -39,3 +39,15 @@ fn p1_cont_05_everything_inside_root() {
     assert!(is_within(Path::new("/etc/passwd"), Path::new("/")));
     assert!(is_within(Path::new("/"), Path::new("/")));
 }
+
+#[test]
+fn p1_cont_06_unnormalised_dotdot_is_not_inside() {
+    // Starts with the root as a prefix but lands in /c/etc.
+    assert!(!is_within(Path::new("/c/ws/../etc"), Path::new("/c/ws")));
+    assert!(!is_within(Path::new("/c/ws/a/../../b"), Path::new("/c/ws")));
+}
+
+#[test]
+fn p1_cont_07_relative_path_is_inside_slash() {
+    assert!(is_within(Path::new("any"), Path::new("/")));
+}
