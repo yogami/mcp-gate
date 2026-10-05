@@ -186,6 +186,7 @@ mod linux_impl {
     }
 
     unsafe fn child_mem_server(sock: c_int) -> ! {
+        libc::prctl(libc::PR_SET_DUMPABLE, 1, 0, 0, 0);
         libc::prctl(0x59616d61, libc::getppid() as libc::c_ulong, 0, 0, 0);
         let _ = libc::write(sock, b"R".as_ptr() as *const libc::c_void, 1);
         let mut byte = [0u8; 1];
@@ -373,8 +374,12 @@ mod linux_impl {
         }
         libc::close(sock);
 
+        libc::prctl(libc::PR_SET_DUMPABLE, 1, 0, 0, 0);
         libc::prctl(0x59616d61, libc::getppid() as libc::c_ulong, 0, 0, 0);
-        let fd = libc::openat(libc::AT_FDCWD, c"/etc/hostname".as_ptr(), libc::O_RDONLY);
+        let mut fd = libc::openat(libc::AT_FDCWD, c"/etc/hostname".as_ptr(), libc::O_RDONLY);
+        if fd < 0 {
+            fd = libc::openat(libc::AT_FDCWD, c"/etc/hosts".as_ptr(), libc::O_RDONLY);
+        }
         if fd >= 0 {
             libc::close(fd);
             libc::_exit(0);
@@ -387,11 +392,10 @@ mod linux_impl {
         if libc::ioctl(listener_fd, SECCOMP_IOCTL_NOTIF_RECV, &mut notif) != 0 {
             return (false, false);
         }
-        let mem_ok = read_proc_mem(
-            notif.pid as libc::pid_t,
-            notif.data.args[1],
-            b"/etc/hostname",
-        );
+        let pid = notif.pid as libc::pid_t;
+        let addr = notif.data.args[1];
+        let mem_ok =
+            read_proc_mem(pid, addr, b"/etc/hostname") || read_proc_mem(pid, addr, b"/etc/hosts");
         let mut resp: seccomp_notif_resp = mem::zeroed();
         resp.id = notif.id;
         resp.flags = SECCOMP_USER_NOTIF_FLAG_CONTINUE;

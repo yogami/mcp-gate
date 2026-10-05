@@ -21,7 +21,14 @@ fn probe_json_has_spec_keys() {
         .output()
         .expect("failed to execute mcp-gate");
 
-    assert_eq!(output.status.code(), Some(0));
+    if output.status.code() != Some(0) {
+        panic!(
+            "probe failed with code {:?}\nstdout: {}\nstderr: {}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
     let v: serde_json::Value = serde_json::from_slice(&output.stdout).expect("valid json");
     assert!(v.get("kernel").is_some());
     assert!(v.get("arch").is_some());

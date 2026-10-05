@@ -167,15 +167,18 @@ fn handle_cli_error(err: clap::Error) -> ! {
 }
 
 fn main() {
-    #[cfg(target_os = "linux")]
-    if let Err(err) = mcpg_linux::self_harden::harden_self() {
-        eprintln!("Warning: failed to harden runner process: {err}");
-    }
-
     let cli = match Cli::try_parse() {
         Ok(c) => c,
         Err(err) => handle_cli_error(err),
     };
+
+    #[cfg(target_os = "linux")]
+    if !matches!(cli.command, Commands::Probe) {
+        if let Err(err) = mcpg_linux::self_harden::harden_self() {
+            eprintln!("Warning: failed to harden runner process: {err}");
+        }
+    }
+
     let code = run_command(cli.command);
     std::process::exit(code as i32);
 }
