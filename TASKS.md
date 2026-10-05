@@ -100,58 +100,58 @@ These do not block work, but they should land in SPEC v0.3 before the affected t
 | TASK-1.7 | Path variable expansion | 3 | [x] |
 | TASK-1.8 | `mcp-gate validate` | 3 | [x] |
 | TASK-1.9 | Env: fixed vars and exact passthrough | 3 | [x] |
-| TASK-1.10 | Env: wildcard, set, decoys | 3 | [ ] |
-| TASK-1.11 | Env: CI deny list | 3 | [ ] |
-| TASK-1.12 | Env: secret-shaped names | 3 | [ ] |
-| TASK-1.13 | Env: reserved names | 3 | [ ] |
-| TASK-1.14 | Env: byte exactness and ordering | 3 | [ ] |
-| TASK-1.15 | `FsView` port and in-memory fake | 4 | [ ] |
-| TASK-1.16 | `is_within` containment | 4 | [ ] |
-| TASK-1.17 | `resolve`: lexical cases | 4 | [ ] |
-| TASK-1.18 | `resolve`: symlinks | 4 | [ ] |
-| TASK-1.19 | `resolve`: missing tails and raw bytes | 4 | [ ] |
-| TASK-1.20 | `resolve`: /proc and /dev/fd | 4 | [ ] |
-| TASK-1.21 | Host capability model | 4 | [ ] |
-| TASK-1.22 | `mcp-gate probe` on Linux, exit 69 elsewhere | 4 | [ ] |
-| TASK-1.23 | Month 1 milestone gate | 4 | [ ] |
-| TASK-1.24 | Policy: canonical entries | 5 | [ ] |
-| TASK-1.25 | Policy: write implies read, child binaries | 5 | [ ] |
-| TASK-1.26 | Policy: baselines and capsule tmp | 5 | [ ] |
-| TASK-1.27 | Policy: enforcement vs evaluation sets | 5 | [ ] |
-| TASK-1.28 | Seed type and entropy port | 5 | [ ] |
-| TASK-1.29 | HKDF key derivation | 5 | [ ] |
-| TASK-1.30 | Canary catalogue, AWS and env kinds | 5 | [ ] |
-| TASK-1.31 | Remaining file canary kinds | 6 | [ ] |
-| TASK-1.32 | Deterministic SSH ed25519 canary | 6 | [ ] |
-| TASK-1.33 | Canary planter and registry | 6 | [ ] |
-| TASK-1.34 | Runner self-hardening (non-dumpable) | 6 | [ ] |
-| TASK-1.35 | Run directory | 6 | [ ] |
-| TASK-1.36 | Workspace copy and link fixture | 6 | [ ] |
-| TASK-1.37 | Checkout credential hint | 6 | [ ] |
-| TASK-1.38 | Report writer registry and guards | 6 | [ ] |
-| TASK-1.39 | syscall-probe fixture skeleton | 6 | [ ] |
-| TASK-1.40 | Capsule plan builder | 7 | [ ] |
-| TASK-1.41 | Spawn with pre_exec hardening | 7 | [ ] |
-| TASK-1.42 | Scrubbed env reaches the capsule | 7 | [ ] |
-| TASK-1.43 | Capsule cannot read runner environ | 7 | [ ] |
-| TASK-1.44 | Parent-death signal | 7 | [ ] |
-| TASK-1.45 | Subreaper and shutdown sequence | 7 | [ ] |
-| TASK-1.46 | Panic guard | 7 | [ ] |
-| TASK-1.47 | Landlock rule plan (pure) | 7 | [ ] |
-| TASK-1.48 | ELF interpreter and shebang discovery | 7 | [ ] |
-| TASK-1.49 | Apply Landlock in the child | 7 | [ ] |
-| TASK-1.50 | Landlock fallback and `--require` | 7 | [ ] |
-| TASK-1.51 | JSON-RPC stdio framing | 8 | [ ] |
-| TASK-1.52 | MCP handshake | 8 | [ ] |
-| TASK-1.53 | `tools/list` pagination | 8 | [ ] |
-| TASK-1.54 | `tools/call` and scenario expectations | 8 | [ ] |
-| TASK-1.55 | Server-to-client requests | 8 | [ ] |
-| TASK-1.56 | Timeouts | 8 | [ ] |
-| TASK-1.57 | Phase cursor | 8 | [ ] |
-| TASK-1.58 | Benign reference server | 8 | [ ] |
-| TASK-1.59 | Vulnerable reference server | 8 | [ ] |
-| TASK-1.60 | `mcp-gate run` end to end, no observer | 8 | [ ] |
-| TASK-1.61 | Month 2 milestone gate | 8 | [ ] |
+| TASK-1.10 | Env: wildcard, set, decoys | 3 | [x] |
+| TASK-1.11 | Env: CI deny list | 3 | [x] |
+| TASK-1.12 | Env: secret-shaped names | 3 | [x] |
+| TASK-1.13 | Env: reserved names | 3 | [x] |
+| TASK-1.14 | Env: byte exactness and ordering | 3 | [x] |
+| TASK-1.15 | `FsView` port and in-memory fake | 4 | [x] |
+| TASK-1.16 | `is_within` containment | 4 | [x] |
+| TASK-1.17 | `resolve`: lexical cases | 4 | [x] |
+| TASK-1.18 | `resolve`: symlinks | 4 | [x] |
+| TASK-1.19 | `resolve`: missing tails and raw bytes | 4 | [x] |
+| TASK-1.20 | `resolve`: /proc and /dev/fd | 4 | [x] |
+| TASK-1.21 | Host capability model | 4 | [x] |
+| TASK-1.22 | `mcp-gate probe` on Linux, exit 69 elsewhere | 4 | [x] |
+| TASK-1.23 | Month 1 milestone gate | 4 | [x] |
+| TASK-1.24 | Policy: canonical entries | 5 | [x] |
+| TASK-1.25 | Policy: write implies read, child binaries | 5 | [x] |
+| TASK-1.26 | Policy: baselines and capsule tmp | 5 | [x] |
+| TASK-1.27 | Policy: enforcement vs evaluation sets | 5 | [x] |
+| TASK-1.28 | Seed type and entropy port | 5 | [x] |
+| TASK-1.29 | HKDF key derivation | 5 | [x] |
+| TASK-1.30 | Canary catalogue, AWS and env kinds | 5 | [x] |
+| TASK-1.31 | Remaining file canary kinds | 6 | [x] |
+| TASK-1.32 | Deterministic SSH ed25519 canary | 6 | [x] |
+| TASK-1.33 | Canary planter and registry | 6 | [x] |
+| TASK-1.34 | Runner self-hardening (non-dumpable) | 6 | [x] |
+| TASK-1.35 | Run directory | 6 | [x] |
+| TASK-1.36 | Workspace copy and link fixture | 6 | [x] |
+| TASK-1.37 | Checkout credential hint | 6 | [x] |
+| TASK-1.38 | Report writer registry and guards | 6 | [x] |
+| TASK-1.39 | syscall-probe fixture skeleton | 6 | [x] |
+| TASK-1.40 | Capsule plan builder | 7 | [x] |
+| TASK-1.41 | Spawn with pre_exec hardening | 7 | [x] |
+| TASK-1.42 | Scrubbed env reaches the capsule | 7 | [x] |
+| TASK-1.43 | Capsule cannot read runner environ | 7 | [x] |
+| TASK-1.44 | Parent-death signal | 7 | [x] |
+| TASK-1.45 | Subreaper and shutdown sequence | 7 | [x] |
+| TASK-1.46 | Panic guard | 7 | [x] |
+| TASK-1.47 | Landlock rule plan (pure) | 7 | [x] |
+| TASK-1.48 | ELF interpreter and shebang discovery | 7 | [x] |
+| TASK-1.49 | Apply Landlock in the child | 7 | [x] |
+| TASK-1.50 | Landlock fallback and `--require` | 7 | [x] |
+| TASK-1.51 | JSON-RPC stdio framing | 8 | [x] |
+| TASK-1.52 | MCP handshake | 8 | [x] |
+| TASK-1.53 | `tools/list` pagination | 8 | [x] |
+| TASK-1.54 | `tools/call` and scenario expectations | 8 | [x] |
+| TASK-1.55 | Server-to-client requests | 8 | [x] |
+| TASK-1.56 | Timeouts | 8 | [x] |
+| TASK-1.57 | Phase cursor | 8 | [x] |
+| TASK-1.58 | Benign reference server | 8 | [x] |
+| TASK-1.59 | Vulnerable reference server | 8 | [x] |
+| TASK-1.60 | `mcp-gate run` end to end, no observer | 8 | [x] |
+| TASK-1.61 | Month 2 milestone gate | 8 | [x] |
 
 ```mermaid
 flowchart LR
