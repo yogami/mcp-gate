@@ -292,7 +292,7 @@ fn add_dev_nodes(rules: &mut BTreeMap<PathBuf, AccessFs>, rights: AccessFs) {
 
 fn add_exec_rules(rules: &mut BTreeMap<PathBuf, AccessFs>, exec: &[PathBuf]) {
     for path in exec {
-        add_single_rule(rules, path.clone(), AccessFs::EXECUTE);
+        add_single_rule(rules, path.clone(), AccessFs::EXECUTE | AccessFs::READ_FILE);
     }
 }
 

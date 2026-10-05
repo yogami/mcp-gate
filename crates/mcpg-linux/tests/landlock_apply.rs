@@ -108,6 +108,11 @@ fn run_landlock_probe(
             read_paths.push(PathEntry::Dir(p));
         }
     }
+    if let Some(parent) = probe_bin.parent() {
+        if parent.exists() {
+            read_paths.push(PathEntry::Dir(parent.to_path_buf()));
+        }
+    }
 
     let sets = EnforcementSet {
         read_paths,
@@ -143,7 +148,15 @@ fn run_landlock_probe(
     let output = running.child.wait_with_output().expect("wait output");
 
     let text = String::from_utf8_lossy(&output.stdout);
-    let val = serde_json::from_str(text.trim()).unwrap_or(Value::Null);
+    let val = serde_json::from_str(text.trim()).unwrap_or_else(|_| {
+        eprintln!(
+            "LANDLOCK PROBE FAILED TO PARSE JSON: status={:?}, stdout={:?}, stderr={:?}",
+            output.status,
+            text,
+            String::from_utf8_lossy(&output.stderr)
+        );
+        Value::Null
+    });
 
     ProbeRun {
         ran: true,
