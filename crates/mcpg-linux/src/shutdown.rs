@@ -75,16 +75,40 @@ fn kill_known_pids(pids: &[u32], survivors: &mut Vec<u32>) {
     }
 }
 
-fn reap_all_children(survivors: &mut Vec<u32>, main_pid: u32) {
+enum ReapResult {
+    Reaped,
+    Pending,
+    Done,
+}
+
+fn record_reaped(reaped: i32, main_pid: u32, survivors: &mut Vec<u32>) {
+    let rpid = reaped as u32;
+    if rpid != main_pid && !survivors.contains(&rpid) {
+        survivors.push(rpid);
+    }
+}
+
+fn reap_one(main_pid: u32, survivors: &mut Vec<u32>) -> ReapResult {
     let mut status = 0;
-    loop {
-        let reaped = unsafe { libc::waitpid(-1, &mut status, libc::WNOHANG) };
-        if reaped <= 0 {
-            break;
-        }
-        let rpid = reaped as u32;
-        if rpid != main_pid && !survivors.contains(&rpid) {
-            survivors.push(rpid);
+    let res = unsafe { libc::waitpid(-1, &mut status, libc::WNOHANG) };
+    if res > 0 {
+        record_reaped(res, main_pid, survivors);
+        ReapResult::Reaped
+    } else if res == 0 || std::io::Error::last_os_error().raw_os_error() == Some(libc::EINTR) {
+        ReapResult::Pending
+    } else {
+        ReapResult::Done
+    }
+}
+
+fn reap_all_children(survivors: &mut Vec<u32>, main_pid: u32) {
+    let start = Instant::now();
+    let timeout = Duration::from_millis(500);
+    while start.elapsed() < timeout {
+        match reap_one(main_pid, survivors) {
+            ReapResult::Reaped => continue,
+            ReapResult::Pending => std::thread::sleep(Duration::from_millis(10)),
+            ReapResult::Done => break,
         }
     }
 }

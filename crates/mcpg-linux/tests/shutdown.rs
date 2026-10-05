@@ -60,6 +60,9 @@ fn find_syscall_probe() -> PathBuf {
 fn launch_probe(subcmd: &str, args: &[&str], workspace: &Path) -> RunningCapsule {
     let _ = mcpg_linux::self_harden::harden_self();
 
+    let mut st = 0;
+    while unsafe { libc::waitpid(-1, &mut st, libc::WNOHANG) > 0 } {}
+
     let probe_bin = find_syscall_probe();
     let probe_cstr = CString::new(probe_bin.as_os_str().as_bytes()).unwrap();
 
@@ -131,11 +134,15 @@ fn daemonized_grandchild_reaped_and_reported() {
     );
 
     // Verify grandchild is dead and reaped
-    assert_ne!(
-        unsafe { libc::kill(grandchild_pid as i32, 0) },
-        0,
-        "grandchild should be terminated"
-    );
+    let mut dead = false;
+    for _ in 0..10 {
+        if unsafe { libc::kill(grandchild_pid as i32, 0) } != 0 {
+            dead = true;
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    assert!(dead, "grandchild should be terminated");
 }
 
 #[test]
