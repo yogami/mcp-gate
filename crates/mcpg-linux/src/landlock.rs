@@ -8,6 +8,8 @@ use std::os::fd::OwnedFd;
 #[cfg(target_os = "linux")]
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd, RawFd};
 #[cfg(target_os = "linux")]
+use std::os::unix::ffi::OsStrExt;
+#[cfg(target_os = "linux")]
 use std::path::Path;
 
 use mcpg_domain::landlock_plan::LandlockPlan;

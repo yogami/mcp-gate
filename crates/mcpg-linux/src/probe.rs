@@ -110,9 +110,19 @@ mod linux_impl {
         flags: u32,
     }
 
+    #[cfg(target_env = "musl")]
+    type IoctlReq = libc::c_int;
+    #[cfg(not(target_env = "musl"))]
     type IoctlReq = libc::c_ulong;
 
+    #[cfg(target_env = "musl")]
+    const SECCOMP_IOCTL_NOTIF_RECV: IoctlReq = -0x3fafe000;
+    #[cfg(not(target_env = "musl"))]
     const SECCOMP_IOCTL_NOTIF_RECV: IoctlReq = 0xc0502100;
+
+    #[cfg(target_env = "musl")]
+    const SECCOMP_IOCTL_NOTIF_SEND: IoctlReq = -0x3fe7deff;
+    #[cfg(not(target_env = "musl"))]
     const SECCOMP_IOCTL_NOTIF_SEND: IoctlReq = 0xc0182101;
     const SECCOMP_USER_NOTIF_FLAG_CONTINUE: u32 = 0x00000001;
 
