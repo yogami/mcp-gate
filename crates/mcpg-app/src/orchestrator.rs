@@ -4,6 +4,7 @@
 
 use std::path::PathBuf;
 
+use mcpg_domain::config::model::FailOnLevel;
 use mcpg_domain::host::Feature;
 use mcpg_domain::mode::Mode;
 use mcpg_domain::seed::Seed;
@@ -19,7 +20,7 @@ pub struct RunOptions {
     pub evidence_path: Option<String>,
     pub requested_mode: Mode,
     pub require: Vec<Feature>,
-    pub fail_on: String,
+    pub fail_on: Option<FailOnLevel>,
     pub seed: Option<Seed>,
     pub timeout: Option<u64>,
     pub keep_capsule: bool,
@@ -37,7 +38,7 @@ impl Default for RunOptions {
             evidence_path: None,
             requested_mode: Mode::Enforce,
             require: Vec::new(),
-            fail_on: "error".to_string(),
+            fail_on: None,
             seed: None,
             timeout: None,
             keep_capsule: false,

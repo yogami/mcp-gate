@@ -403,3 +403,51 @@ fn run_enforce_denies_read_outside_policy() {
         // mcp-gate will capture this non-zero exit from the server handshake or execution and exit 3.
         .code(3);
 }
+
+#[test]
+fn run_invalid_fail_on_exits_64() {
+    let _lock = RUN_LOCK.lock().unwrap();
+    let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
+    cmd.current_dir(workspace_root())
+        .args([
+            "run",
+            "--config",
+            "tests/configs/valid/benign.yaml",
+            "--fail-on",
+            "not_a_valid_level",
+        ])
+        .assert()
+        .code(64);
+}
+
+#[test]
+fn run_evidence_include_values_in_ci_exits_64() {
+    let _lock = RUN_LOCK.lock().unwrap();
+    let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
+    cmd.current_dir(workspace_root())
+        .env("CI", "true")
+        .args([
+            "run",
+            "--config",
+            "tests/configs/valid/benign.yaml",
+            "--evidence-include-values",
+        ])
+        .assert()
+        .code(64);
+}
+
+#[test]
+fn run_timeout_flag_overrides_limits() {
+    let _lock = RUN_LOCK.lock().unwrap();
+    let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
+    cmd.current_dir(workspace_root())
+        .args([
+            "run",
+            "--config",
+            "tests/configs/valid/benign.yaml",
+            "--timeout",
+            "0",
+        ])
+        .assert()
+        .code(3);
+}

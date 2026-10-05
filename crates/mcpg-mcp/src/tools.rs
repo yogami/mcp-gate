@@ -118,11 +118,21 @@ impl<T: McpTransport> McpClient<T> {
         Ok(all_tools)
     }
 
-    /// Invoke a tool by name with arguments.
+    /// Invoke a tool by name with arguments using the default call timeout.
     pub fn call_tool(
         &mut self,
         name: &str,
         arguments: &Value,
+    ) -> Result<ToolCallResult, DriverError> {
+        self.call_tool_with_timeout(name, arguments, None)
+    }
+
+    /// Invoke a tool by name with arguments and an optional custom timeout limit in seconds.
+    pub fn call_tool_with_timeout(
+        &mut self,
+        name: &str,
+        arguments: &Value,
+        limit_s: Option<u64>,
     ) -> Result<ToolCallResult, DriverError> {
         let start = self.deadline_tracker.as_ref().map(|dt| dt.clock().now());
         let id = self.next_id;
@@ -140,7 +150,7 @@ impl<T: McpTransport> McpClient<T> {
         let result = self.wait_for_response(id, "tools/call")?;
         if let Some(start) = start {
             if let Some(dt) = &self.deadline_tracker {
-                dt.check_call(start, None)?;
+                dt.check_call(start, limit_s)?;
             }
         }
 

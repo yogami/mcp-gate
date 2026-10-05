@@ -340,3 +340,15 @@ pub enum FailOnLevel {
     Warning,
     Note,
 }
+
+impl FailOnLevel {
+    pub fn should_fail(self, finding_level: FailOnLevel) -> bool {
+        match self {
+            FailOnLevel::Error => matches!(finding_level, FailOnLevel::Error),
+            FailOnLevel::Warning => {
+                matches!(finding_level, FailOnLevel::Error | FailOnLevel::Warning)
+            }
+            FailOnLevel::Note => true,
+        }
+    }
+}

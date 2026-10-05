@@ -176,7 +176,7 @@ fn build_landlock_ruleset(
 
 fn execute_single_scenario<T: McpTransport>(
     client: &mut McpClient<T>,
-    tracker: &DeadlineTracker,
+    _tracker: &DeadlineTracker,
     scenario: &ScenarioConfig,
     phase: &PhaseCursor,
     tools: &std::collections::HashMap<String, mcpg_mcp::tools::ToolDef>,
@@ -191,12 +191,12 @@ fn execute_single_scenario<T: McpTransport>(
             false
         };
         if is_valid {
-            let call_start = tracker.clock().now();
-            match client.call_tool(&scenario.tool, &scenario.arguments) {
-                Ok(res) => {
-                    tracker.check_call(call_start, scenario.timeout_s)?;
-                    CallOutcome::from(res)
-                }
+            match client.call_tool_with_timeout(
+                &scenario.tool,
+                &scenario.arguments,
+                scenario.timeout_s,
+            ) {
+                Ok(res) => CallOutcome::from(res),
                 Err(DriverError::Protocol(msg)) => CallOutcome::protocol_error(msg),
                 Err(e) => return Err(e),
             }
@@ -404,7 +404,10 @@ struct RunContext {
 fn init_base(opts: &RunOptions) -> Result<(Config, Mode, Seed, HostCaps), ExitCode> {
     let _ = mcpg_linux::self_harden::harden_self();
     let caps = mcpg_linux::probe::probe();
-    let cfg = load_config(&opts.config_path)?;
+    let mut cfg = load_config(&opts.config_path)?;
+    if let Some(timeout) = opts.timeout {
+        cfg.limits.total_timeout_s = timeout;
+    }
     let (mode, _) = mcpg_app::plan_mode::choose_mode(opts.requested_mode, &caps, &opts.require)?;
     let seed = resolve_seed(opts.seed)?;
     Ok((cfg, mode, seed, caps))
@@ -479,7 +482,14 @@ fn run_pipeline(opts: &RunOptions) -> Result<ExitCode, ExitCode> {
     let mut final_code = exec_code;
     let mut final_verdict = exec_verdict;
 
-    if !violations.is_empty() {
+    let effective_fail_on = opts
+        .fail_on
+        .or(ctx.cfg.report.fail_on)
+        .unwrap_or(mcpg_domain::config::model::FailOnLevel::Error);
+
+    if !violations.is_empty()
+        && effective_fail_on.should_fail(mcpg_domain::config::model::FailOnLevel::Warning)
+    {
         final_code = mcpg_domain::verdict::combine(vec![final_code, ExitCode::FailSecurity]);
         if final_code == ExitCode::FailSecurity {
             final_verdict = Verdict::FailSecurity;

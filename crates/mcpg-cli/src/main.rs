@@ -40,8 +40,8 @@ struct RunArgs {
     #[arg(long = "require")]
     require: Option<String>,
     /// Lowest SARIF level that makes the verdict FAIL
-    #[arg(long = "fail-on", default_value = "error")]
-    fail_on: String,
+    #[arg(long = "fail-on")]
+    fail_on: Option<String>,
     /// Seed for reproducible execution (64 hex characters)
     #[arg(long = "seed")]
     seed: Option<mcpg_domain::seed::Seed>,
@@ -117,9 +117,35 @@ fn parse_require(raw_opt: Option<&str>) -> Result<Vec<mcpg_domain::host::Feature
     Ok(features)
 }
 
+fn parse_fail_on(
+    raw_opt: Option<&str>,
+) -> Result<Option<mcpg_domain::config::model::FailOnLevel>, ExitCode> {
+    let Some(raw) = raw_opt else {
+        return Ok(None);
+    };
+    match raw.to_ascii_lowercase().as_str() {
+        "error" => Ok(Some(mcpg_domain::config::model::FailOnLevel::Error)),
+        "warning" => Ok(Some(mcpg_domain::config::model::FailOnLevel::Warning)),
+        "note" => Ok(Some(mcpg_domain::config::model::FailOnLevel::Note)),
+        _ => {
+            eprintln!(
+                "Error: invalid fail-on level '{raw}', expected 'error', 'warning', or 'note'"
+            );
+            Err(ExitCode::Usage)
+        }
+    }
+}
+
 fn build_run_options(args: RunArgs) -> Result<mcpg_app::orchestrator::RunOptions, ExitCode> {
     let requested_mode = parse_mode(&args.mode)?;
     let require = parse_require(args.require.as_deref())?;
+    let fail_on = parse_fail_on(args.fail_on.as_deref())?;
+
+    if args.evidence_include_values && std::env::var("CI").is_ok() {
+        eprintln!("Error: --evidence-include-values is forbidden in CI environments (exit 64)");
+        return Err(ExitCode::Usage);
+    }
+
     Ok(mcpg_app::orchestrator::RunOptions {
         config_path: args.config,
         out_dir: args.out_dir,
@@ -128,7 +154,7 @@ fn build_run_options(args: RunArgs) -> Result<mcpg_app::orchestrator::RunOptions
         evidence_path: args.evidence,
         requested_mode,
         require,
-        fail_on: args.fail_on,
+        fail_on,
         seed: args.seed,
         timeout: args.timeout,
         keep_capsule: args.keep_capsule,
