@@ -57,6 +57,12 @@ struct RunArgs {
     /// Do not emit GitHub workflow commands
     #[arg(long = "no-annotations")]
     no_annotations: bool,
+    /// Suppress summary console output
+    #[arg(short = 'q', long = "quiet")]
+    quiet: bool,
+    /// Increase logging verbosity
+    #[arg(short = 'v', long = "verbose")]
+    verbose: bool,
 }
 
 #[derive(Subcommand)]
@@ -71,6 +77,11 @@ enum Commands {
     },
     /// Print host isolation capabilities as JSON
     Probe,
+    /// Print documentation for a rule ID (e.g. mcp-gate explain MCPG005)
+    Explain {
+        /// Rule ID to explain (e.g. MCPG001, MCPG005)
+        rule: String,
+    },
     /// Print version, commit, build target and supported MCP protocol versions
     Version,
 }
@@ -146,6 +157,14 @@ fn build_run_options(args: RunArgs) -> Result<mcpg_app::orchestrator::RunOptions
         return Err(ExitCode::Usage);
     }
 
+    let verbosity = if args.quiet {
+        mcpg_app::orchestrator::Verbosity::Quiet
+    } else if args.verbose {
+        mcpg_app::orchestrator::Verbosity::Verbose
+    } else {
+        mcpg_app::orchestrator::Verbosity::Normal
+    };
+
     Ok(mcpg_app::orchestrator::RunOptions {
         config_path: args.config,
         out_dir: args.out_dir,
@@ -160,6 +179,9 @@ fn build_run_options(args: RunArgs) -> Result<mcpg_app::orchestrator::RunOptions
         keep_capsule: args.keep_capsule,
         evidence_include_values: args.evidence_include_values,
         no_annotations: args.no_annotations,
+        quiet: args.quiet,
+        verbose: args.verbose,
+        verbosity,
     })
 }
 
@@ -174,6 +196,7 @@ fn run_command(cmd: Commands) -> ExitCode {
         }
         Commands::Validate { config } => cmd::validate::execute(&config),
         Commands::Probe => cmd::probe::execute(),
+        Commands::Explain { rule } => cmd::explain::execute(&rule),
         Commands::Version => {
             println!("mcp-gate 0.1.0");
             println!("Supported MCP protocol versions: 2025-06-18, 2024-11-05");

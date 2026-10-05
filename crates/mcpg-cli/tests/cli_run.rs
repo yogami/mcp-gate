@@ -437,6 +437,72 @@ fn run_evidence_include_values_in_ci_exits_64() {
 }
 
 #[test]
+fn run_evidence_include_values_without_ci_writes_raw_secrets() {
+    let _lock = RUN_LOCK.lock().unwrap();
+    let tmp = tempfile_helper::TempDir::new("test_ev_values");
+    let out_dir = tmp.path().join("out");
+
+    let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
+    cmd.current_dir(workspace_root())
+        .env_remove("CI")
+        .args([
+            "run",
+            "--config",
+            "tests/configs/valid/benign.yaml",
+            "--out-dir",
+            out_dir.to_str().unwrap(),
+            "--evidence-include-values",
+        ])
+        .assert()
+        .code(0);
+
+    let ev_content =
+        fs::read_to_string(out_dir.join("evidence.ndjson")).expect("evidence.ndjson exists");
+
+    assert!(
+        ev_content.contains("AKIA"),
+        "evidence.ndjson must contain raw AWS canary secret when --evidence-include-values is enabled"
+    );
+    assert!(
+        ev_content.contains(r#""type":"canary_secret""#)
+            || ev_content.contains(r#""canary_values""#),
+        "evidence.ndjson must record canary values structure"
+    );
+
+    let out_clean = tmp.path().join("out_clean");
+    let mut cmd_clean = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
+    cmd_clean
+        .current_dir(workspace_root())
+        .env_remove("CI")
+        .args([
+            "run",
+            "--config",
+            "tests/configs/valid/benign.yaml",
+            "--out-dir",
+            out_clean.to_str().unwrap(),
+        ])
+        .assert()
+        .code(0);
+
+    let clean_ev = fs::read_to_string(out_clean.join("evidence.ndjson")).expect("clean evidence");
+    assert!(
+        !clean_ev.contains("AKIA"),
+        "raw secret must not appear in evidence when --evidence-include-values is omitted"
+    );
+}
+
+#[test]
+fn run_quiet_flag_suppresses_console_summary() {
+    let _lock = RUN_LOCK.lock().unwrap();
+    let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
+    cmd.current_dir(workspace_root())
+        .args(["run", "--config", "tests/configs/valid/benign.yaml", "-q"])
+        .assert()
+        .code(0)
+        .stdout(predicate::str::is_empty());
+}
+
+#[test]
 fn run_timeout_flag_overrides_limits() {
     let _lock = RUN_LOCK.lock().unwrap();
     let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");

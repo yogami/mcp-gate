@@ -373,23 +373,22 @@ fn execute_capsule_run(
     result
 }
 
-fn write_run_reports(
-    record: &RunRecord,
-    out_dir: &Path,
-    evidence_path_opt: Option<&str>,
-) -> Result<(), ExitCode> {
-    let _ = ConsoleWriter.write(record, &mut std::io::stdout());
-    let _ = fs::create_dir_all(out_dir);
-    let ev_path = match evidence_path_opt {
+fn write_run_reports(record: &RunRecord, opts: &RunOptions) -> Result<(), ExitCode> {
+    if !opts.quiet {
+        let _ = ConsoleWriter.write(record, &mut std::io::stdout());
+    }
+    let _ = fs::create_dir_all(&opts.out_dir);
+    let ev_path = match opts.evidence_path.as_deref() {
         Some("-") => return Ok(()),
         Some(p) => PathBuf::from(p),
-        None => out_dir.join("evidence.ndjson"),
+        None => opts.out_dir.join("evidence.ndjson"),
     };
     if let Some(parent) = ev_path.parent() {
         let _ = fs::create_dir_all(parent);
     }
     if let Ok(mut file) = fs::File::create(&ev_path) {
-        let _ = EvidenceWriter.write(record, &mut file);
+        let writer = EvidenceWriter::new(opts.evidence_include_values);
+        let _ = writer.write(record, &mut file);
     }
     Ok(())
 }
@@ -501,7 +500,7 @@ fn run_pipeline(opts: &RunOptions) -> Result<ExitCode, ExitCode> {
     }
 
     let record = RunRecord::new(ctx.seed, final_verdict, ctx.registry, violations);
-    write_run_reports(&record, &opts.out_dir, opts.evidence_path.as_deref())?;
+    write_run_reports(&record, opts)?;
     Ok(final_code)
 }
 

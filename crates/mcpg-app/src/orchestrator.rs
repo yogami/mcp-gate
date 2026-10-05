@@ -10,6 +10,15 @@ use mcpg_domain::mode::Mode;
 use mcpg_domain::seed::Seed;
 use mcpg_domain::verdict::{ExitCode, Verdict};
 
+/// Level of console verbosity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Verbosity {
+    Quiet,
+    #[default]
+    Normal,
+    Verbose,
+}
+
 /// Options controlling capsule run execution.
 #[derive(Debug, Clone)]
 pub struct RunOptions {
@@ -26,6 +35,9 @@ pub struct RunOptions {
     pub keep_capsule: bool,
     pub evidence_include_values: bool,
     pub no_annotations: bool,
+    pub quiet: bool,
+    pub verbose: bool,
+    pub verbosity: Verbosity,
 }
 
 impl Default for RunOptions {
@@ -44,6 +56,9 @@ impl Default for RunOptions {
             keep_capsule: false,
             evidence_include_values: false,
             no_annotations: false,
+            quiet: false,
+            verbose: false,
+            verbosity: Verbosity::Normal,
         }
     }
 }

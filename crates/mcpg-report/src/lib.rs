@@ -56,5 +56,5 @@ pub trait ReportWriter: Send + Sync {
 
 /// Returns a list of all active report writers.
 pub fn all_writers() -> Vec<Box<dyn ReportWriter>> {
-    vec![Box::new(ConsoleWriter), Box::new(EvidenceWriter)]
+    vec![Box::new(ConsoleWriter), Box::new(EvidenceWriter::default())]
 }
