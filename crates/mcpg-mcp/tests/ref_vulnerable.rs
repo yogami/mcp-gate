@@ -38,7 +38,7 @@ impl Drop for AutoCleanDir {
 
 struct VulnProcess {
     child: Child,
-    client: McpClient<StdioTransport<ChildStdin, BufReader<ChildStdout>>>,
+    client: McpClient<StdioTransport<ChildStdin>>,
 }
 
 impl VulnProcess {

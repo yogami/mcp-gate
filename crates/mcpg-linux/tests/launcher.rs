@@ -321,3 +321,38 @@ fn umask_is_077() {
     let umask = val["umask"].as_i64().expect("umask");
     assert_eq!(umask, 0o077, "umask must be 077 (octal 077 = 63)");
 }
+
+#[test]
+fn launch_missing_program_is_err() {
+    let plan = mcpg_app::capsule_plan::CapsulePlan {
+        program: std::ffi::CString::new("/nonexistent/binary/does/not/exist").unwrap(),
+        argv: vec![],
+        envp: vec![],
+        cwd: PathBuf::from("/tmp"),
+        mode: mcpg_domain::mode::Mode::Enforce,
+    };
+    use mcpg_app::ports::CapsuleLauncher;
+    let launcher = mcpg_linux::launcher::LinuxLauncher::new();
+    let res = launcher.launch(&plan);
+    assert!(res.is_err(), "Launch of missing program should fail before returning from spawn");
+}
+
+#[test]
+fn launch_with_bad_landlock_fd_is_err() {
+    // Fails on Linux because landlock_restrict_self expects a valid ruleset FD.
+    #[cfg(target_os = "linux")]
+    {
+        let plan = mcpg_app::capsule_plan::CapsulePlan {
+            program: std::ffi::CString::new("/bin/true").unwrap(),
+            argv: vec![std::ffi::CString::new("true").unwrap()],
+            envp: vec![],
+            cwd: PathBuf::from("/tmp"),
+            mode: mcpg_domain::mode::Mode::Enforce,
+        };
+        use mcpg_app::ports::CapsuleLauncher;
+        // 9999 is highly likely an invalid FD
+        let launcher = mcpg_linux::launcher::LinuxLauncher::new().with_landlock_fd(9999);
+        let res = launcher.launch(&plan);
+        assert!(res.is_err(), "Launch with invalid landlock FD should fail in pre_exec and bubble up");
+    }
+}

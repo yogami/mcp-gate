@@ -11,7 +11,6 @@ use mcpg_linux::guard::CapsuleGuard;
 use mcpg_linux::launcher::LinuxLauncher;
 use mcpg_linux::shutdown::{shutdown, ShutdownStage};
 
-static TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 mod tempfile_helper {
     use std::fs;
@@ -84,7 +83,7 @@ fn launch_probe(subcmd: &str, args: &[&str], workspace: &Path) -> RunningCapsule
 
 #[test]
 fn stdin_close_ends_cooperative_capsule() {
-    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    
     let tmp = tempfile_helper::TempDir::new("mcpg_shut_coop");
     let cap = launch_probe("wait-stdin-eof", &[], tmp.path());
 
@@ -95,7 +94,7 @@ fn stdin_close_ends_cooperative_capsule() {
 
 #[test]
 fn stubborn_capsule_gets_sigkill() {
-    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    
     let tmp = tempfile_helper::TempDir::new("mcpg_shut_kill");
     let mut cap = launch_probe("ignore-sigterm", &[], tmp.path());
 
@@ -113,7 +112,7 @@ fn stubborn_capsule_gets_sigkill() {
 #[test]
 #[cfg(target_os = "linux")]
 fn daemonized_grandchild_reaped_and_reported() {
-    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    
     let tmp = tempfile_helper::TempDir::new("mcpg_shut_daemon");
     let mut cap = launch_probe("daemon", &[], tmp.path());
 
@@ -147,7 +146,7 @@ fn daemonized_grandchild_reaped_and_reported() {
 
 #[test]
 fn no_children_left() {
-    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    
     let tmp = tempfile_helper::TempDir::new("mcpg_shut_nochld");
     let cap = launch_probe("wait-stdin-eof", &[], tmp.path());
     let _ = shutdown(cap, Duration::from_millis(500));
@@ -185,7 +184,7 @@ fn helper_panic_runner() {
 fn panic_in_runner_kills_capsule() {
     use std::io::BufRead;
 
-    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    
     let current_exe = std::env::current_exe().expect("current exe");
     let mut child = std::process::Command::new(current_exe)
         .env("MCPG_HELPER", "panic_runner")
@@ -232,7 +231,7 @@ fn panic_in_runner_kills_capsule() {
 
 #[test]
 fn guard_drop_kills_capsule() {
-    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    
     let tmp = tempfile_helper::TempDir::new("mcpg_guard_drop");
     let mut cap = launch_probe("sleep", &["60"], tmp.path());
     let pid = cap.pid;
@@ -252,7 +251,7 @@ fn guard_drop_kills_capsule() {
 
 #[test]
 fn disarmed_guard_does_not_kill_capsule() {
-    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    
     let tmp = tempfile_helper::TempDir::new("mcpg_guard_disarm");
     let cap = launch_probe("wait-stdin-eof", &[], tmp.path());
     let guard = CapsuleGuard::new(cap.pid as i32, vec![cap.pid]);

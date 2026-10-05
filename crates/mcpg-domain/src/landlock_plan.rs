@@ -274,8 +274,22 @@ fn add_path_rules(
     entries: &[PathEntry],
     access: AccessFs,
 ) {
+    let dir_rights = AccessFs::READ_DIR
+        | AccessFs::REMOVE_DIR
+        | AccessFs::MAKE_DIR
+        | AccessFs::MAKE_CHAR
+        | AccessFs::MAKE_REG
+        | AccessFs::MAKE_SOCK
+        | AccessFs::MAKE_FIFO
+        | AccessFs::MAKE_BLOCK
+        | AccessFs::MAKE_SYM;
+
     for entry in entries {
-        *rules.entry(entry.path().to_path_buf()).or_default() |= access;
+        let entry_access = match entry {
+            PathEntry::File(_) => access & !dir_rights,
+            PathEntry::Dir(_) => access,
+        };
+        *rules.entry(entry.path().to_path_buf()).or_default() |= entry_access;
     }
 }
 

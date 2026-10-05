@@ -43,6 +43,11 @@ impl DeadlineTracker {
         &self.limits
     }
 
+    /// Return the total deadline instant.
+    pub fn total_deadline(&self) -> Instant {
+        self.total_deadline
+    }
+
     /// Verify startup did not exceed the startup timeout.
     pub fn check_startup(&self, start: Instant) -> Result<(), DriverError> {
         let elapsed = self.clock.now().saturating_duration_since(start);
@@ -56,12 +61,13 @@ impl DeadlineTracker {
     }
 
     /// Verify a tool call did not exceed the call timeout.
-    pub fn check_call(&self, start: Instant) -> Result<(), DriverError> {
+    pub fn check_call(&self, start: Instant, limit_s: Option<u64>) -> Result<(), DriverError> {
         let elapsed = self.clock.now().saturating_duration_since(start);
-        if elapsed >= Duration::from_secs(self.limits.call_timeout_s) {
+        let limit = limit_s.unwrap_or(self.limits.call_timeout_s);
+        if elapsed >= Duration::from_secs(limit) {
             return Err(DriverError::Inconclusive(format!(
                 "call timeout: exceeded {}s limit",
-                self.limits.call_timeout_s
+                limit
             )));
         }
         Ok(())
@@ -99,10 +105,15 @@ fn execute_single_scenario<T: McpTransport>(
     scenario: &ScenarioConfig,
 ) -> Result<bool, DriverError> {
     let call_start = tracker.clock().now();
-    let res = client.call_tool(&scenario.tool, &scenario.arguments)?;
-    tracker.check_call(call_start)?;
+    let outcome = match client.call_tool(&scenario.tool, &scenario.arguments) {
+        Ok(res) => {
+            tracker.check_call(call_start, scenario.timeout_s)?;
+            mcpg_app::scenario::CallOutcome::from(res)
+        }
+        Err(DriverError::Protocol(msg)) => mcpg_app::scenario::CallOutcome::protocol_error(msg),
+        Err(e) => return Err(e),
+    };
 
-    let outcome = mcpg_app::scenario::CallOutcome::from(res);
     let expect = scenario.expect.as_ref().cloned().unwrap_or_default();
     let check_res = mcpg_app::scenario::check(&expect, &outcome);
     Ok(check_res.passed)

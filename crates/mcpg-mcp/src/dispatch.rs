@@ -18,9 +18,13 @@ impl<T: McpTransport> McpClient<T> {
         context: &str,
     ) -> Result<Value, DriverError> {
         loop {
+            let deadline = self.deadline_tracker.as_ref()
+                .map(|t| t.total_deadline())
+                .unwrap_or_else(|| std::time::Instant::now() + std::time::Duration::from_secs(31536000));
+            
             let item = self
                 .transport
-                .receive()
+                .receive(deadline)
                 .map_err(|e| DriverError::Io(e.to_string()))?
                 .ok_or(DriverError::TransportClosed)?;
 
@@ -39,10 +43,8 @@ impl<T: McpTransport> McpClient<T> {
         let msg = match item {
             FrameItem::Message(m) => m,
             FrameItem::Violation(v) => {
-                return Ok(Some(Err(DriverError::Protocol(format!(
-                    "protocol violation reading {context} response: {}",
-                    v.reason
-                )))));
+                self.violations.push(v);
+                return Ok(None);
             }
         };
 

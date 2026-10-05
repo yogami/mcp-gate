@@ -120,5 +120,17 @@ pub fn validate_semantics(config: &Config, spans: &SpanMap) -> Result<(), Config
         )?;
     }
 
+    let mut seen_ids = std::collections::HashSet::new();
+    for (i, scenario) in config.scenarios.iter().enumerate() {
+        if !seen_ids.insert(&scenario.id) {
+            let field = format!("scenarios[{}]", i);
+            let line = spans.line_of(&field);
+            return Err(ConfigError::semantic(
+                format!("duplicate scenario ID '{}': REQ-CFG-003 forbids overlapping scenario IDs", scenario.id),
+                line,
+            ));
+        }
+    }
+
     Ok(())
 }

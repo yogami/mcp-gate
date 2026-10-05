@@ -11,6 +11,7 @@ permissions:
 jobs:
   domain:
     name: domain (${{ matrix.os }})
+    timeout-minutes: 15
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -36,6 +37,9 @@ jobs:
       - name: Test workspace
         run: cargo test --workspace
 
+      - name: Check traceability coverage
+        run: ./scripts/check-test-ids.sh TASK-1.10-1.63
+
       - name: Safety check (forbid unsafe)
         run: bash scripts/tests/forbid_unsafe_test.sh
 
@@ -47,6 +51,7 @@ jobs:
 
   linux-integration:
     name: linux-integration (${{ matrix.os }})
+    timeout-minutes: 15
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -68,6 +73,7 @@ jobs:
 
   coverage:
     name: coverage
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,6 +93,7 @@ jobs:
 
   probe:
     name: probe (${{ matrix.os }})
+    timeout-minutes: 15
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

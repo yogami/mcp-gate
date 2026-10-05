@@ -140,7 +140,7 @@ impl<T: McpTransport> McpClient<T> {
         let result = self.wait_for_response(id, "tools/call")?;
         if let Some(start) = start {
             if let Some(dt) = &self.deadline_tracker {
-                dt.check_call(start)?;
+                dt.check_call(start, None)?;
             }
         }
 

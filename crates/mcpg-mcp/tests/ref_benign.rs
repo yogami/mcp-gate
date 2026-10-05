@@ -36,7 +36,7 @@ impl Drop for AutoCleanDir {
 
 struct BenignProcess {
     child: Child,
-    client: McpClient<StdioTransport<ChildStdin, BufReader<ChildStdout>>>,
+    client: McpClient<StdioTransport<ChildStdin>>,
 }
 
 impl BenignProcess {

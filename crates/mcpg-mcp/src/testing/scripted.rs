@@ -64,7 +64,7 @@ impl McpTransport for ScriptedServer {
         Ok(())
     }
 
-    fn receive(&mut self) -> io::Result<Option<FrameItem>> {
+    fn receive(&mut self, _deadline: std::time::Instant) -> io::Result<Option<FrameItem>> {
         Ok(self.canned_responses.pop_front())
     }
 }

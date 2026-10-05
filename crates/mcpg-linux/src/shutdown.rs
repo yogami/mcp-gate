@@ -75,42 +75,9 @@ fn kill_known_pids(pids: &[u32], survivors: &mut Vec<u32>) {
     }
 }
 
-enum ReapResult {
-    Reaped,
-    Pending,
-    Done,
-}
-
-fn record_reaped(reaped: i32, main_pid: u32, survivors: &mut Vec<u32>) {
-    let rpid = reaped as u32;
-    if rpid != main_pid && !survivors.contains(&rpid) {
-        survivors.push(rpid);
-    }
-}
-
-fn reap_one(main_pid: u32, survivors: &mut Vec<u32>) -> ReapResult {
+fn reap_specific(pid: u32) {
     let mut status = 0;
-    let res = unsafe { libc::waitpid(-1, &mut status, libc::WNOHANG) };
-    if res > 0 {
-        record_reaped(res, main_pid, survivors);
-        ReapResult::Reaped
-    } else if res == 0 || std::io::Error::last_os_error().raw_os_error() == Some(libc::EINTR) {
-        ReapResult::Pending
-    } else {
-        ReapResult::Done
-    }
-}
-
-fn reap_all_children(survivors: &mut Vec<u32>, main_pid: u32) {
-    let start = Instant::now();
-    let timeout = Duration::from_millis(500);
-    while start.elapsed() < timeout {
-        match reap_one(main_pid, survivors) {
-            ReapResult::Reaped => continue,
-            ReapResult::Pending => std::thread::sleep(Duration::from_millis(10)),
-            ReapResult::Done => break,
-        }
-    }
+    unsafe { libc::waitpid(pid as i32, &mut status, 0) };
 }
 
 fn collect_subreaper_adopted_children(runner_pid: u32, main_pid: u32) -> Vec<u32> {
@@ -150,7 +117,6 @@ fn execute_shutdown_escalation(
 pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport {
     let mut survivors = Vec::new();
     let runner_pid = unsafe { libc::getpid() } as u32;
-    let known_pids = collect_tree_pids(cap.pid);
     let pgid = cap.pid as i32;
 
     drop(cap.child.stdin.take());
@@ -158,10 +124,29 @@ pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport {
     let stage = execute_shutdown_escalation(&mut cap.child, pgid, grace);
     let _ = cap.child.wait();
 
-    kill_known_pids(&known_pids, &mut survivors);
     let orphans = collect_subreaper_adopted_children(runner_pid, cap.pid);
-    kill_known_pids(&orphans, &mut survivors);
-    reap_all_children(&mut survivors, cap.pid);
+    let mut all_known = collect_tree_pids(cap.pid);
+    all_known.extend(orphans);
+    
+    // We only reap processes that actually belong to this capsule's process group.
+    // Since concurrent tests run, we don't want to kill siblings. We filter by PGID.
+    let mut capsule_pids = Vec::new();
+    for pid in all_known {
+        let p_pgid = unsafe { libc::getpgid(pid as i32) };
+        if p_pgid == pgid {
+            capsule_pids.push(pid);
+        }
+    }
+    
+    capsule_pids.sort_unstable();
+    capsule_pids.dedup();
+
+    kill_known_pids(&capsule_pids, &mut survivors);
+    for pid in &capsule_pids {
+        if *pid != cap.pid {
+            reap_specific(*pid);
+        }
+    }
 
     ShutdownReport { stage, survivors }
 }

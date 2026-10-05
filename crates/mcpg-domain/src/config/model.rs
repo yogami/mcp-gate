@@ -244,6 +244,29 @@ pub struct ScenarioConfig {
     pub canaries: Option<ScenarioCanaries>,
     #[serde(default)]
     pub expect: Option<ScenarioExpect>,
+    #[serde(default, deserialize_with = "deserialize_timeout")]
+    pub timeout_s: Option<u64>,
+}
+
+fn deserialize_timeout<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let v: Option<serde_json::Value> = Option::deserialize(deserializer)?;
+    match v {
+        Some(serde_json::Value::Number(n)) => {
+            if let Some(u) = n.as_u64() {
+                Ok(Some(u))
+            } else if let Some(f) = n.as_f64() {
+                Ok(Some(f as u64))
+            } else {
+                Err(serde::de::Error::custom("invalid timeout_s number"))
+            }
+        }
+        Some(serde_json::Value::String(s)) => s.parse::<u64>().map(Some).map_err(serde::de::Error::custom),
+        Some(_) => Err(serde::de::Error::custom("timeout_s must be a number or string")),
+        None => Ok(None),
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

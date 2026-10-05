@@ -104,25 +104,27 @@ fn is_secret_shaped(name: &str) -> bool {
     contains_secret_word(clean) || matches_secret_affix(clean)
 }
 
-fn validate_secret_pat(pat: &str, allow: bool, warnings: &mut Vec<String>) -> Result<(), EnvError> {
-    if !is_secret_shaped(pat) {
+fn validate_secret_key(key: &str, allow: bool, warnings: &mut Vec<String>) -> Result<(), EnvError> {
+    if !is_secret_shaped(key) {
         return Ok(());
     }
     if !allow {
-        return Err(EnvError::SecretNeedsOptIn(pat.to_string()));
+        return Err(EnvError::SecretNeedsOptIn(key.to_string()));
     }
-    warnings.push(format!("secret-shaped passthrough variable allowed: {pat}"));
+    let msg = format!("secret-shaped passthrough variable allowed: {key}");
+    if !warnings.contains(&msg) {
+        warnings.push(msg);
+    }
     Ok(())
 }
 
-fn check_secret_passthrough(passthrough: &[String], allow: bool) -> Result<Vec<String>, EnvError> {
-    let mut warnings = Vec::new();
+fn check_secret_passthrough(passthrough: &[String], allow: bool, warnings: &mut Vec<String>) -> Result<(), EnvError> {
     for pat in passthrough {
         if !is_ci_deny_var(pat) {
-            validate_secret_pat(pat, allow, &mut warnings)?;
+            validate_secret_key(pat, allow, warnings)?;
         }
     }
-    Ok(warnings)
+    Ok(())
 }
 
 fn check_forbidden_passthrough(passthrough: &[String]) -> Result<(), EnvError> {
@@ -138,19 +140,28 @@ fn add_passthrough_vars(
     env: &mut BTreeMap<OsString, OsString>,
     host: &[(OsString, OsString)],
     passthrough: &[String],
-) {
+    allow: bool,
+    warnings: &mut Vec<String>,
+) -> Result<(), EnvError> {
     for (k, v) in host {
         let key_str = k.to_string_lossy();
         if is_ci_deny_var(&key_str) {
             continue;
         }
+        // B-09: Passthrough must not overwrite fixed vars.
+        if key_str == "HOME" || key_str == "TMPDIR" || key_str == "PATH" || key_str == "LANG" {
+            continue;
+        }
+
         let matches = passthrough
             .iter()
             .any(|pat| matches_passthrough_pattern(pat, &key_str));
         if matches {
+            validate_secret_key(&key_str, allow, warnings)?;
             env.insert(k.clone(), v.clone());
         }
     }
+    Ok(())
 }
 
 fn add_set_vars(env: &mut BTreeMap<OsString, OsString>, set: &BTreeMap<String, String>) {
@@ -181,7 +192,7 @@ fn validate_set_entry(
     val: &str,
     is_reachable: &dyn Fn(&Path) -> bool,
 ) -> Result<(), EnvError> {
-    if key == "HOME" || key == "TMPDIR" {
+    if key == "HOME" || key == "TMPDIR" || key == "LANG" {
         return Err(EnvError::InvalidSet(key.to_string()));
     }
     if key == "PATH" {
@@ -209,14 +220,21 @@ pub fn build_env(
     is_reachable: &dyn Fn(&Path) -> bool,
 ) -> Result<EnvOutcome, EnvError> {
     check_forbidden_passthrough(&cfg.passthrough)?;
-    let warnings = check_secret_passthrough(&cfg.passthrough, cfg.allow_secret_passthrough)?;
     validate_set(&cfg.set, is_reachable)?;
+
+    let mut warnings = Vec::new();
+    check_secret_passthrough(&cfg.passthrough, cfg.allow_secret_passthrough, &mut warnings)?;
 
     let mut env = BTreeMap::new();
 
     add_fixed_vars(&mut env, fixed);
-    add_passthrough_vars(&mut env, host, &cfg.passthrough);
+
+    // B-08: validate secret keys on the host keys actually matched.
+    add_passthrough_vars(&mut env, host, &cfg.passthrough, cfg.allow_secret_passthrough, &mut warnings)?;
+    
+    // add_set_vars can override PATH, but not HOME/TMPDIR/LANG (prevented by validate_set_entry)
     add_set_vars(&mut env, &cfg.set);
+
     add_decoy_vars(&mut env, decoys);
 
     Ok(EnvOutcome {

@@ -23,6 +23,15 @@ struct EvidenceHeader<'a> {
 }
 
 #[derive(Serialize)]
+struct EvidenceFinding<'a> {
+    #[serde(rename = "type")]
+    record_type: &'static str,
+    rule_id: &'static str,
+    reason: &'a str,
+    raw: &'a str,
+}
+
+#[derive(Serialize)]
 struct EvidenceFooter<'a> {
     #[serde(rename = "type")]
     record_type: &'static str,
@@ -47,10 +56,21 @@ impl ReportWriter for EvidenceWriter {
         serde_json::to_writer(&mut *out, &header).map_err(io::Error::other)?;
         writeln!(out)?;
 
+        for v in &run.protocol_violations {
+            let finding = EvidenceFinding {
+                record_type: "finding",
+                rule_id: "MCPG900",
+                reason: &v.0,
+                raw: &v.1,
+            };
+            serde_json::to_writer(&mut *out, &finding).map_err(io::Error::other)?;
+            writeln!(out)?;
+        }
+
         let footer = EvidenceFooter {
             record_type: "footer",
             verdict: run.verdict.as_str(),
-            findings_count: 0,
+            findings_count: run.protocol_violations.len(),
         };
         serde_json::to_writer(&mut *out, &footer).map_err(io::Error::other)?;
         writeln!(out)?;

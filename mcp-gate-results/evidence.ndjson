@@ -1,0 +1,2 @@
+{"type":"header","seed":"589966b95e6dc4caed45d25b3ef11d9e228ebdab6e2d973280817424329e14ec","claim":"No finding at or above the configured threshold was observed in the scenarios that ran, with the observer coverage listed in the report.","tool_name":"mcp-gate","canary_fps":["debfd43f004b","debfd43f004b","87fcbe5db589","87fcbe5db589"]}
+{"type":"footer","verdict":"INCONCLUSIVE","findings_count":0}

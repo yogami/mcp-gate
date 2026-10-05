@@ -34,7 +34,7 @@ fn sample_run_record() -> RunRecord {
         });
     }
 
-    RunRecord::new(seed, Verdict::Pass, registry)
+    RunRecord::new(seed, Verdict::Pass, registry, vec![])
 }
 
 #[test]

@@ -11,6 +11,7 @@ name = "mcp-gate"
 path = "src/main.rs"
 
 [dependencies]
+jsonschema = { workspace = true }
 mcpg-domain = { path = "../mcpg-domain" }
 mcpg-app = { path = "../mcpg-app" }
 mcpg-linux = { path = "../mcpg-linux" }
@@ -18,6 +19,7 @@ mcpg-mcp = { path = "../mcpg-mcp" }
 mcpg-report = { path = "../mcpg-report" }
 clap = { workspace = true }
 serde_json = { workspace = true }
+ctrlc = "3.5.2"
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

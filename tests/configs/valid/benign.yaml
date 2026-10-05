@@ -18,6 +18,7 @@ policy:
   baseline: python
   read_paths:
     - ${WORKSPACE}
+    - ${CONFIG_DIR}/../../../fixtures/servers/benign
   write_paths:
     - ${WORKSPACE}
   allowed_child_binaries:

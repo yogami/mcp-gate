@@ -132,6 +132,7 @@ fn total_timeout_skips_remaining_scenarios() {
             arguments: json!({}),
             canaries: None,
             expect: None,
+            timeout_s: None,
         },
         ScenarioConfig {
             id: "scenario-2".to_string(),
@@ -139,6 +140,7 @@ fn total_timeout_skips_remaining_scenarios() {
             arguments: json!({}),
             canaries: None,
             expect: None,
+            timeout_s: None,
         },
         ScenarioConfig {
             id: "scenario-3".to_string(),
@@ -146,6 +148,7 @@ fn total_timeout_skips_remaining_scenarios() {
             arguments: json!({}),
             canaries: None,
             expect: None,
+            timeout_s: None,
         },
     ];
 

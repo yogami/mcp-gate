@@ -34,7 +34,7 @@ fn read_entries_get_read_rights() {
         .iter()
         .find(|r| r.path == Path::new("/etc/hosts"))
         .expect("hosts rule");
-    assert_eq!(hosts_rule.access, AccessFs::READ_FILE | AccessFs::READ_DIR);
+    assert_eq!(hosts_rule.access, AccessFs::READ_FILE);
 }
 
 #[test]

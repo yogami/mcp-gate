@@ -120,6 +120,7 @@ pub struct McpClient<T: McpTransport> {
     pub(crate) server_info: Option<ServerInfo>,
     pub(crate) workspace_uri: Option<String>,
     pub(crate) transcript: Vec<JsonRpc>,
+    pub(crate) violations: Vec<crate::framing::ProtoViolation>,
     pub(crate) deadline_tracker: Option<crate::deadline::DeadlineTracker>,
 }
 
@@ -132,8 +133,14 @@ impl<T: McpTransport> McpClient<T> {
             server_info: None,
             workspace_uri: None,
             transcript: Vec::new(),
+            violations: Vec::new(),
             deadline_tracker: None,
         }
+    }
+
+    /// Take and return accumulated protocol violations.
+    pub fn take_violations(&mut self) -> Vec<crate::framing::ProtoViolation> {
+        std::mem::take(&mut self.violations)
     }
 
     /// Set deadline tracker on client builder.

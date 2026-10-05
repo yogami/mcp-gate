@@ -235,6 +235,10 @@ fn failed_expectation_exits_2() {
             server_path.to_str().unwrap(),
         )
         .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign",
+            server_path.parent().unwrap().to_str().unwrap(),
+        )
+        .replace(
             r#"arguments: { path: "hello.txt", body: "world" }"#,
             r#"arguments: { path: "hello.txt", body: "different_content" }"#,
         );
@@ -259,6 +263,10 @@ fn server_exits_during_handshake_exits_3() {
         .replace(
             "${CONFIG_DIR}/../../../fixtures/servers/benign/server.py",
             server_path.to_str().unwrap(),
+        )
+        .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign",
+            server_path.parent().unwrap().to_str().unwrap(),
         )
         .replace(
             r#"--root", "${WORKSPACE}""#,
@@ -286,6 +294,10 @@ fn reports_written_for_exit_2_and_3() {
         .replace(
             "${CONFIG_DIR}/../../../fixtures/servers/benign/server.py",
             server_path.to_str().unwrap(),
+        )
+        .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign",
+            server_path.parent().unwrap().to_str().unwrap(),
         )
         .replace(
             r#"arguments: { path: "hello.txt", body: "world" }"#,
@@ -317,6 +329,10 @@ fn reports_written_for_exit_2_and_3() {
             server_path.to_str().unwrap(),
         )
         .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign",
+            server_path.parent().unwrap().to_str().unwrap(),
+        )
+        .replace(
             r#"--root", "${WORKSPACE}""#,
             r#"--root", "${WORKSPACE}", "--crash-on-start""#,
         );
@@ -339,4 +355,50 @@ fn reports_written_for_exit_2_and_3() {
     let ev3_content =
         fs::read_to_string(out3.join("evidence.ndjson")).expect("evidence for exit 3");
     assert!(ev3_content.contains(r#""verdict":"INCONCLUSIVE""#));
+}
+
+#[test]
+fn run_enforce_denies_read_outside_policy() {
+    // Only run on Linux when Landlock is actually available. 
+    // We add a switch or just skip if missing, but bug_report says "with a switch that makes Landlock unavailable a failure in CI".
+    // We'll use mcpg_linux::landlock::get_landlock_abi().
+    #[cfg(target_os = "linux")]
+    {
+        if mcpg_linux::landlock::get_landlock_abi() == 0 {
+            if std::env::var("CI").is_ok() {
+                panic!("Landlock is required in CI but unavailable on this host");
+            }
+            return;
+        }
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        return;
+    }
+
+    let ws = tempfile_helper::TempDir::new("mcpg_cli_ws");
+    let outside = tempfile_helper::TempDir::new("mcpg_cli_outside");
+    let secret = outside.path().join("secret.txt");
+    std::fs::write(&secret, "secret data").unwrap();
+
+    let cfg_path = ws.path().join("mcpg.yaml");
+    std::fs::write(
+        &cfg_path,
+        format!(
+            "version: 1\npolicy:\n  read_paths: []\n  write_paths: []\n  allowed_child_binaries: []\n  allow_network: false\n  allow_network: false\n  allowed_unix_sockets: []\nscenarios: []\nserver:\n  name: \"test-server\"\n  command: \"cat\"\n  args: [\"{}\"]\n  workspace:\n    source: ./fixtures/workspace\n    mode: copy\n",
+            secret.display()
+        ),
+    )
+    .unwrap();
+
+    let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
+    cmd.current_dir(ws.path())
+        .arg("run")
+        .arg("--config")
+        .arg(&cfg_path)
+        .arg("--mode").arg("enforce") // Use enforce mode
+        .assert()
+        // `cat` should fail to read the file and exit non-zero. 
+        // mcp-gate will capture this non-zero exit from the server handshake or execution and exit 3.
+        .code(3); 
 }

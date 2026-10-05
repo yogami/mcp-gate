@@ -179,12 +179,33 @@ fn execute_single_scenario<T: McpTransport>(
     tracker: &DeadlineTracker,
     scenario: &ScenarioConfig,
     phase: &PhaseCursor,
+    tools: &std::collections::HashMap<String, mcpg_mcp::tools::ToolDef>,
 ) -> Result<bool, DriverError> {
     let _ = phase.start_scenario(&scenario.id);
-    let call_start = tracker.clock().now();
-    let res = client.call_tool(&scenario.tool, &scenario.arguments)?;
-    tracker.check_call(call_start)?;
-    let outcome = CallOutcome::from(res);
+    let outcome = if let Some(tool_def) = tools.get(&scenario.tool) {
+        let is_valid = if tool_def.input_schema.is_null() {
+            true
+        } else if let Ok(validator) = jsonschema::validator_for(&tool_def.input_schema) {
+            validator.is_valid(&scenario.arguments)
+        } else {
+            false
+        };
+        if is_valid {
+            let call_start = tracker.clock().now();
+            match client.call_tool(&scenario.tool, &scenario.arguments) {
+                Ok(res) => {
+                    tracker.check_call(call_start, scenario.timeout_s)?;
+                    CallOutcome::from(res)
+                }
+                Err(DriverError::Protocol(msg)) => CallOutcome::protocol_error(msg),
+                Err(e) => return Err(e),
+            }
+        } else {
+            CallOutcome::tool_error("arguments failed schema validation")
+        }
+    } else {
+        CallOutcome::tool_error("tool not found in tools/list")
+    };
     let expect = scenario.expect.clone().unwrap_or_default();
     let passed = mcpg_app::scenario::check(&expect, &outcome).passed;
     let _ = phase.end_scenario();
@@ -197,8 +218,9 @@ fn handle_scenario_step<T: McpTransport>(
     scenario: &ScenarioConfig,
     phase: &PhaseCursor,
     has_failure: &mut bool,
+    tools: &std::collections::HashMap<String, mcpg_mcp::tools::ToolDef>,
 ) -> bool {
-    match execute_single_scenario(client, tracker, scenario, phase) {
+    match execute_single_scenario(client, tracker, scenario, phase, tools) {
         Ok(passed) => {
             if !passed {
                 *has_failure = true;
@@ -214,21 +236,32 @@ fn drive_scenarios_loop<T: McpTransport>(
     tracker: &DeadlineTracker,
     scenarios: &[ScenarioConfig],
     phase: &PhaseCursor,
+    tools: &std::collections::HashMap<String, mcpg_mcp::tools::ToolDef>,
 ) -> (Verdict, ExitCode) {
-    let mut has_failure = false;
+    let mut codes = vec![ExitCode::Pass];
     for scenario in scenarios {
         if tracker.is_total_expired() {
-            return (Verdict::Inconclusive, ExitCode::Inconclusive);
+            codes.push(ExitCode::Inconclusive);
+            break;
         }
-        if !handle_scenario_step(client, tracker, scenario, phase, &mut has_failure) {
-            return (Verdict::Inconclusive, ExitCode::Inconclusive);
+        let mut has_failure = false;
+        let ok = handle_scenario_step(client, tracker, scenario, phase, &mut has_failure, tools);
+        if has_failure {
+            codes.push(ExitCode::FailFunctional);
+        }
+        if !ok {
+            codes.push(ExitCode::Inconclusive);
+            break;
         }
     }
-    if has_failure {
-        (Verdict::FailFunctional, ExitCode::FailFunctional)
-    } else {
-        (Verdict::Pass, ExitCode::Pass)
-    }
+    let final_code = mcpg_domain::verdict::combine(codes);
+    let final_verdict = match final_code {
+        ExitCode::Pass => Verdict::Pass,
+        ExitCode::FailFunctional => Verdict::FailFunctional,
+        ExitCode::FailSecurity => Verdict::FailSecurity,
+        _ => Verdict::Inconclusive,
+    };
+    (final_verdict, final_code)
 }
 
 fn drive_session<T: McpTransport>(
@@ -236,15 +269,28 @@ fn drive_session<T: McpTransport>(
     cfg: &Config,
     tracker: &DeadlineTracker,
     phase: &PhaseCursor,
-) -> (Verdict, ExitCode) {
+) -> (Verdict, ExitCode, Vec<(String, String)>) {
     let _ = phase.advance_to_handshake();
     if client
         .initialize(&cfg.server.protocol_versions, cfg.server.client.roots)
         .is_err()
     {
-        return (Verdict::Inconclusive, ExitCode::Inconclusive);
+        return (Verdict::Inconclusive, ExitCode::Inconclusive, client.take_violations().into_iter().map(|v| (v.reason, v.raw)).collect());
     }
-    drive_scenarios_loop(&mut client, tracker, &cfg.scenarios, phase)
+    
+    let tools_list = match client.list_tools() {
+        Ok(t) => t,
+        Err(_) => {
+            return (Verdict::Inconclusive, ExitCode::Inconclusive, client.take_violations().into_iter().map(|v| (v.reason, v.raw)).collect());
+        }
+    };
+    let mut tools = std::collections::HashMap::new();
+    for t in tools_list {
+        tools.insert(t.name.clone(), t);
+    }
+    
+    let (v, e) = drive_scenarios_loop(&mut client, tracker, &cfg.scenarios, phase, &tools);
+    (v, e, client.take_violations().into_iter().map(|v| (v.reason, v.raw)).collect())
 }
 
 fn execute_capsule_run(
@@ -252,7 +298,7 @@ fn execute_capsule_run(
     ruleset: Option<&std::os::fd::OwnedFd>,
     cfg: &Config,
     vars: &VarTable,
-) -> (Verdict, ExitCode) {
+) -> (Verdict, ExitCode, Vec<(String, String)>) {
     let mut launcher = LinuxLauncher::new();
     if let Some(ruleset) = ruleset {
         launcher = launcher.with_landlock_fd(ruleset.as_raw_fd());
@@ -261,7 +307,7 @@ fn execute_capsule_run(
         Ok(c) => c,
         Err(e) => {
             eprintln!("launch error: {e}");
-            return (Verdict::Inconclusive, ExitCode::Internal);
+            return (Verdict::Inconclusive, ExitCode::Internal, Vec::new());
         }
     };
 
@@ -285,11 +331,11 @@ fn execute_capsule_run(
     result
 }
 
-fn write_run_reports(record: &RunRecord, out_dir: &Path, evidence_path_opt: Option<&str>) {
+fn write_run_reports(record: &RunRecord, out_dir: &Path, evidence_path_opt: Option<&str>) -> Result<(), ExitCode> {
     let _ = ConsoleWriter.write(record, &mut std::io::stdout());
     let _ = fs::create_dir_all(out_dir);
     let ev_path = match evidence_path_opt {
-        Some("-") => return,
+        Some("-") => return Ok(()),
         Some(p) => PathBuf::from(p),
         None => out_dir.join("evidence.ndjson"),
     };
@@ -299,6 +345,7 @@ fn write_run_reports(record: &RunRecord, out_dir: &Path, evidence_path_opt: Opti
     if let Ok(mut file) = fs::File::create(&ev_path) {
         let _ = EvidenceWriter.write(record, &mut file);
     }
+    Ok(())
 }
 
 struct RunContext {
@@ -384,10 +431,21 @@ fn prepare_plan(ctx: &RunContext) -> Result<(CapsulePlan, Option<std::os::fd::Ow
 fn run_pipeline(opts: &RunOptions) -> Result<ExitCode, ExitCode> {
     let ctx = prepare_context(opts)?;
     let (plan, ruleset) = prepare_plan(&ctx)?;
-    let (verdict, code) = execute_capsule_run(&plan, ruleset.as_ref(), &ctx.cfg, &ctx.vars);
-    let record = RunRecord::new(ctx.seed, verdict, ctx.registry);
-    write_run_reports(&record, &opts.out_dir, opts.evidence_path.as_deref());
-    Ok(code)
+    let (exec_verdict, exec_code, violations) = execute_capsule_run(&plan, ruleset.as_ref(), &ctx.cfg, &ctx.vars);
+    
+    let mut final_code = exec_code;
+    let mut final_verdict = exec_verdict;
+    
+    if !violations.is_empty() {
+        final_code = mcpg_domain::verdict::combine(vec![final_code, ExitCode::FailSecurity]);
+        if final_code == ExitCode::FailSecurity {
+            final_verdict = Verdict::FailSecurity;
+        }
+    }
+
+    let record = RunRecord::new(ctx.seed, final_verdict, ctx.registry, violations);
+    write_run_reports(&record, &opts.out_dir, opts.evidence_path.as_deref())?;
+    Ok(final_code)
 }
 
 /// Linux run orchestrator implementation.
