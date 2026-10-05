@@ -215,12 +215,18 @@ fn run_dir_deleted_unless_keep_capsule() {
 #[test]
 fn failed_expectation_exits_2() {
     let tmp = tempfile_helper::TempDir::new("test_failed_expect");
+    let server_path = workspace_root().join("fixtures/servers/benign/server.py");
     let base_cfg = fs::read_to_string(workspace_root().join("tests/configs/valid/benign.yaml"))
         .expect("read benign config");
-    let modified_cfg = base_cfg.replace(
-        r#"arguments: { path: "hello.txt", body: "world" }"#,
-        r#"arguments: { path: "hello.txt", body: "different_content" }"#,
-    );
+    let modified_cfg = base_cfg
+        .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign/server.py",
+            server_path.to_str().unwrap(),
+        )
+        .replace(
+            r#"arguments: { path: "hello.txt", body: "world" }"#,
+            r#"arguments: { path: "hello.txt", body: "different_content" }"#,
+        );
     let cfg_path = tmp.path().join("failed_expect.yaml");
     fs::write(&cfg_path, modified_cfg).expect("write modified config");
 
@@ -234,12 +240,18 @@ fn failed_expectation_exits_2() {
 #[test]
 fn server_exits_during_handshake_exits_3() {
     let tmp = tempfile_helper::TempDir::new("test_handshake_crash");
+    let server_path = workspace_root().join("fixtures/servers/benign/server.py");
     let base_cfg = fs::read_to_string(workspace_root().join("tests/configs/valid/benign.yaml"))
         .expect("read benign config");
-    let modified_cfg = base_cfg.replace(
-        r#"--root", "${WORKSPACE}""#,
-        r#"--root", "${WORKSPACE}", "--bad-flag-causes-exit-immediately""#,
-    );
+    let modified_cfg = base_cfg
+        .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign/server.py",
+            server_path.to_str().unwrap(),
+        )
+        .replace(
+            r#"--root", "${WORKSPACE}""#,
+            r#"--root", "${WORKSPACE}", "--bad-flag-causes-exit-immediately""#,
+        );
     let cfg_path = tmp.path().join("crash.yaml");
     fs::write(&cfg_path, modified_cfg).expect("write crash config");
 
@@ -253,13 +265,19 @@ fn server_exits_during_handshake_exits_3() {
 #[test]
 fn reports_written_for_exit_2_and_3() {
     let tmp = tempfile_helper::TempDir::new("test_reports_2_3");
+    let server_path = workspace_root().join("fixtures/servers/benign/server.py");
     let base_cfg = fs::read_to_string(workspace_root().join("tests/configs/valid/benign.yaml"))
         .expect("read benign config");
 
-    let fail_cfg = base_cfg.replace(
-        r#"arguments: { path: "hello.txt", body: "world" }"#,
-        r#"arguments: { path: "hello.txt", body: "mismatched_content" }"#,
-    );
+    let fail_cfg = base_cfg
+        .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign/server.py",
+            server_path.to_str().unwrap(),
+        )
+        .replace(
+            r#"arguments: { path: "hello.txt", body: "world" }"#,
+            r#"arguments: { path: "hello.txt", body: "mismatched_content" }"#,
+        );
     let fail_path = tmp.path().join("fail.yaml");
     fs::write(&fail_path, fail_cfg).expect("write fail config");
 
@@ -280,10 +298,15 @@ fn reports_written_for_exit_2_and_3() {
         fs::read_to_string(out2.join("evidence.ndjson")).expect("evidence for exit 2");
     assert!(ev2_content.contains(r#""verdict":"FAIL_FUNCTIONAL""#));
 
-    let crash_cfg = base_cfg.replace(
-        r#"--root", "${WORKSPACE}""#,
-        r#"--root", "${WORKSPACE}", "--crash-on-start""#,
-    );
+    let crash_cfg = base_cfg
+        .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign/server.py",
+            server_path.to_str().unwrap(),
+        )
+        .replace(
+            r#"--root", "${WORKSPACE}""#,
+            r#"--root", "${WORKSPACE}", "--crash-on-start""#,
+        );
     let crash_path = tmp.path().join("crash.yaml");
     fs::write(&crash_path, crash_cfg).expect("write crash config");
 
