@@ -80,6 +80,10 @@ fn resolve_workspace(
             ws_cfg.source = candidate.to_string_lossy().to_string();
         }
     }
+    if let Some(warning) = mcpg_app::hygiene::check_source_checkout_hint(Path::new(&ws_cfg.source))
+    {
+        eprintln!("Warning: {warning}");
+    }
     mcpg_linux::workspace::prepare(&ws_cfg, run_dir).map_err(|e| {
         eprintln!("failed to prepare workspace: {e}");
         ExitCode::Internal

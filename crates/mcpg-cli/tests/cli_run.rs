@@ -451,3 +451,42 @@ fn run_timeout_flag_overrides_limits() {
         .assert()
         .code(3);
 }
+
+#[test]
+fn p2_launch_06_cli_extraheader_warns() {
+    let _lock = RUN_LOCK.lock().unwrap();
+    let tmp = tempfile_helper::TempDir::new("test_extraheader");
+    let ws_source = tmp.path().join("source");
+    fs::create_dir_all(ws_source.join(".git")).unwrap();
+    fs::write(
+        ws_source.join(".git/config"),
+        "[http]\n    extraheader = AUTHORIZATION: basic xyz\n",
+    )
+    .unwrap();
+
+    let server_path = workspace_root().join("fixtures/servers/benign/server.py");
+    let base_cfg = fs::read_to_string(workspace_root().join("tests/configs/valid/benign.yaml"))
+        .expect("read benign config");
+    let modified_cfg = base_cfg
+        .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign/server.py",
+            server_path.to_str().unwrap(),
+        )
+        .replace(
+            "${CONFIG_DIR}/../../../fixtures/servers/benign",
+            server_path.parent().unwrap().to_str().unwrap(),
+        )
+        .replace(
+            "source: ./fixtures/workspace",
+            &format!("source: {}", ws_source.display()),
+        );
+    let cfg_path = tmp.path().join("extraheader.yaml");
+    fs::write(&cfg_path, modified_cfg).unwrap();
+
+    let mut cmd = Command::cargo_bin("mcp-gate").expect("mcp-gate exists");
+    cmd.current_dir(workspace_root())
+        .args(["run", "--config", cfg_path.to_str().unwrap()]);
+    cmd.assert()
+        .code(0)
+        .stderr(predicate::str::contains("persist-credentials: false"));
+}
