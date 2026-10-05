@@ -89,43 +89,55 @@ fn reap_all_children(survivors: &mut Vec<u32>, main_pid: u32) {
     }
 }
 
+fn collect_subreaper_adopted_children(runner_pid: u32, main_pid: u32) -> Vec<u32> {
+    let mut orphans = Vec::new();
+    let task_dir = format!("/proc/{runner_pid}/task");
+    if let Ok(entries) = std::fs::read_dir(task_dir) {
+        for cpid in entries.flatten().flat_map(collect_thread_children) {
+            if cpid != main_pid {
+                orphans.extend(collect_tree_pids(cpid));
+            }
+        }
+    }
+    orphans
+}
+
+fn execute_shutdown_escalation(
+    child: &mut std::process::Child,
+    pgid: i32,
+    grace: Duration,
+) -> ShutdownStage {
+    if wait_for_exit(child, grace) {
+        return ShutdownStage::StdinClosed;
+    }
+    unsafe {
+        libc::kill(-pgid, libc::SIGTERM);
+    }
+    if wait_for_exit(child, Duration::from_secs(1)) {
+        return ShutdownStage::Terminated;
+    }
+    unsafe {
+        libc::kill(-pgid, libc::SIGKILL);
+    }
+    ShutdownStage::Killed
+}
+
 /// Execute graceful capsule shutdown with signal escalation and orphan reaping.
 pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport {
     let mut survivors = Vec::new();
+    let runner_pid = unsafe { libc::getpid() } as u32;
     let known_pids = collect_tree_pids(cap.pid);
     let pgid = cap.pid as i32;
 
     drop(cap.child.stdin.take());
 
-    if wait_for_exit(&mut cap.child, grace) {
-        reap_all_children(&mut survivors, cap.pid);
-        return ShutdownReport {
-            stage: ShutdownStage::StdinClosed,
-            survivors,
-        };
-    }
-
-    unsafe {
-        libc::kill(-pgid, libc::SIGTERM);
-    }
-    if wait_for_exit(&mut cap.child, Duration::from_secs(1)) {
-        reap_all_children(&mut survivors, cap.pid);
-        return ShutdownReport {
-            stage: ShutdownStage::Terminated,
-            survivors,
-        };
-    }
-
-    unsafe {
-        libc::kill(-pgid, libc::SIGKILL);
-    }
-    kill_known_pids(&known_pids, &mut survivors);
+    let stage = execute_shutdown_escalation(&mut cap.child, pgid, grace);
     let _ = cap.child.wait();
 
+    kill_known_pids(&known_pids, &mut survivors);
+    let orphans = collect_subreaper_adopted_children(runner_pid, cap.pid);
+    kill_known_pids(&orphans, &mut survivors);
     reap_all_children(&mut survivors, cap.pid);
 
-    ShutdownReport {
-        stage: ShutdownStage::Killed,
-        survivors,
-    }
+    ShutdownReport { stage, survivors }
 }

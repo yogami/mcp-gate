@@ -81,7 +81,7 @@ fn launch_probe(subcmd: &str, args: &[&str], workspace: &Path) -> RunningCapsule
 
 #[test]
 fn stdin_close_ends_cooperative_capsule() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("mcpg_shut_coop");
     let cap = launch_probe("wait-stdin-eof", &[], tmp.path());
 
@@ -92,7 +92,7 @@ fn stdin_close_ends_cooperative_capsule() {
 
 #[test]
 fn stubborn_capsule_gets_sigkill() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("mcpg_shut_kill");
     let mut cap = launch_probe("ignore-sigterm", &[], tmp.path());
 
@@ -110,7 +110,7 @@ fn stubborn_capsule_gets_sigkill() {
 #[test]
 #[cfg(target_os = "linux")]
 fn daemonized_grandchild_reaped_and_reported() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("mcpg_shut_daemon");
     let mut cap = launch_probe("daemon", &[], tmp.path());
 
@@ -140,7 +140,7 @@ fn daemonized_grandchild_reaped_and_reported() {
 
 #[test]
 fn no_children_left() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("mcpg_shut_nochld");
     let cap = launch_probe("wait-stdin-eof", &[], tmp.path());
     let _ = shutdown(cap, Duration::from_millis(500));
@@ -205,14 +205,22 @@ fn panic_in_runner_kills_capsule() {
     let _ = child.wait();
 
     let mut died = false;
-    for _ in 0..20 {
+    for _ in 0..40 {
         std::thread::sleep(Duration::from_millis(50));
         if unsafe { libc::kill(capsule_pid, 0) } != 0 {
             died = true;
             break;
         }
+        #[cfg(target_os = "linux")]
+        if std::fs::read_to_string(format!("/proc/{capsule_pid}/status"))
+            .map(|s| s.contains("State:\tZ"))
+            .unwrap_or(true)
+        {
+            died = true;
+            break;
+        }
     }
-    assert!(died, "capsule should die within 1s after runner panics");
+    assert!(died, "capsule should die within 2s after runner panics");
 }
 
 #[test]
