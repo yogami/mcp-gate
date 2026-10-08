@@ -60,7 +60,6 @@ policy:
   allowed_unix_sockets: []
 scenarios:
   - id: test-call
-    action: call_tool
     tool: read_file
     arguments:
       path: "../../../../../../../../../../../etc/passwd"
