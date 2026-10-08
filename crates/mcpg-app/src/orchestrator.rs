@@ -157,6 +157,17 @@ impl RunOrchestrator for AppOrchestrator {
                 }
             };
 
+            if let Some(mut stderr) = cap.child.stderr.take() {
+                std::thread::spawn(move || {
+                    use std::io::Read;
+                    let mut buf = String::new();
+                    let _ = stderr.read_to_string(&mut buf);
+                    if !buf.is_empty() {
+                        eprintln!("CAPSULE STDERR: {}", buf);
+                    }
+                });
+            }
+
             let transport = mcpg_mcp::transport::StdioTransport::new(
                 cap.child.stdin.take().unwrap(),
                 mcpg_mcp::framing::LineReader::new(
