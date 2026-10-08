@@ -107,7 +107,7 @@ impl RunOrchestrator for AppOrchestrator {
 
         let ruleset = if mode == Mode::Enforce {
             self.sandbox
-                .build_ruleset(&resolved, &vars, &cfg.server.command, &caps)?
+                .build_ruleset(&resolved, &vars, &cfg.server.command, &caps, mode)?
         } else {
             None
         };

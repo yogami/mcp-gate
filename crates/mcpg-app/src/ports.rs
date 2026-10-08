@@ -125,7 +125,7 @@ pub trait Sandbox {
         vars: &VarTable,
         cmd: &str,
         caps: &HostCaps,
-        mode: mcpg_domain::config::model::Mode,
+        mode: mcpg_domain::mode::Mode,
     ) -> Result<Option<OwnedFd>, ExitCode>;
     fn setup_tripwire(
         &self,

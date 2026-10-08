@@ -94,6 +94,7 @@ mod tests {
             _vars: &VarTable,
             _cmd: &str,
             _caps: &HostCaps,
+            _mode: mcpg_domain::mode::Mode,
         ) -> Result<Option<OwnedFd>, ExitCode> {
             self.method_calls
                 .lock()
