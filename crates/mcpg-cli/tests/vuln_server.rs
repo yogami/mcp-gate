@@ -67,6 +67,7 @@ server:
   name: "vulnerable-server"
   command: "python3"
   args: ["{}", "--defect", "{}", "--root", "{}"]
+  protocol_versions: ["2024-11-05"]
   workspace:
     source: "{}"
     mode: in-place
