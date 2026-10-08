@@ -405,6 +405,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                     })
                     .build();
 
+                    eprintln!("DEBUG: MCPG005 DENYING openat on {}", raw_path);
                     return SyscallResult {
                         flags: 0,
                         error: -libc::EACCES,
@@ -470,6 +471,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                     .decision(mcpg_domain::event::Decision::Denied)
                     .build();
 
+                    eprintln!("DEBUG: MCPG006 DENYING execve on {}", path.display());
                     return SyscallResult {
                         flags: 0,
                         error: -libc::EACCES,
