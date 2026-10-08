@@ -161,7 +161,7 @@ impl Sandbox for LinuxSandbox {
         &self,
         ruleset: Option<OwnedFd>,
     ) -> (Box<dyn mcpg_app::ports::CapsuleLauncher>, Option<RawFd>) {
-        let mut launcher = crate::launcher::LinuxLauncher::new().with_seccomp(true);
+        let mut launcher = crate::launcher::LinuxLauncher::new().with_seccomp(false);
         if let Some(fd) = ruleset {
             use std::os::fd::IntoRawFd;
             launcher = launcher.with_landlock_fd(fd.into_raw_fd());
