@@ -245,7 +245,6 @@ fn child_pre_exec(
 
 impl CapsuleLauncher for LinuxLauncher {
     fn launch(&self, plan: &CapsulePlan) -> Result<RunningCapsule, LaunchError> {
-    eprintln!("LinuxLauncher::launch - start");
         #[cfg(target_os = "linux")]
         unsafe {
             let dumpable = libc::prctl(libc::PR_GET_DUMPABLE, 0, 0, 0, 0);
@@ -268,7 +267,7 @@ impl CapsuleLauncher for LinuxLauncher {
             .stderr(Stdio::piped());
 
         #[cfg(target_os = "linux")]
-        let mut child_sock = None;
+        let mut child_sock = self.handover_sock;
         #[cfg(target_os = "linux")]
         let mut seccomp_filter: Vec<crate::seccomp::sock_filter> = vec![];
         #[cfg(target_os = "linux")]
@@ -278,18 +277,6 @@ impl CapsuleLauncher for LinuxLauncher {
 
         #[cfg(target_os = "linux")]
         if self.observe_seccomp {
-            unsafe {
-                let mut sv = [-1i32; 2];
-                if libc::socketpair(
-                    libc::AF_UNIX,
-                    libc::SOCK_SEQPACKET | libc::SOCK_CLOEXEC,
-                    0,
-                    sv.as_mut_ptr(),
-                ) == 0
-                {
-                    child_sock = Some(sv[1]);
-                }
-            }
             if let Some(cs) = child_sock {
                 seccomp_filter = crate::seccomp::build_seccomp_filter_for_child(Some(cs));
                 seccomp_ptr = seccomp_filter.as_ptr();
@@ -334,7 +321,7 @@ impl CapsuleLauncher for LinuxLauncher {
             }
         }
 
-        eprintln!("LinuxLauncher::launch - cmd.spawn"); let child = cmd.spawn()?; eprintln!("LinuxLauncher::launch - cmd.spawn finished");
+        let child = cmd.spawn()?;
         let pid = child.id();
 
         #[cfg(target_os = "linux")]

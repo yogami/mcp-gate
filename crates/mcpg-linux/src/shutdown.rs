@@ -24,7 +24,7 @@ pub struct ShutdownReport {
 }
 
 fn wait_for_exit(child: &mut std::process::Child, timeout: Duration) -> bool {
-    eprintln!("shutdown - waitpid loop"); let start = Instant::now();
+    let start = Instant::now();
     while start.elapsed() < timeout {
         if let Ok(Some(_)) = child.try_wait() {
             return true;
@@ -127,15 +127,14 @@ fn execute_shutdown_escalation(
 
 /// Execute graceful capsule shutdown with signal escalation and orphan reaping.
 pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport {
-    eprintln!("shutdown - start");
     let mut survivors = Vec::new();
     let runner_pid = unsafe { libc::getpid() } as u32;
     let pgid = cap.pid as i32;
 
     drop(cap.child.stdin.take());
 
-    eprintln!("shutdown - execute_shutdown_escalation"); let stage = execute_shutdown_escalation(&mut cap.child, pgid, grace);
-    eprintln!("shutdown - cap.child.wait()"); let _ = cap.child.wait(); eprintln!("shutdown - cap.child.wait() finished");
+    let stage = execute_shutdown_escalation(&mut cap.child, pgid, grace);
+    let _ = cap.child.wait();
 
     let orphans = collect_subreaper_adopted_children(runner_pid, cap.pid);
     let mut all_known = collect_tree_pids(cap.pid);
@@ -144,10 +143,10 @@ pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport {
     all_known.dedup();
 
     // SPEC 3.1.6 step 4: SIGKILL every pid in the observed process tree that is still alive
-    eprintln!("shutdown - kill_known_pids"); kill_known_pids(&all_known, &mut survivors);
+    kill_known_pids(&all_known, &mut survivors);
 
     // SPEC 3.1.6 step 5: Reap with waitpid(-1, WNOHANG) until no children remain
-    eprintln!("shutdown - waitpid loop"); let start = Instant::now();
+    let start = Instant::now();
     let timeout = Duration::from_millis(500);
     while start.elapsed() < timeout {
         let mut status = 0;
