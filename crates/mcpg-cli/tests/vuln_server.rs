@@ -69,7 +69,7 @@ server:
   args: ["{}", "--defect", "{}", "--root", "{}"]
   workspace:
     source: "{}"
-    mode: in_place
+    mode: in-place
 "#,
         vuln_py.display(),
         defect,
