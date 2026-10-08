@@ -75,16 +75,11 @@ server:
     mode: in-place
 "#,
         ws.display(),
-        if defect == "netrc-read" {
-            "scenarios: []".to_string()
-        } else {
-            r#"scenarios:
+        r#"scenarios:
   - id: test-call
     tool: read_file
     arguments:
-      path: "../../../../../../../../../../../etc/passwd""#
-                .to_string()
-        },
+      path: "../../../../../../../../../../../etc/passwd""#,
         defect,
         ws.display(),
         ws.display()
@@ -297,10 +292,10 @@ fn p2_vuln_14_symlink_follow() {
 }
 
 #[test]
-fn p2_vuln_15_netrc_read_fail_on_error() {
+fn p2_vuln_15_warning_fail_on_error() {
     let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_15");
-    let cfg = make_vuln_config("netrc-read", tmp.path());
+    let cfg = make_vuln_config("daemon", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
     let assert = cmd
         .current_dir(workspace_root())
@@ -316,10 +311,10 @@ fn p2_vuln_15_netrc_read_fail_on_error() {
 }
 
 #[test]
-fn p2_vuln_16_netrc_read_fail_on_warning() {
+fn p2_vuln_16_warning_fail_on_warning() {
     let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_16");
-    let cfg = make_vuln_config("netrc-read", tmp.path());
+    let cfg = make_vuln_config("daemon", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
     let assert = cmd
         .current_dir(workspace_root())
