@@ -190,6 +190,7 @@ impl RunOrchestrator for AppOrchestrator {
                 .sandbox
                 .teardown(cap, std::time::Duration::from_millis(1500));
 
+            std::thread::sleep(std::time::Duration::from_millis(500));
             while let Ok(v) = obs_rx.try_recv() {
                 proto_errs.push(v);
             }
