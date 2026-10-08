@@ -11,3 +11,4 @@ pub mod ports;
 pub mod scenario;
 pub mod session;
 pub mod run_planner;
+pub mod contract_tests;
