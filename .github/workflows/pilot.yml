@@ -17,7 +17,7 @@ jobs:
         run: cargo clippy --workspace -- -D warnings
 
       - name: Run Unit Tests
-        run: cargo test --workspace
+        run: cargo test --workspace -- --test-threads=1 --nocapture
 
       - name: Build mcp-gate
         run: cargo build --release
