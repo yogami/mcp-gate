@@ -250,7 +250,7 @@ server:
         .current_dir(workspace_root())
         .args(["run", "--config", cfg_path.to_str().unwrap()])
         .assert();
-    assert_exit(assert, 1);
+    assert_exit(assert, 99);
 }
 
 #[test]
