@@ -20,7 +20,7 @@ jobs:
           cd pilot-servers/src/filesystem
           npm install && npm run build
           cd ../../..
-          cat << 'EOF' > fs-gate.yaml
+          echo '
           version: 1
           server:
             name: node-filesystem
@@ -37,7 +37,7 @@ jobs:
             allowed_child_binaries: []
             allow_network: false
             allowed_unix_sockets: []
-EOF
+          ' > fs-gate.yaml
           RUST_LOG=trace target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
 
       - name: Run Python Git server
@@ -48,24 +48,24 @@ EOF
           pip install .
           cd ../../..
           GIT_CMD=$(which mcp-server-git)
-          cat << 'EOF' > git-gate.yaml
+          echo '
           version: 1
           server:
             name: python-git
-            command: ${GIT_CMD}
+            command: '${GIT_CMD}'
             args: []
             workspace:
               source: pilot-git/src/git
               mode: copy
           policy:
             read_paths:
-              - \${WORKSPACE}
+              - ${WORKSPACE}
             write_paths:
-              - \${WORKSPACE}
+              - ${WORKSPACE}
             allowed_child_binaries: []
             allow_network: false
             allowed_unix_sockets: []
-EOF
+          ' > git-gate.yaml
           RUST_LOG=trace target/release/mcp-gate run --config git-gate.yaml --sarif git.sarif || true
 
       - name: Run Go Github server
@@ -76,24 +76,24 @@ EOF
           go build -o github-mcp-server ./cmd/github-mcp-server
           cd ..
           GH_CMD=$(realpath pilot-gh/github-mcp-server)
-          cat << 'EOF' > gh-gate.yaml
+          echo '
           version: 1
           server:
             name: go-github
-            command: ${GH_CMD}
+            command: '${GH_CMD}'
             args: []
             workspace:
               source: pilot-gh
               mode: copy
           policy:
             read_paths:
-              - \${WORKSPACE}
+              - ${WORKSPACE}
             write_paths:
-              - \${WORKSPACE}
+              - ${WORKSPACE}
             allowed_child_binaries: []
             allow_network: true
             allowed_unix_sockets: []
-EOF
+          ' > gh-gate.yaml
           RUST_LOG=trace target/release/mcp-gate run --config gh-gate.yaml --sarif gh.sarif || true
 
       - name: Upload results
