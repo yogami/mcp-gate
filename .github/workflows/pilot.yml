@@ -20,7 +20,7 @@ jobs:
           cd pilot-servers/src/filesystem
           npm install && npm run build
           cd ../../..
-          cat << 'CONFIG' > fs-gate.yaml
+          cat << 'CONFIG_DELIM' > fs-gate.yaml
           version: 1
           server:
             name: node-filesystem
@@ -37,10 +37,9 @@ jobs:
             allowed_child_binaries: []
             allow_network: false
             allowed_unix_sockets: []
+          CONFIG_DELIM
           timeout 30s strace -f -o mcp-gate.strace target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
           cat mcp-gate.strace || true
-
-
 
       - name: Upload results
         uses: actions/upload-artifact@v4
