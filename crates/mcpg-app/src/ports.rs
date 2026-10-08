@@ -108,6 +108,8 @@ impl Clock for FakeClock {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+#[allow(clippy::result_unit_err)]
 pub trait Sandbox {
     fn generate_seed(&self) -> Result<Seed, ExitCode>;
     fn probe_host_caps(&self) -> HostCaps;
@@ -150,6 +152,7 @@ pub trait Sandbox {
     ) -> std::thread::JoinHandle<()>;
 }
 
+#[allow(clippy::result_unit_err)]
 pub trait TripwireHandle {
     fn stop(&mut self);
     fn join(self: Box<Self>) -> Result<Vec<(String, String)>, ()>;

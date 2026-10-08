@@ -27,6 +27,7 @@ fn compute_fingerprint(secrets: &[Secret], content: &[u8]) -> String {
     full[..12].to_string()
 }
 
+#[allow(dead_code)]
 fn set_dirs_mode_0700(mut dir: &std::path::Path, stop_at: &std::path::Path) -> io::Result<()> {
     while dir != stop_at && dir.starts_with(stop_at) {
         #[cfg(unix)]

@@ -45,7 +45,7 @@ impl<T: McpTransport> McpClient<T> {
                 .deadline_tracker
                 .as_ref()
                 .map(|t| t.clock().now())
-                .unwrap_or_else(|| std::time::Instant::now());
+                .unwrap_or_else(std::time::Instant::now);
             if now >= deadline {
                 if let Some(cd) = call_deadline {
                     if now >= cd {

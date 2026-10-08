@@ -112,7 +112,7 @@ pub fn drive_session<T: McpTransport>(
     if client
         .initialize(
             &cfg.server.protocol_versions,
-            cfg.server.client.roots.clone(),
+            cfg.server.client.roots,
         )
         .is_err()
     {

@@ -80,7 +80,7 @@ pub trait RunOrchestrator {
 }
 
 use crate::phase::PhaseCursor;
-use crate::ports::{CapsuleLauncher, Sandbox};
+use crate::ports::Sandbox;
 use crate::run_planner::RunPlanner;
 use std::sync::Arc;
 
@@ -90,15 +90,9 @@ pub struct AppOrchestrator {
 
 impl RunOrchestrator for AppOrchestrator {
     fn execute(&self, opts: &RunOptions) -> Result<RunOutcome, ExitCode> {
-        let (cfg, mode, seed, caps) = match self.init_base(opts) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
+        let (cfg, mode, seed, caps) = self.init_base(opts)?;
 
-        let (vars, registry, env_outcome) = match self.sandbox.init(&cfg, &seed, opts) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
+        let (vars, registry, env_outcome) = self.sandbox.init(&cfg, &seed, opts)?;
 
         let capsule_path = env_outcome
             .vars
@@ -107,34 +101,21 @@ impl RunOrchestrator for AppOrchestrator {
             .and_then(|(_, v)| v.to_str())
             .unwrap_or("/usr/local/bin:/usr/bin:/bin");
 
-        let resolved = match RunPlanner::resolve_policy(&cfg, &vars, capsule_path) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
+        let resolved = RunPlanner::resolve_policy(&cfg, &vars, capsule_path)?;
 
-        let plan = match RunPlanner::create_plan(&cfg, &env_outcome, &vars, mode) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
+        let plan = RunPlanner::create_plan(&cfg, &env_outcome, &vars, mode)?;
 
         let ruleset = if mode == Mode::Enforce {
-            match self
+            self
                 .sandbox
-                .build_ruleset(&resolved, &vars, &cfg.server.command, &caps)
-            {
-                Ok(v) => v,
-                Err(e) => return Err(e),
-            }
+                .build_ruleset(&resolved, &vars, &cfg.server.command, &caps)?
         } else {
             None
         };
 
         let phase = PhaseCursor::new();
 
-        let _tripwire_handle = match self.sandbox.setup_tripwire(&registry, phase.clone()) {
-            Ok(v) => v,
-            Err(e) => return Err(e),
-        };
+        let _tripwire_handle = self.sandbox.setup_tripwire(&registry, phase.clone())?;
 
         let _scanner = if !registry.records.is_empty() {
             Some(Arc::new(mcpg_domain::leak::LeakScanner::from_registry(
@@ -188,7 +169,7 @@ impl RunOrchestrator for AppOrchestrator {
                 .with_workspace_uri(format!("file://{}", vars.workspace.display()));
             let tracker = mcpg_mcp::deadline::DeadlineTracker::new(
                 std::sync::Arc::new(mcpg_mcp::deadline::SystemClock),
-                cfg.limits.clone(),
+                cfg.limits,
             );
             client.set_deadline_tracker(tracker.clone());
 

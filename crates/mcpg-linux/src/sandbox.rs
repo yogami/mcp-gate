@@ -16,13 +16,18 @@ use mcpg_domain::policy::sets::EnforcementSet;
 use mcpg_domain::seed::Seed;
 use mcpg_domain::verdict::ExitCode;
 use std::fs;
-use std::os::fd::AsRawFd;
 use std::os::fd::OwnedFd;
 use std::os::fd::RawFd;
 use std::path::{Path, PathBuf};
 
 pub struct LinuxSandbox {
     run_dir: std::sync::Mutex<Option<RunDir>>,
+}
+
+impl Default for LinuxSandbox {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl LinuxSandbox {
