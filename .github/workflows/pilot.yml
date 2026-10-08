@@ -45,20 +45,21 @@ jobs:
           cd pilot-git/src/git
           pip install .
           cd ../../..
-          cat << 'CONFIG' > git-gate.yaml
+          GIT_CMD=$(which mcp-server-git)
+          cat << CONFIG > git-gate.yaml
           version: 1
           server:
             name: python-git
-            command: mcp-server-git
+            command: ${GIT_CMD}
             args: []
             workspace:
               source: pilot-git/src/git
               mode: copy
           policy:
             read_paths:
-              - ${WORKSPACE}
+              - \${WORKSPACE}
             write_paths:
-              - ${WORKSPACE}
+              - \${WORKSPACE}
             allowed_child_binaries: []
             allow_network: false
             allowed_unix_sockets: []
@@ -69,22 +70,23 @@ jobs:
         run: |
           git clone https://github.com/github/github-mcp-server.git pilot-gh
           cd pilot-gh
-          go build -o github-mcp-server .
+          go build -o github-mcp-server ./cmd/github-mcp-server
           cd ..
-          cat << 'CONFIG' > gh-gate.yaml
+          GH_CMD=$(realpath pilot-gh/github-mcp-server)
+          cat << CONFIG > gh-gate.yaml
           version: 1
           server:
             name: go-github
-            command: ./github-mcp-server
+            command: ${GH_CMD}
             args: []
             workspace:
               source: pilot-gh
               mode: copy
           policy:
             read_paths:
-              - ${WORKSPACE}
+              - \${WORKSPACE}
             write_paths:
-              - ${WORKSPACE}
+              - \${WORKSPACE}
             allowed_child_binaries: []
             allow_network: true
             allowed_unix_sockets: []

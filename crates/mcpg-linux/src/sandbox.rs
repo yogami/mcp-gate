@@ -251,8 +251,9 @@ impl LinuxSandbox {
     }
 
     fn collect_exec_roots(cmd: &str, child_bins: &[PathBuf]) -> Vec<PathBuf> {
+        let path_var = std::env::var("PATH").unwrap_or_else(|_| "/usr/local/bin:/usr/bin:/bin".to_string());
         let root =
-            mcpg_domain::policy::resolve::resolve_binary(cmd, "/usr/local/bin:/usr/bin:/bin", &StdFs)
+            mcpg_domain::policy::resolve::resolve_binary(cmd, &path_var, &StdFs)
                 .unwrap_or_else(|_| PathBuf::from(cmd));
         let mut roots = vec![root];
         roots.extend(child_bins.iter().cloned());
