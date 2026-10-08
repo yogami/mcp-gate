@@ -59,8 +59,19 @@ fn cmd_fds() {
     let mut fds = collect_dir_fds(fd_dir_path());
     fds.sort();
     let mut links = std::collections::BTreeMap::new();
+    let dir_path = fd_dir_path();
     for &fd in &fds {
-        if let Ok(path) = std::fs::read_link(format!("/proc/self/fd/{}", fd)) {
+        #[cfg(target_os = "macos")]
+        {
+            let mut buf = [0u8; 1024];
+            if unsafe { libc::fcntl(fd, libc::F_GETPATH, buf.as_mut_ptr()) } != -1 {
+                if let Ok(c_str) = std::ffi::CStr::from_bytes_until_nul(&buf) {
+                    links.insert(fd.to_string(), c_str.to_string_lossy().into_owned());
+                }
+            }
+        }
+        #[cfg(target_os = "linux")]
+        if let Ok(path) = std::fs::read_link(format!("{}/{}", dir_path, fd)) {
             links.insert(fd.to_string(), path.to_string_lossy().into_owned());
         }
     }

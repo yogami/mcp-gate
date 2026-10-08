@@ -65,7 +65,10 @@ pub fn handle_scenario_step<T: McpTransport>(
             }
             true
         }
-        Err(_) => false,
+        Err(e) => {
+            eprintln!("DEBUG: execute_single_scenario failed with: {:?}", e);
+            false
+        },
     }
 }
 
@@ -109,10 +112,8 @@ pub fn drive_session<T: McpTransport>(
     phase: &PhaseCursor,
 ) -> (Verdict, ExitCode, Vec<(String, String)>) {
     let _ = phase.advance_to_handshake();
-    if client
-        .initialize(&cfg.server.protocol_versions, cfg.server.client.roots)
-        .is_err()
-    {
+    if let Err(e) = client.initialize(&cfg.server.protocol_versions, cfg.server.client.roots) {
+        eprintln!("DEBUG: client.initialize failed with: {:?}", e);
         return (
             Verdict::Inconclusive,
             ExitCode::Inconclusive,

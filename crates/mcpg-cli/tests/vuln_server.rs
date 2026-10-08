@@ -91,7 +91,7 @@ fn assert_exit(assert: assert_cmd::assert::Assert, linux_expected: i32) {
 
 #[test]
 fn p2_vuln_01_naive_read() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_01");
     let cfg = make_vuln_config("naive-read", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -104,7 +104,7 @@ fn p2_vuln_01_naive_read() {
 
 #[test]
 fn p2_vuln_02_naive_read_enforce() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_02");
     let cfg = make_vuln_config("naive-read", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -123,7 +123,7 @@ fn p2_vuln_02_naive_read_enforce() {
 
 #[test]
 fn p2_vuln_03_naive_write() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_03");
     let cfg = make_vuln_config("naive-write", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -136,7 +136,7 @@ fn p2_vuln_03_naive_write() {
 
 #[test]
 fn p2_vuln_04_startup_read() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_04");
     let cfg = make_vuln_config("startup-read", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -149,7 +149,7 @@ fn p2_vuln_04_startup_read() {
 
 #[test]
 fn p2_vuln_05_config_echo() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_05");
     let cfg = make_vuln_config("config-echo", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -162,7 +162,7 @@ fn p2_vuln_05_config_echo() {
 
 #[test]
 fn p2_vuln_06_env_echo() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_06");
     let cfg = make_vuln_config("env-echo", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -175,7 +175,7 @@ fn p2_vuln_06_env_echo() {
 
 #[test]
 fn p2_vuln_07_shell_out() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_07");
     let cfg = make_vuln_config("shell-out", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -188,7 +188,7 @@ fn p2_vuln_07_shell_out() {
 
 #[test]
 fn p2_vuln_08_shell_out_enforce() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_08");
     let cfg = make_vuln_config("shell-out", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -207,7 +207,7 @@ fn p2_vuln_08_shell_out_enforce() {
 
 #[test]
 fn p2_vuln_09_net_call() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_09");
     let cfg = make_vuln_config("net-call", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -220,7 +220,7 @@ fn p2_vuln_09_net_call() {
 
 #[test]
 fn p2_vuln_10_unix_sock() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_10");
     let cfg = make_vuln_config("unix-sock", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -233,7 +233,7 @@ fn p2_vuln_10_unix_sock() {
 
 #[test]
 fn p2_vuln_11_proc_peek() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_11");
     let cfg = make_vuln_config("proc-peek", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -246,7 +246,7 @@ fn p2_vuln_11_proc_peek() {
 
 #[test]
 fn p2_vuln_12_daemon() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_12");
     let cfg = make_vuln_config("daemon", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -259,7 +259,7 @@ fn p2_vuln_12_daemon() {
 
 #[test]
 fn p2_vuln_13_signal_parent() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_13");
     let cfg = make_vuln_config("signal-parent", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -272,7 +272,7 @@ fn p2_vuln_13_signal_parent() {
 
 #[test]
 fn p2_vuln_14_symlink_follow() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_14");
     let cfg = make_vuln_config("symlink-follow", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -285,7 +285,7 @@ fn p2_vuln_14_symlink_follow() {
 
 #[test]
 fn p2_vuln_15_netrc_read_fail_on_error() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_15");
     let cfg = make_vuln_config("netrc-read", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -304,7 +304,7 @@ fn p2_vuln_15_netrc_read_fail_on_error() {
 
 #[test]
 fn p2_vuln_16_netrc_read_fail_on_warning() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_16");
     let cfg = make_vuln_config("netrc-read", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -323,7 +323,7 @@ fn p2_vuln_16_netrc_read_fail_on_warning() {
 
 #[test]
 fn p2_vuln_17_all_defects() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_17");
     let cfg = make_vuln_config("all", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -336,7 +336,7 @@ fn p2_vuln_17_all_defects() {
 
 #[test]
 fn p2_vuln_18_same_seed_replay() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let seed = "11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff";
     let tmp = tempfile_helper::TempDir::new("p2_vuln_18");
     let cfg = make_vuln_config("config-echo", tmp.path());
@@ -350,7 +350,7 @@ fn p2_vuln_18_same_seed_replay() {
 
 #[test]
 fn p2_vuln_18a_replay_with_printed_seed() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_18a");
     let cfg = make_vuln_config("config-echo", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
@@ -369,7 +369,7 @@ fn p2_vuln_18a_replay_with_printed_seed() {
 
 #[test]
 fn p2_vuln_19_server_exits_during_handshake() {
-    let _lock = VULN_LOCK.lock().unwrap();
+    let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_19");
     let cfg = make_vuln_config("naive-read", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
