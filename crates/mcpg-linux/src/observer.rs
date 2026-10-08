@@ -532,7 +532,7 @@ pub fn start_observer_thread(
             let res = engine.handle_syscall(req.pid, nr, req.data.args);
             resp.flags = res.flags;
             resp.error = res.error;
-            resp.val = res.val as u64;
+            resp.val = res.val;
 
             if let Some(vio) = res.violation {
                 let _ = violations_tx.send(vio);

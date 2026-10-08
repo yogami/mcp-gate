@@ -68,6 +68,7 @@ fn add_single_fs_rule(ruleset_fd: RawFd, path: &Path, allowed_access: u64) -> st
         }
         return Err(err);
     }
+    let mut stat: libc::stat = unsafe { std::mem::zeroed() };
     if unsafe { libc::fstat(fd, &mut stat) } < 0 {
         let err = std::io::Error::last_os_error();
         unsafe {
