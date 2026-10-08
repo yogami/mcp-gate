@@ -245,6 +245,7 @@ fn child_pre_exec(
 
 impl CapsuleLauncher for LinuxLauncher {
     fn launch(&self, plan: &CapsulePlan) -> Result<RunningCapsule, LaunchError> {
+    eprintln!("LinuxLauncher::launch - start");
         #[cfg(target_os = "linux")]
         unsafe {
             let dumpable = libc::prctl(libc::PR_GET_DUMPABLE, 0, 0, 0, 0);
@@ -333,7 +334,7 @@ impl CapsuleLauncher for LinuxLauncher {
             }
         }
 
-        let child = cmd.spawn()?;
+        eprintln!("LinuxLauncher::launch - cmd.spawn"); let child = cmd.spawn()?; eprintln!("LinuxLauncher::launch - cmd.spawn finished");
         let pid = child.id();
 
         #[cfg(target_os = "linux")]
