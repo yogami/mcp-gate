@@ -210,47 +210,13 @@ fn p2_vuln_08_shell_out_enforce() {
 fn p2_vuln_09_net_call() {
     let _lock = VULN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let tmp = tempfile_helper::TempDir::new("p2_vuln_09");
-    
-    let vuln_py = workspace_root().join("fixtures/servers/vulnerable/server.py");
-    let ws = tmp.path().join("workspace");
-    let _ = std::fs::create_dir_all(&ws);
-
-    let cfg_path = tmp.path().join("mcp-gate.yaml");
-    let content = format!(
-        r#"version: 1
-policy:
-  read_paths: []
-  write_paths: []
-  allowed_child_binaries: ["/usr/bin/bash", "/bin/bash", "/usr/bin/ls", "/bin/ls", "/usr/bin/cat", "/bin/cat", "/usr/bin/id", "/bin/id"]
-  allow_network: false
-  allowed_unix_sockets: []
-scenarios:
-  - id: test-call
-    tool: make_net_call
-    arguments:
-      url: "http://example.com"
-server:
-  name: "vulnerable-server"
-  command: "bash"
-  args: ["-c", "id >&2; ls -la {} >&2; cat {} >&2"]
-  protocol_versions: ["2024-11-05"]
-  workspace:
-    source: "{}"
-    mode: in-place
-"#,
-        vuln_py.display(),
-        vuln_py.display(),
-        ws.display()
-    );
-
-    std::fs::write(&cfg_path, content).unwrap();
-
+    let cfg = make_vuln_config("net-call", tmp.path());
     let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
     let assert = cmd
         .current_dir(workspace_root())
-        .args(["run", "--config", cfg_path.to_str().unwrap()])
+        .args(["run", "--config", cfg.to_str().unwrap()])
         .assert();
-    assert_exit(assert, 99);
+    assert_exit(assert, 1);
 }
 
 #[test]
