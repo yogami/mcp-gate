@@ -1,0 +1,15 @@
+[package]
+name = "syscall-probe"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+libc = "0.2"
+
+[dev-dependencies]
+assert_cmd = { workspace = true }

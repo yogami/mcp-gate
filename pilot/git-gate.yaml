@@ -1,0 +1,16 @@
+version: 1
+server:
+  name: python-git
+  command: mcp-server-git
+  args: []
+  workspace:
+    source: pilot-git/src/git
+    mode: copy
+policy:
+  read_paths:
+    - ${WORKSPACE}
+  write_paths:
+    - ${WORKSPACE}
+  allowed_child_binaries: []
+  allow_network: false
+  allowed_unix_sockets: []

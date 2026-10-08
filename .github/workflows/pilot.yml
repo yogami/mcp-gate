@@ -1,0 +1,98 @@
+name: Pilot
+
+on:
+  push:
+    branches:
+      - pilot-eval
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build mcp-gate
+        run: cargo build --release
+      
+      - name: Run filesystem server
+        run: |
+          git clone https://github.com/modelcontextprotocol/servers.git pilot-servers
+          cd pilot-servers/src/filesystem
+          npm install && npm run build
+          cd ../../..
+          cat << 'CONFIG' > fs-gate.yaml
+          version: 1
+          server:
+            name: node-filesystem
+            command: node
+            args: ["dist/index.js", "."]
+            workspace:
+              source: pilot-servers/src/filesystem
+              mode: copy
+          policy:
+            read_paths:
+              - ${WORKSPACE}
+            write_paths:
+              - ${WORKSPACE}
+            allowed_child_binaries: []
+            allow_network: false
+            allowed_unix_sockets: []
+          CONFIG
+          target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
+
+      - name: Run Python Git server
+        run: |
+          git clone https://github.com/modelcontextprotocol/servers.git pilot-git
+          cd pilot-git/src/git
+          pip install .
+          cd ../../..
+          cat << 'CONFIG' > git-gate.yaml
+          version: 1
+          server:
+            name: python-git
+            command: mcp-server-git
+            args: []
+            workspace:
+              source: pilot-git/src/git
+              mode: copy
+          policy:
+            read_paths:
+              - ${WORKSPACE}
+            write_paths:
+              - ${WORKSPACE}
+            allowed_child_binaries: []
+            allow_network: false
+            allowed_unix_sockets: []
+          CONFIG
+          target/release/mcp-gate run --config git-gate.yaml --sarif git.sarif || true
+
+      - name: Run Go Github server
+        run: |
+          git clone https://github.com/github/github-mcp-server.git pilot-gh
+          cd pilot-gh
+          go build -o github-mcp-server .
+          cd ..
+          cat << 'CONFIG' > gh-gate.yaml
+          version: 1
+          server:
+            name: go-github
+            command: ./github-mcp-server
+            args: []
+            workspace:
+              source: pilot-gh
+              mode: copy
+          policy:
+            read_paths:
+              - ${WORKSPACE}
+            write_paths:
+              - ${WORKSPACE}
+            allowed_child_binaries: []
+            allow_network: true
+            allowed_unix_sockets: []
+          CONFIG
+          target/release/mcp-gate run --config gh-gate.yaml --sarif gh.sarif || true
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pilot-sarifs
+          path: "*.sarif"

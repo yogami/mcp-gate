@@ -1,0 +1,17 @@
+[package]
+name = "mcpg-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+mcpg-domain = { path = "../mcpg-domain" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yml = { workspace = true }
+saphyr = { workspace = true }
+jsonschema = { workspace = true }
+
+mcpg-mcp = { path = "../mcpg-mcp" }

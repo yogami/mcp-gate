@@ -1,0 +1,6 @@
+version: 1
+server:
+  name: test-server
+  command: python3
+  workspace:
+    source: ./fixtures/workspace

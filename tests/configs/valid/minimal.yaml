@@ -1,0 +1,13 @@
+version: 1
+
+server:
+  name: minimal-server
+  command: /usr/bin/python3
+  workspace:
+    source: .
+
+policy:
+  read_paths: []
+  write_paths: []
+  allowed_child_binaries: []
+  allow_network: false

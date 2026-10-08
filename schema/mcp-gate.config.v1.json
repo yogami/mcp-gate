@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcp-gate.dev/schema/config/v1.json",
+  "title": "mcp-gate configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "server", "policy"],
+  "properties": {
+    "version": { "const": 1 },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "command", "workspace"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,62}$" },
+        "command": { "type": "string", "minLength": 1 },
+        "args": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "workspace": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source"],
+          "properties": {
+            "source": { "type": "string" },
+            "mode": { "enum": ["copy", "in-place"], "default": "copy" },
+            "exclude": { "type": "array", "items": { "type": "string" }, "default": [".git"] }
+          }
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "passthrough": {
+              "type": "array",
+              "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\*?$" },
+              "default": []
+            },
+            "set": {
+              "type": "object",
+              "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+              "additionalProperties": { "type": "string" },
+              "default": {}
+            },
+            "allow_secret_passthrough": { "type": "boolean", "default": false }
+          }
+        },
+        "protocol_versions": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "minItems": 1
+        },
+        "client": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "roots": { "type": "boolean", "default": true } }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read_paths", "write_paths", "allowed_child_binaries", "allow_network"],
+      "properties": {
+        "baseline": { "enum": ["minimal", "python", "node", "none"], "default": "minimal" },
+        "read_paths": { "$ref": "#/$defs/pathList" },
+        "write_paths": { "$ref": "#/$defs/pathList" },
+        "allowed_child_binaries": { "$ref": "#/$defs/pathList" },
+        "allow_network": { "type": "boolean" },
+        "allowed_unix_sockets": { "$ref": "#/$defs/pathList" }
+      }
+    },
+    "canaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "kinds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["ssh", "aws", "gcloud", "kube", "docker", "git_credentials", "gh_cli", "netrc", "npmrc", "pypirc", "dotenv", "env"] }
+        },
+        "declared_use": { "$ref": "#/$defs/fileCanaryKinds" }
+      }
+    },
+    "observe": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stat_probes": { "type": "boolean", "default": false },
+        "max_events": { "type": "integer", "minimum": 1000, "default": 200000 }
+      }
+    },
+    "probes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path_traversal": { "$ref": "#/$defs/probeToggle" },
+        "env_echo": { "$ref": "#/$defs/probeToggle" }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "tool"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,62}$" },
+          "tool": { "type": "string" },
+          "arguments": { "type": "object", "default": {} },
+          "timeout_s": { "type": "integer", "minimum": 1 },
+          "canaries": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "allow_access": { "$ref": "#/$defs/fileCanaryKinds" }
+            }
+          },
+          "expect": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "outcome": { "enum": ["success", "tool_error", "protocol_error", "any"], "default": "success" },
+              "content_contains": { "type": "array", "items": { "type": "string" } },
+              "content_not_contains": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "startup_timeout_s": { "type": "integer", "minimum": 1, "default": 30 },
+        "call_timeout_s": { "type": "integer", "minimum": 1, "default": 30 },
+        "total_timeout_s": { "type": "integer", "minimum": 1, "default": 600 },
+        "shutdown_grace_s": { "type": "integer", "minimum": 0, "default": 3 },
+        "max_processes": { "type": "integer", "minimum": 1, "default": 64 },
+        "max_stdout_line_bytes": { "type": "integer", "minimum": 1024, "default": 16777216 }
+      }
+    },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fail_on": { "enum": ["error", "warning", "note"], "default": "error" },
+        "sarif_category": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "fileCanaryKinds": {
+      "type": "array",
+      "uniqueItems": true,
+      "default": [],
+      "items": { "enum": ["ssh", "aws", "gcloud", "kube", "docker", "git_credentials", "gh_cli", "netrc", "npmrc", "pypirc", "dotenv"] }
+    },
+    "pathList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "probeToggle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "tools": {
+          "oneOf": [
+            { "const": "auto" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "default": "auto"
+        }
+      }
+    }
+  }
+}

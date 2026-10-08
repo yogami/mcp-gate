@@ -1,0 +1,17 @@
+{
+  "schema": "runner-probe/v1",
+  "kernel": "6.8.0-generic",
+  "arch": "x86_64",
+  "checks": {
+    "P0-SPIKE-01": {"status": "pass", "detail": {"listener_fd": 4}},
+    "P0-SPIKE-02": {"status": "pass", "detail": {"notifications": 1}},
+    "P0-SPIKE-03": {"status": "fail", "detail": {"path": "/etc/hostname"}},
+    "P0-SPIKE-04": {"status": "info", "detail": {"wait_killable_recv": true}},
+    "P0-SPIKE-05": {"status": "pass", "detail": {"abi": 7}},
+    "P0-SPIKE-06": {"status": "pass", "detail": {"allowed_ok": true}},
+    "P0-SPIKE-07": {"status": "pass", "detail": {"open_seen": true}},
+    "P0-SPIKE-08": {"status": "pass", "detail": {"open_seen": true}},
+    "P0-SPIKE-09": {"status": "pass", "detail": {"errno": "EACCES"}},
+    "P0-SPIKE-10": {"status": "info", "detail": {"ratio": 12.0}}
+  }
+}

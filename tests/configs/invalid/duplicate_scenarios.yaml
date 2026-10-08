@@ -1,0 +1,13 @@
+version: "1"
+server:
+  command: "python3"
+  args: ["foo.py"]
+policy:
+  read_paths: ["/home"]
+scenarios:
+  - id: "test"
+    tool: "read_file"
+    arguments: { "path": "/home/user" }
+  - id: "test"
+    tool: "list_dir"
+    arguments: { "path": "/home" }

@@ -1,0 +1,43 @@
+name: 'mcp-gate'
+description: 'Linux CI regression tester and capability policy gate for MCP servers'
+inputs:
+  config:
+    description: 'Config file to run'
+    required: false
+    default: './mcp-gate.yaml'
+  mode:
+    description: 'Operational mode: enforce or observe'
+    required: false
+    default: 'enforce'
+  fail-on:
+    description: 'Lowest SARIF level that makes the verdict FAIL'
+    required: false
+    default: ''
+  sarif:
+    description: 'SARIF output path'
+    required: false
+    default: 'mcp-gate.sarif'
+  timeout:
+    description: 'Override total run timeout in seconds'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Run mcp-gate'
+      shell: bash
+      env:
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_MODE: ${{ inputs.mode }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_TIMEOUT: ${{ inputs.timeout }}
+      run: |
+        ARGS=("--config" "$INPUT_CONFIG" "--mode" "$INPUT_MODE" "--sarif" "$INPUT_SARIF")
+        if [ -n "$INPUT_FAIL_ON" ]; then
+          ARGS+=("--fail-on" "$INPUT_FAIL_ON")
+        fi
+        if [ -n "$INPUT_TIMEOUT" ]; then
+          ARGS+=("--timeout" "$INPUT_TIMEOUT")
+        fi
+        mcp-gate run "${ARGS[@]}"

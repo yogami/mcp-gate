@@ -1,0 +1,42 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mcpg-domain",
+    "crates/mcpg-app",
+    "crates/mcpg-linux",
+    "crates/mcpg-mcp",
+    "crates/mcpg-report",
+    "crates/mcpg-cli",
+    "fixtures/servers/syscall-probe",
+]
+exclude = [
+    "spikes/runner-probe",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yogami/mcp-gate"
+authors = ["mcp-gate contributors"]
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yml = "0.0.13"
+saphyr = "0.1.0"
+jsonschema = { version = "0.58", default-features = false }
+clap = { version = "4.5", features = ["derive"] }
+assert_cmd = "2.0"
+predicates = "3.1"
+proptest = "1.5"
+insta = { version = "1.39", features = ["yaml"] }
+getrandom = "0.3"
+hkdf = "0.12"
+sha2 = "0.10"
+rand_chacha = "0.9"
+rand_core = "0.9"
+ed25519-dalek = { version = "2.1", default-features = false, features = ["fast", "zeroize"] }
+aho-corasick = "1.1"
+

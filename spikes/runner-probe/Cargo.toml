@@ -1,0 +1,18 @@
+[package]
+name = "runner-probe"
+version = "0.0.0"
+edition = "2021"
+description = "Phase 0 spike: probes seccomp, Landlock and inotify support on hosted CI runners. Deleted in Month 3."
+publish = false
+
+# Standalone crate. The empty table stops cargo from treating the future
+# repository-root workspace (TASK-1.1) as this crate's parent.
+[workspace]
+
+[dependencies]
+libc = "0.2"
+serde_json = "1"
+
+[profile.release]
+opt-level = 2
+debug = false

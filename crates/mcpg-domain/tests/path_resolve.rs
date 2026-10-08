@@ -1,0 +1,312 @@
+use std::path::{Path, PathBuf};
+
+use mcpg_domain::path::resolve::{resolve, EscapeKind};
+use mcpg_domain::path::ProcCtx;
+use mcpg_domain::testing::FakeFs;
+
+#[test]
+fn p1_path_01_relative_join() {
+    let mut fs = FakeFs::new();
+    fs.add_file("/c/ws/a/b.txt", b"hello");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b"a/b.txt", true, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/c/ws/a/b.txt"));
+    assert_eq!(res.escaped_via, None);
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_02_dotdot_escape() {
+    let mut fs = FakeFs::new();
+    fs.add_file("/c/home/.ssh/id_ed25519", b"key");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b"../home/.ssh/id_ed25519", true, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/c/home/.ssh/id_ed25519"));
+    assert_eq!(res.escaped_via, Some(EscapeKind::DotDot));
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_03_absolute_escape() {
+    let mut fs = FakeFs::new();
+    fs.add_file("/etc/passwd", b"root:x:0:0:...");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b"/etc/passwd", true, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/etc/passwd"));
+    assert_eq!(res.escaped_via, Some(EscapeKind::Absolute));
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_04_dotdot_clamps_at_root() {
+    let mut fs = FakeFs::new();
+    fs.add_file("/x", b"target");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b"../../../../../../x", true, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/x"));
+    assert_eq!(res.escaped_via, Some(EscapeKind::DotDot));
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_09_redundant_separators() {
+    let mut fs = FakeFs::new();
+    fs.add_file("/c/ws/a/b", b"data");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b".//a/./b//", true, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/c/ws/a/b"));
+    assert_eq!(res.escaped_via, None);
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_11_dirfd_base_inside_root() {
+    let mut fs = FakeFs::new();
+    fs.add_file("/c/ws/f", b"data");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws/sub");
+    let res = resolve(&fs, root, base, b"../f", true, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/c/ws/f"));
+    assert_eq!(res.escaped_via, None);
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_05_symlink_escape() {
+    let mut fs = FakeFs::new();
+    fs.add_symlink("/c/ws/link", "/c/home/.ssh");
+    fs.add_file("/c/home/.ssh/id", b"secret");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b"link/id", true, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/c/home/.ssh/id"));
+    assert_eq!(res.escaped_via, Some(EscapeKind::Symlink));
+    assert_eq!(res.symlinks_followed, 1);
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_06_symlink_then_dotdot_kernel_order() {
+    let mut fs = FakeFs::new();
+    fs.add_symlink("/c/ws/link", "/c/home/.ssh");
+    fs.add_file("/c/home/x", b"data");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b"link/../x", true, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/c/home/x"));
+    assert_eq!(res.escaped_via, Some(EscapeKind::Symlink));
+    assert_eq!(res.symlinks_followed, 1);
+    assert_eq!(res.lexical, PathBuf::from("/c/ws/x"));
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_07_nofollow_last_component() {
+    let mut fs = FakeFs::new();
+    fs.add_symlink("/c/ws/link", "/etc");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b"link", false, None);
+
+    assert_eq!(res.resolved, PathBuf::from("/c/ws/link"));
+    assert_eq!(res.escaped_via, None);
+    assert_eq!(res.symlinks_followed, 0);
+    assert!(res.exists);
+}
+
+#[test]
+fn p1_path_08_eloop_after_40() {
+    let mut fs = FakeFs::new();
+    for i in 0..41 {
+        fs.add_symlink(format!("/c/ws/link{i}"), format!("/c/ws/link{}", i + 1));
+    }
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+    let res = resolve(&fs, root, base, b"link0", true, None);
+
+    assert_eq!(
+        res.error,
+        Some(mcpg_domain::path::resolve::ResolveError::Eloop)
+    );
+    assert_eq!(res.symlinks_followed, 40);
+}
+
+#[test]
+fn p1_path_10_missing_tail_joined_lexically() {
+    let mut fs = FakeFs::new();
+    fs.add_dir("/c");
+    fs.add_dir("/c/ws");
+    fs.add_dir("/c/ws/existing");
+    fs.add_symlink("/c/ws/link_to_existing", "/c/ws/existing");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+
+    let res = resolve(
+        &fs,
+        root,
+        base,
+        b"existing/missing_dir/file.txt",
+        true,
+        None,
+    );
+    assert_eq!(
+        res.resolved,
+        Path::new("/c/ws/existing/missing_dir/file.txt")
+    );
+    assert!(!res.exists);
+    assert_eq!(res.escaped_via, None);
+
+    let res2 = resolve(
+        &fs,
+        root,
+        base,
+        b"link_to_existing/missing/../another_missing/tail.txt",
+        true,
+        None,
+    );
+    assert_eq!(
+        res2.resolved,
+        Path::new("/c/ws/existing/another_missing/tail.txt")
+    );
+    assert!(!res2.exists);
+    assert_eq!(res2.escaped_via, None);
+}
+
+#[test]
+fn p1_path_15_non_utf8_preserved() {
+    let mut fs = FakeFs::new();
+    fs.add_dir("/c");
+    fs.add_dir("/c/ws");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+
+    let raw = b"bad_\xff\xfe_dir/file.txt";
+    let res = resolve(&fs, root, base, raw, true, None);
+    assert!(!res.exists);
+
+    let display = res.display();
+    assert!(
+        display.contains(r"\xff\xfe"),
+        "expected escaped bytes in display, got: {display}"
+    );
+    assert_eq!(display, r"/c/ws/bad_\xff\xfe_dir/file.txt");
+}
+
+#[test]
+fn p1_path_12_proc_self_maps_to_capsule() {
+    let fs = FakeFs::new();
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+
+    let mut capsule_pids = std::collections::BTreeSet::new();
+    capsule_pids.insert(1000);
+    let ctx = ProcCtx::new(capsule_pids, std::collections::BTreeMap::new());
+
+    let res = resolve(&fs, root, base, b"/proc/self/status", true, Some(&ctx));
+    assert_eq!(res.resolved, Path::new("proc:capsule/status"));
+    assert_eq!(res.escaped_via, None);
+    assert!(!res.exists);
+
+    let res2 = resolve(&fs, root, base, b"/proc/self", true, Some(&ctx));
+    assert_eq!(res2.resolved, Path::new("proc:capsule"));
+    assert_eq!(res2.escaped_via, None);
+
+    let res3 = resolve(&fs, root, base, b"/proc/thread-self/stat", true, Some(&ctx));
+    assert_eq!(res3.resolved, Path::new("proc:capsule/stat"));
+    assert_eq!(res3.escaped_via, None);
+
+    let res4 = resolve(&fs, root, base, b"/proc/1000/cmdline", true, Some(&ctx));
+    assert_eq!(res4.resolved, Path::new("proc:capsule/cmdline"));
+    assert_eq!(res4.escaped_via, None);
+}
+
+#[test]
+fn p1_path_13_foreign_pid_maps_to_foreign() {
+    let fs = FakeFs::new();
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+
+    let mut capsule_pids = std::collections::BTreeSet::new();
+    capsule_pids.insert(1000);
+    let ctx = ProcCtx::new(capsule_pids, std::collections::BTreeMap::new());
+
+    let res = resolve(&fs, root, base, b"/proc/9999/environ", true, Some(&ctx));
+    assert_eq!(res.resolved, Path::new("proc:foreign:9999/environ"));
+    assert_eq!(res.escaped_via, Some(EscapeKind::ProcFd));
+    assert!(!res.exists);
+
+    let res2 = resolve(&fs, root, base, b"/proc/1/cmdline", true, Some(&ctx));
+    assert_eq!(res2.resolved, Path::new("proc:foreign:1/cmdline"));
+    assert_eq!(res2.escaped_via, Some(EscapeKind::ProcFd));
+    assert!(!res2.exists);
+}
+
+#[test]
+fn p1_path_14_dev_fd_follows_fd_table() {
+    let mut fs = FakeFs::new();
+    fs.add_file("/c/ws/open_file.txt", b"data");
+    fs.add_dir("/c/ws/open_dir");
+    fs.add_file("/c/ws/open_dir/child.txt", b"child");
+    fs.add_file("/etc/passwd", b"root:x:0:0");
+
+    let root = Path::new("/c/ws");
+    let base = Path::new("/c/ws");
+
+    let mut capsule_pids = std::collections::BTreeSet::new();
+    capsule_pids.insert(1000);
+    let mut fds = std::collections::BTreeMap::new();
+    fds.insert((1000, 3), PathBuf::from("/c/ws/open_file.txt"));
+    fds.insert((1000, 4), PathBuf::from("/c/ws/open_dir"));
+    fds.insert((1000, 5), PathBuf::from("/etc/passwd"));
+    let ctx = ProcCtx::new(capsule_pids, fds);
+
+    let res1 = resolve(&fs, root, base, b"/dev/fd/3", true, Some(&ctx));
+    assert_eq!(res1.resolved, Path::new("/c/ws/open_file.txt"));
+    assert_eq!(res1.escaped_via, None);
+    assert!(res1.exists);
+
+    let res2 = resolve(&fs, root, base, b"/dev/fd/4/child.txt", true, Some(&ctx));
+    assert_eq!(res2.resolved, Path::new("/c/ws/open_dir/child.txt"));
+    assert_eq!(res2.escaped_via, None);
+    assert!(res2.exists);
+
+    let res3 = resolve(&fs, root, base, b"/proc/self/fd/3", true, Some(&ctx));
+    assert_eq!(res3.resolved, Path::new("/c/ws/open_file.txt"));
+    assert_eq!(res3.escaped_via, None);
+    assert!(res3.exists);
+
+    let res4 = resolve(&fs, root, base, b"/proc/1000/fd/3", true, Some(&ctx));
+    assert_eq!(res4.resolved, Path::new("/c/ws/open_file.txt"));
+    assert_eq!(res4.escaped_via, None);
+    assert!(res4.exists);
+
+    let res5 = resolve(&fs, root, base, b"/dev/fd/5", true, Some(&ctx));
+    assert_eq!(res5.resolved, Path::new("/etc/passwd"));
+    assert_eq!(res5.escaped_via, Some(EscapeKind::ProcFd));
+    assert!(res5.exists);
+}

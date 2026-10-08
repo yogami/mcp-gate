@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Install musl-tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build static binary
+        run: cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Prepare assets and generate SHA-256
+        run: |
+          mkdir -p dist
+          cp target/x86_64-unknown-linux-musl/release/mcp-gate dist/
+          cd dist
+          sha256sum mcp-gate > mcp-gate.sha256
+
+      - name: Install cargo-cyclonedx
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-cyclonedx
+
+      - name: Generate CycloneDX SBOM
+        run: cargo cyclonedx -f json -a -o dist/sbom.json
+
+      - name: Generate Sigstore Provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'dist/mcp-gate'
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/mcp-gate
+            dist/mcp-gate.sha256
+            dist/sbom.json

@@ -1,0 +1,17 @@
+---
+source: crates/mcpg-domain/tests/policy.rs
+expression: str_entries
+---
+- File(/dev/null)
+- File(/dev/urandom)
+- File(/dev/zero)
+- File(/etc/ld.so.cache)
+- File(/etc/localtime)
+- Dir(/etc/ssl/certs)
+- Dir(/lib)
+- Dir(/lib64)
+- Dir(/usr)
+- Dir(/bin)
+- Dir(/etc/python3)
+- Dir(/usr/lib/python3)
+- Dir(/usr/local/lib/python3)

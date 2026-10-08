@@ -1,0 +1,79 @@
+version: 1
+
+server:
+  name: fs-notes                      # used in report names and SARIF category
+  command: /usr/bin/python3           # absolute, or resolved via PATH at load time
+  args: ["${CONFIG_DIR}/server.py", "--root", "${WORKSPACE}"]
+  workspace:
+    source: ./fixtures/workspace      # relative to CONFIG_DIR
+    mode: copy                        # copy | in-place
+    exclude: [".git", "node_modules/.cache"]
+  env:
+    passthrough: [LANG, "LC_*"]       # copied from host if present
+    set:
+      NOTES_LOG_LEVEL: debug
+  protocol_versions: ["2025-06-18", "2025-03-26", "2024-11-05"]
+  client:
+    roots: true                       # advertise the workspace as the only root
+
+policy:
+  baseline: python                    # minimal | python | node | none
+  read_paths:
+    - ${WORKSPACE}
+    - /usr/share/zoneinfo
+  write_paths:
+    - ${WORKSPACE}/notes
+  allowed_child_binaries:
+    - /usr/bin/git
+  allow_network: false
+  allowed_unix_sockets: []
+
+canaries:
+  enabled: true
+  kinds: [ssh, aws, gcloud, kube, docker, git_credentials, gh_cli, netrc, npmrc, pypirc, dotenv, env]
+  declared_use: []                    # e.g. [aws] for a server whose job is AWS
+
+observe:
+  stat_probes: false                  # stat-family notifications (noisy)
+  max_events: 200000
+
+probes:
+  path_traversal:
+    enabled: true
+    tools: auto                       # auto | list of tool names
+  env_echo:
+    enabled: true
+
+scenarios:
+  - id: write-and-read-note
+    tool: write_note
+    arguments: { name: "hello.md", body: "hi" }
+    expect: { outcome: success }
+  - id: read-note
+    tool: read_note
+    arguments: { name: "hello.md" }
+    expect:
+      outcome: success
+      content_contains: ["hi"]
+  - id: reject-escape
+    tool: read_note
+    arguments: { name: "../../etc/hostname" }
+    expect: { outcome: tool_error }
+  - id: sign-note                     # hypothetical tool that signs with the user's SSH key
+    tool: sign_note
+    arguments: { name: "hello.md" }
+    canaries:
+      allow_access: [ssh]             # only inside this scenario's phase, see 3.4.2
+    expect: { outcome: success }
+
+limits:
+  startup_timeout_s: 30
+  call_timeout_s: 30
+  total_timeout_s: 600
+  shutdown_grace_s: 3
+  max_processes: 64
+  max_stdout_line_bytes: 16777216
+
+report:
+  fail_on: error
+  sarif_category: mcp-gate/fs-notes

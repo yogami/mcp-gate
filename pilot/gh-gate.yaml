@@ -1,0 +1,16 @@
+version: 1
+server:
+  name: go-github
+  command: ./github-mcp-server
+  args: []
+  workspace:
+    source: pilot-gh
+    mode: copy
+policy:
+  read_paths:
+    - ${WORKSPACE}
+  write_paths:
+    - ${WORKSPACE}
+  allowed_child_binaries: []
+  allow_network: true
+  allowed_unix_sockets: []
