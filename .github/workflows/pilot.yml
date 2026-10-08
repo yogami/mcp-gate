@@ -14,6 +14,7 @@ jobs:
         run: cargo build --release
       
       - name: Run filesystem server
+        timeout-minutes: 2
         run: |
           git clone https://github.com/modelcontextprotocol/servers.git pilot-servers
           cd pilot-servers/src/filesystem
@@ -37,9 +38,10 @@ jobs:
             allow_network: false
             allowed_unix_sockets: []
           CONFIG
-          target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
+          RUST_LOG=trace target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
 
       - name: Run Python Git server
+        timeout-minutes: 2
         run: |
           git clone https://github.com/modelcontextprotocol/servers.git pilot-git
           cd pilot-git/src/git
@@ -64,9 +66,10 @@ jobs:
             allow_network: false
             allowed_unix_sockets: []
           CONFIG
-          target/release/mcp-gate run --config git-gate.yaml --sarif git.sarif || true
+          RUST_LOG=trace target/release/mcp-gate run --config git-gate.yaml --sarif git.sarif || true
 
       - name: Run Go Github server
+        timeout-minutes: 2
         run: |
           git clone https://github.com/github/github-mcp-server.git pilot-gh
           cd pilot-gh
@@ -91,7 +94,7 @@ jobs:
             allow_network: true
             allowed_unix_sockets: []
           CONFIG
-          target/release/mcp-gate run --config gh-gate.yaml --sarif gh.sarif || true
+          RUST_LOG=trace target/release/mcp-gate run --config gh-gate.yaml --sarif gh.sarif || true
 
       - name: Upload results
         uses: actions/upload-artifact@v4
