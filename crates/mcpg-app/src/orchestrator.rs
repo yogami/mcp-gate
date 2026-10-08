@@ -142,7 +142,24 @@ impl RunOrchestrator for AppOrchestrator {
         };
 
         let (exec_verdict, exec_code, proto_errs) = {
-            let launcher = self.sandbox.create_launcher(ruleset);
+            let (launcher, handover) = self.sandbox.create_launcher(ruleset);
+            let (obs_tx, obs_rx) = std::sync::mpsc::channel();
+            
+            let mut _obs_handle = None;
+            if let Some(fd) = handover {
+                _obs_handle = Some(self.sandbox.start_observer_thread(
+                    fd,
+                    cfg.policy.allow_network,
+                    cfg.policy.allowed_child_binaries.iter().map(std::path::PathBuf::from).collect(),
+                    Some(cfg.server.command.clone().into()),
+                    cfg.policy.allowed_unix_sockets.clone(),
+                    vec![],
+                    None,
+                    None,
+                    obs_tx
+                ));
+            }
+
             let mut cap = match launcher.launch(&plan) {
                 Ok(c) => c,
                 Err(e) => {
@@ -150,21 +167,7 @@ impl RunOrchestrator for AppOrchestrator {
                     return Err(ExitCode::Internal);
                 }
             };
-            let (obs_tx, obs_rx) = std::sync::mpsc::channel();
-            let mut _obs_handle = None;
-            if let Some(fd) = cap.seccomp_listener_fd {
-                _obs_handle = Some(self.sandbox.start_observer_thread(
-                    fd,
-                    cfg.policy.allow_network,
-                    cfg.policy.allowed_child_binaries.iter().map(std::path::PathBuf::from).collect(),
-                    Some(cfg.server.command.clone().into()),
-                    cfg.policy.allowed_unix_sockets.clone(),
-                    vec![cap.pid],
-                    None,
-                    None,
-                    obs_tx
-                ));
-            }
+
 
             let transport = mcpg_mcp::transport::StdioTransport::new(
                 cap.child.stdin.take().unwrap(),

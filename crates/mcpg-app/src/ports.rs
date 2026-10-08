@@ -115,7 +115,7 @@ pub trait Sandbox {
     fn build_ruleset(&self, policy: &ResolvedPolicy, vars: &VarTable, cmd: &str, caps: &HostCaps) -> Result<Option<OwnedFd>, ExitCode>;
     fn setup_tripwire(&self, registry: &CanaryRegistry, phase: crate::phase::PhaseCursor) -> Result<Option<Box<dyn TripwireHandle>>, ExitCode>;
     fn teardown(&self, capsule: RunningCapsule, grace: Duration) -> Result<Vec<Event>, ExitCode>;
-    fn create_launcher(&self, ruleset: Option<OwnedFd>) -> Box<dyn CapsuleLauncher>;
+    fn create_launcher(&self, ruleset: Option<OwnedFd>) -> (Box<dyn CapsuleLauncher>, Option<RawFd>);
     fn disarm_guard(&self);
     fn arm_guard(&self, pid: i32, pids: Vec<u32>);
     fn start_observer_thread(

@@ -68,9 +68,9 @@ mod tests {
             self.method_calls.lock().unwrap().push("teardown".into());
             Ok(vec![])
         }
-        fn create_launcher(&self, _ruleset: Option<OwnedFd>) -> Box<dyn CapsuleLauncher> {
+        fn create_launcher(&self, _ruleset: Option<OwnedFd>) -> (Box<dyn CapsuleLauncher>, Option<RawFd>) {
             self.method_calls.lock().unwrap().push("create_launcher".into());
-            Box::new(MockLauncher)
+            (Box::new(MockLauncher), Some(42))
         }
         fn disarm_guard(&self) {
             self.method_calls.lock().unwrap().push("disarm_guard".into());

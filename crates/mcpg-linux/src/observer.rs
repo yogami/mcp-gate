@@ -501,11 +501,16 @@ impl<M: MemoryReader> ObserverEngine<M> {
 
 #[cfg(target_os = "linux")]
 pub fn start_observer_thread(
-    listener_fd: RawFd,
+    handover_fd: RawFd,
     cfg: ObserverConfig,
     violations_tx: Sender<(String, String)>,
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
+        let listener_fd = match crate::seccomp::recv_fd(handover_fd) {
+            Ok(fd) => fd,
+            Err(_) => return, // Failed to receive, maybe process died or execve failed
+        };
+        unsafe { libc::close(handover_fd); }
         let engine = ObserverEngine::new(cfg, RealMemoryReader);
         loop {
             let mut req: seccomp_notif = unsafe { std::mem::zeroed() };

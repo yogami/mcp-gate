@@ -19,6 +19,7 @@ use mcpg_app::ports::{CapsuleLauncher, LaunchError, RunningCapsule};
 pub struct LinuxLauncher {
     landlock_fd: Option<std::os::fd::RawFd>,
     observe_seccomp: bool,
+    pub(crate) handover_sock: Option<std::os::fd::RawFd>,
 }
 
 impl LinuxLauncher {
@@ -31,6 +32,7 @@ impl LinuxLauncher {
         Self {
             landlock_fd: None,
             observe_seccomp: false,
+            handover_sock: None,
         }
     }
 
@@ -43,6 +45,11 @@ impl LinuxLauncher {
     /// Enable seccomp observer filter installation in the child.
     pub fn with_seccomp(mut self, observe: bool) -> Self {
         self.observe_seccomp = observe;
+        self
+    }
+    
+    pub fn with_handover_sock(mut self, fd: std::os::fd::RawFd) -> Self {
+        self.handover_sock = Some(fd);
         self
     }
 }
@@ -85,14 +92,14 @@ fn apply_argv(cmd: &mut Command, argv: &[CString]) {
 }
 
 #[cfg(unix)]
-fn close_extra_fds_except(keep_fd: std::os::fd::RawFd) {
+fn close_extra_fds_except(keep_fds: &[std::os::fd::RawFd]) {
     #[cfg(target_os = "linux")]
     unsafe {
         const CLOSE_RANGE_CLOEXEC: libc::c_uint = 4;
 
         let set_cloexec_fallback = |start: i32, max: i32| {
             for fd in start..max {
-                if fd != keep_fd {
+                if !keep_fds.contains(&fd) {
                     libc::fcntl(fd, libc::F_SETFD, libc::FD_CLOEXEC);
                 }
             }
@@ -133,7 +140,7 @@ fn close_extra_fds_except(keep_fd: std::os::fd::RawFd) {
     unsafe {
         let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
         for fd in 3..max_fd {
-            if fd != keep_fd {
+            if !keep_fds.contains(&fd) {
                 libc::fcntl(fd, libc::F_SETFD, libc::FD_CLOEXEC);
             }
         }
@@ -177,7 +184,10 @@ fn child_pre_exec(
             }
         }
 
-        close_extra_fds_except(_landlock_fd);
+        let mut keep = vec![];
+        if _landlock_fd >= 0 { keep.push(_landlock_fd); }
+        if _child_sock >= 0 { keep.push(_child_sock); }
+        close_extra_fds_except(&keep);
 
         if libc::chdir(cwd_cstr.as_ptr()) < 0 {
             return Err(io::Error::last_os_error());
@@ -318,21 +328,13 @@ impl CapsuleLauncher for LinuxLauncher {
         let pid = child.id();
 
         #[cfg(target_os = "linux")]
-        let mut seccomp_listener_fd = None;
+        let seccomp_listener_fd = None;
         #[cfg(not(target_os = "linux"))]
         let seccomp_listener_fd = None;
         #[cfg(target_os = "linux")]
-        if let Some(ps) = parent_sock {
-            if let Some(cs) = child_sock {
-                unsafe {
-                    libc::close(cs);
-                }
-            }
-            if let Ok(fd) = crate::seccomp::recv_fd(ps) {
-                seccomp_listener_fd = Some(fd);
-            }
+        if let Some(cs) = child_sock {
             unsafe {
-                libc::close(ps);
+                libc::close(cs);
             }
         }
 
