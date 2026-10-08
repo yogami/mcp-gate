@@ -217,9 +217,9 @@ fn child_pre_exec(
 
         #[cfg(target_os = "linux")]
         {
-            // if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 {
-            //     return Err(io::Error::last_os_error());
-            // }
+            if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 {
+                return Err(io::Error::last_os_error());
+            }
 
             if !_seccomp_ptr.is_null() && _seccomp_len > 0 && _child_sock >= 0 {
                 let filter = std::slice::from_raw_parts(_seccomp_ptr, _seccomp_len);

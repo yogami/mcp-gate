@@ -48,6 +48,11 @@ fn make_vuln_config(defect: &str, out_dir: &Path) -> PathBuf {
     let vuln_py = workspace_root().join("fixtures/servers/vulnerable/server.py");
     let ws = out_dir.join("workspace");
     let _ = fs::create_dir_all(&ws);
+    
+    // AppArmor on Ubuntu 24.04 blocks NO_NEW_PRIVS processes from reading /home/...
+    // So we copy the script into the temporary workspace (/tmp/...) and run it from there.
+    let script_in_ws = ws.join("server.py");
+    let _ = fs::copy(&vuln_py, &script_in_ws);
 
     let cfg_path = out_dir.join("mcp-gate.yaml");
     let content = format!(
@@ -66,13 +71,12 @@ scenarios:
 server:
   name: "vulnerable-server"
   command: "python3"
-  args: ["{}", "--defect", "{}", "--root", "{}"]
+  args: ["./server.py", "--defect", "{}", "--root", "{}"]
   protocol_versions: ["2024-11-05"]
   workspace:
     source: "{}"
     mode: in-place
 "#,
-        vuln_py.display(),
         defect,
         ws.display(),
         ws.display()
