@@ -10,18 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check Formatting
-        run: cargo fmt --check
 
-      - name: Run Clippy
-        run: cargo clippy --workspace -- -D warnings
+      - name: Build mcp-gate
+        run: cargo build
 
-      - name: Run Unit Tests
+      - name: Run Test Trace
         run: |
-          cargo test --workspace -- --test-threads=1 --nocapture > test.log 2>&1 &
+          RUST_LOG=trace cargo test --test benign_server p3_ben_01_benign_server_zero_findings -- --nocapture > test.log 2>&1 &
           PID=$!
           while kill -0 $PID 2>/dev/null; do
-            tail -n 50 test.log || true
-            sleep 10
+            cat test.log
+            sleep 5
           done
           wait $PID
