@@ -58,7 +58,13 @@ fn collect_dir_fds(dir_path: &str) -> Vec<i32> {
 fn cmd_fds() {
     let mut fds = collect_dir_fds(fd_dir_path());
     fds.sort();
-    println!("{}", serde_json::json!({ "fds": fds }));
+    let mut links = std::collections::BTreeMap::new();
+    for &fd in &fds {
+        if let Ok(path) = std::fs::read_link(format!("/proc/self/fd/{}", fd)) {
+            links.insert(fd.to_string(), path.to_string_lossy().into_owned());
+        }
+    }
+    println!("{}", serde_json::json!({ "fds": fds, "links": links }));
 }
 
 fn cmd_cwd() {

@@ -278,7 +278,7 @@ fn p2_launch_02_only_stdio_fds() {
     assert_eq!(
         fds,
         vec![0, 1, 2],
-        "expected only stdio fds [0, 1, 2], got: {fds:?}"
+        "expected only stdio fds [0, 1, 2], got: {fds:?}. Links: {:?}", val["links"]
     );
 }
 
