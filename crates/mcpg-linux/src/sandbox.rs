@@ -90,6 +90,7 @@ impl Sandbox for LinuxSandbox {
         vars: &VarTable,
         cmd: &str,
         caps: &HostCaps,
+        mode: Mode,
     ) -> Result<Option<OwnedFd>, ExitCode> {
         if !caps.landlock.available {
             eprintln!("Landlock is not available for requested enforce mode");
@@ -103,7 +104,7 @@ impl Sandbox for LinuxSandbox {
             &enforcement_set,
             &full_exec,
             caps.landlock.abi as u8,
-            Mode::Enforce,
+            mode,
             policy.allow_network,
         );
         let fd = crate::landlock::build(&plan).map_err(|e| {

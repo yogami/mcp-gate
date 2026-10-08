@@ -58,7 +58,8 @@ fn make_vuln_config(defect: &str, out_dir: &Path) -> PathBuf {
     let content = format!(
         r#"version: 1
 policy:
-  read_paths: []
+  read_paths:
+    - "{}"
   write_paths: []
   allowed_child_binaries: []
   allow_network: false
@@ -77,6 +78,7 @@ server:
     source: "{}"
     mode: in-place
 "#,
+        ws.display(),
         defect,
         ws.display(),
         ws.display()
