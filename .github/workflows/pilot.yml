@@ -37,64 +37,10 @@ jobs:
             allowed_child_binaries: []
             allow_network: false
             allowed_unix_sockets: []
-          CONFIG
-          RUST_LOG=trace target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
+          timeout 30s strace -f -o mcp-gate.strace target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
+          cat mcp-gate.strace || true
 
-      - name: Run Python Git server
-        timeout-minutes: 2
-        run: |
-          git clone https://github.com/modelcontextprotocol/servers.git pilot-git
-          cd pilot-git/src/git
-          pip install .
-          cd ../../..
-          GIT_CMD=$(which mcp-server-git)
-          cat << CONFIG > git-gate.yaml
-          version: 1
-          server:
-            name: python-git
-            command: ${GIT_CMD}
-            args: []
-            workspace:
-              source: pilot-git/src/git
-              mode: copy
-          policy:
-            read_paths:
-              - \${WORKSPACE}
-            write_paths:
-              - \${WORKSPACE}
-            allowed_child_binaries: []
-            allow_network: false
-            allowed_unix_sockets: []
-          CONFIG
-          RUST_LOG=trace target/release/mcp-gate run --config git-gate.yaml --sarif git.sarif || true
 
-      - name: Run Go Github server
-        timeout-minutes: 2
-        run: |
-          git clone https://github.com/github/github-mcp-server.git pilot-gh
-          cd pilot-gh
-          go build -o github-mcp-server ./cmd/github-mcp-server
-          cd ..
-          GH_CMD=$(realpath pilot-gh/github-mcp-server)
-          cat << CONFIG > gh-gate.yaml
-          version: 1
-          server:
-            name: go-github
-            command: ${GH_CMD}
-            args: []
-            workspace:
-              source: pilot-gh
-              mode: copy
-          policy:
-            read_paths:
-              - \${WORKSPACE}
-            write_paths:
-              - \${WORKSPACE}
-            allowed_child_binaries: []
-            allow_network: true
-            allowed_unix_sockets: []
-          CONFIG
-          RUST_LOG=trace target/release/mcp-gate run --config gh-gate.yaml --sarif gh.sarif || true
 
       - name: Upload results
         uses: actions/upload-artifact@v4
