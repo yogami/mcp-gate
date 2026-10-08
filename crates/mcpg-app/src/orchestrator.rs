@@ -106,8 +106,7 @@ impl RunOrchestrator for AppOrchestrator {
         let plan = RunPlanner::create_plan(&cfg, &env_outcome, &vars, mode)?;
 
         let ruleset = if mode == Mode::Enforce {
-            self
-                .sandbox
+            self.sandbox
                 .build_ruleset(&resolved, &vars, &cfg.server.command, &caps)?
         } else {
             None

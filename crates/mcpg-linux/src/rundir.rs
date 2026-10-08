@@ -6,11 +6,11 @@
 //! ├── home/       (${CAPSULE_HOME})
 //! ├── workspace/  (${WORKSPACE})
 //! └── tmp/        (${CAPSULE_TMP})
+use mcpg_app::ports::EntropySource;
 use std::fs;
 use std::io;
 #[cfg(unix)]
 use std::path::{Path, PathBuf};
-use mcpg_app::ports::EntropySource;
 /// Disposable directory tree containing capsule home, workspace, and tmp.
 #[derive(Debug)]
 pub struct RunDir {

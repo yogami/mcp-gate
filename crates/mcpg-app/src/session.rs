@@ -110,10 +110,7 @@ pub fn drive_session<T: McpTransport>(
 ) -> (Verdict, ExitCode, Vec<(String, String)>) {
     let _ = phase.advance_to_handshake();
     if client
-        .initialize(
-            &cfg.server.protocol_versions,
-            cfg.server.client.roots,
-        )
+        .initialize(&cfg.server.protocol_versions, cfg.server.client.roots)
         .is_err()
     {
         return (
