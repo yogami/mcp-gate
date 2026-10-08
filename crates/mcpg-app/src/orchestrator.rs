@@ -150,7 +150,22 @@ impl RunOrchestrator for AppOrchestrator {
                     return Err(ExitCode::Internal);
                 }
             };
-            
+            let (obs_tx, obs_rx) = std::sync::mpsc::channel();
+            let mut _obs_handle = None;
+            if let Some(fd) = cap.seccomp_listener_fd {
+                _obs_handle = Some(self.sandbox.start_observer_thread(
+                    fd,
+                    cfg.policy.allow_network,
+                    cfg.policy.allowed_child_binaries.iter().map(std::path::PathBuf::from).collect(),
+                    Some(cfg.server.command.clone().into()),
+                    cfg.policy.allowed_unix_sockets.clone(),
+                    vec![cap.pid],
+                    None,
+                    None,
+                    obs_tx
+                ));
+            }
+
             let transport = mcpg_mcp::transport::StdioTransport::new(
                 cap.child.stdin.take().unwrap(),
                 mcpg_mcp::framing::LineReader::new(std::io::BufReader::new(cap.child.stdout.take().unwrap()), 1024 * 1024)
@@ -160,10 +175,15 @@ impl RunOrchestrator for AppOrchestrator {
             let tracker = mcpg_mcp::deadline::DeadlineTracker::new(std::sync::Arc::new(mcpg_mcp::deadline::SystemClock), cfg.limits.clone());
             client.set_deadline_tracker(tracker.clone());
 
-            let session_res = crate::session::drive_session(client, &cfg, &tracker, &phase);
+            let (exec_verdict, exec_code, mut proto_errs) = crate::session::drive_session(client, &cfg, &tracker, &phase);
             
             let _ = self.sandbox.teardown(cap, std::time::Duration::from_millis(1500));
-            session_res
+            
+            while let Ok(v) = obs_rx.try_recv() {
+                proto_errs.push(v);
+            }
+            
+            (exec_verdict, exec_code, proto_errs)
         };
         
         Ok(RunOutcome { verdict: exec_verdict, exit_code: exec_code, seed, registry, violations: proto_errs })
