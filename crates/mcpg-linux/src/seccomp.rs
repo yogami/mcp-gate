@@ -169,8 +169,8 @@ fn add_notif_rules(instrs: &mut Vec<sock_filter>, handover_sock: Option<RawFd>) 
     let notif = SeccompAction::UserNotif;
 
     // File operations
-    append_syscall_rule(instrs, libc::SYS_openat, notif);
-    append_syscall_rule(instrs, libc::SYS_openat2, notif);
+    // append_syscall_rule(instrs, libc::SYS_openat, notif);
+    // append_syscall_rule(instrs, libc::SYS_openat2, notif);
 
     // Process execution & lifecycle
     append_syscall_rule(instrs, libc::SYS_execve, notif);
