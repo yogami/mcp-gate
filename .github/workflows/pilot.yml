@@ -19,10 +19,6 @@ jobs:
           RUST_LOG=trace target/debug/mcp-gate run --config tests/configs/valid/benign.yaml > mcp-gate.log 2>&1 &
           PID=$!
           
-          # Print the log file as it grows
-          tail -f mcp-gate.log &
-          TAIL_PID=$!
-          
           # Wait for up to 60 seconds
           for i in {1..60}; do
             if ! kill -0 $PID 2>/dev/null; then
@@ -31,10 +27,12 @@ jobs:
             sleep 1
           done
           
+          echo "==== MCP-GATE LOG ===="
+          cat mcp-gate.log
+          echo "======================"
+          
           if kill -0 $PID 2>/dev/null; then
             echo "mcp-gate run is hanging!"
             kill -9 $PID
+            exit 1
           fi
-          
-          kill -9 $TAIL_PID 2>/dev/null || true
-          cat mcp-gate.log
