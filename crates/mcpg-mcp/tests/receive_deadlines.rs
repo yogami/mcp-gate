@@ -6,11 +6,17 @@ use mcpg_mcp::deadline::{Clock, SystemClock};
 
 pub struct FakeClock(pub std::sync::RwLock<std::time::Instant>);
 impl FakeClock {
-    pub fn new(start: std::time::Instant) -> Self { Self(std::sync::RwLock::new(start)) }
-    pub fn advance(&self, d: std::time::Duration) { *self.0.write().unwrap() += d; }
+    pub fn new(start: std::time::Instant) -> Self {
+        Self(std::sync::RwLock::new(start))
+    }
+    pub fn advance(&self, d: std::time::Duration) {
+        *self.0.write().unwrap() += d;
+    }
 }
 impl Clock for FakeClock {
-    fn now(&self) -> std::time::Instant { *self.0.read().unwrap() }
+    fn now(&self) -> std::time::Instant {
+        *self.0.read().unwrap()
+    }
 }
 
 use mcpg_domain::config::LimitsConfig;
@@ -63,7 +69,8 @@ fn startup_deadline_is_passed_to_receive_from_injected_clock() {
             error,
             DriverError::Inconclusive(ref message) if message.contains("initialize timeout") || message.contains("startup timeout")
         ),
-        "Actual error: {:?}", error
+        "Actual error: {:?}",
+        error
     );
     assert_eq!(client.transport().receives, 1);
 }

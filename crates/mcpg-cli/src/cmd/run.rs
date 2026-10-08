@@ -1,7 +1,7 @@
 use mcpg_app::orchestrator::{AppOrchestrator, RunOptions, RunOrchestrator};
+use mcpg_domain::verdict::ExitCode;
 use mcpg_linux::sandbox::LinuxSandbox;
 use mcpg_report::reporter::DefaultReporter;
-use mcpg_domain::verdict::ExitCode;
 use mcpg_report::RunRecord;
 
 pub fn execute(opts: &RunOptions) -> ExitCode {
@@ -9,7 +9,7 @@ pub fn execute(opts: &RunOptions) -> ExitCode {
         eprintln!("Error: mcp-gate run requires Linux (exit 69)");
         return ExitCode::UnsupportedHost;
     }
-    
+
     let orchestrator = AppOrchestrator {
         sandbox: Box::new(LinuxSandbox::new()),
     };

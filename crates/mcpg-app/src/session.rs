@@ -1,11 +1,11 @@
+use crate::phase::PhaseCursor;
+use crate::scenario::CallOutcome;
 use mcpg_domain::config::model::{Config, ScenarioConfig};
+use mcpg_domain::leak::{LeakMatch, LeakScanner};
 use mcpg_domain::verdict::{ExitCode, Verdict};
 use mcpg_mcp::client::{DriverError, McpClient};
 use mcpg_mcp::deadline::DeadlineTracker;
 use mcpg_mcp::transport::McpTransport;
-use crate::phase::PhaseCursor;
-use crate::scenario::CallOutcome;
-use mcpg_domain::leak::{LeakMatch, LeakScanner};
 use std::io::{self, Read};
 use std::sync::Mutex;
 
@@ -110,7 +110,10 @@ pub fn drive_session<T: McpTransport>(
 ) -> (Verdict, ExitCode, Vec<(String, String)>) {
     let _ = phase.advance_to_handshake();
     if client
-        .initialize(&cfg.server.protocol_versions, cfg.server.client.roots.clone())
+        .initialize(
+            &cfg.server.protocol_versions,
+            cfg.server.client.roots.clone(),
+        )
         .is_err()
     {
         return (

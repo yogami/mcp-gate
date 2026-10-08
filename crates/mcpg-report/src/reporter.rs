@@ -1,7 +1,7 @@
-use mcpg_domain::verdict::ExitCode;
 use crate::RunRecord;
-use mcpg_app::orchestrator::RunOptions;
 use crate::{ConsoleWriter, EvidenceWriter, GithubWriter, JunitWriter, ReportWriter, SarifWriter};
+use mcpg_app::orchestrator::RunOptions;
+use mcpg_domain::verdict::ExitCode;
 use std::fs;
 use std::path::PathBuf;
 
@@ -76,12 +76,10 @@ impl DefaultReporter {
                 eprintln!("failed to create sarif file {}: {e}", p.display());
                 ExitCode::Internal
             })?;
-            SarifWriter
-                .write(record, &mut file)
-                .map_err(|e| {
-                    eprintln!("failed to write sarif {}: {e}", p.display());
-                    ExitCode::Internal
-                })?;
+            SarifWriter.write(record, &mut file).map_err(|e| {
+                eprintln!("failed to write sarif {}: {e}", p.display());
+                ExitCode::Internal
+            })?;
         }
 
         // JUnit
@@ -101,12 +99,10 @@ impl DefaultReporter {
                 eprintln!("failed to create junit file {}: {e}", p.display());
                 ExitCode::Internal
             })?;
-            JunitWriter
-                .write(record, &mut file)
-                .map_err(|e| {
-                    eprintln!("failed to write junit {}: {e}", p.display());
-                    ExitCode::Internal
-                })?;
+            JunitWriter.write(record, &mut file).map_err(|e| {
+                eprintln!("failed to write junit {}: {e}", p.display());
+                ExitCode::Internal
+            })?;
         }
 
         Ok(())

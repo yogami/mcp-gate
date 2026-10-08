@@ -1,25 +1,25 @@
-use std::path::{Path, PathBuf};
-use std::fs;
-use std::os::fd::OwnedFd;
-use std::os::fd::RawFd;
-use std::os::fd::AsRawFd;
-use mcpg_domain::config::model::{CanariesConfig, Config, EnvConfig, WorkspaceConfig};
-use mcpg_domain::config::vars::VarTable;
-use mcpg_domain::canary::registry::CanaryRegistry;
-use mcpg_domain::env::{build_env, EnvOutcome, FixedEnv};
-use mcpg_domain::seed::Seed;
-use mcpg_domain::verdict::ExitCode;
-use mcpg_domain::policy::resolve::ResolvedPolicy;
-use mcpg_domain::host::HostCaps;
-use mcpg_domain::fs_view::StdFs;
-use mcpg_domain::mode::Mode;
-use mcpg_domain::policy::sets::EnforcementSet;
-use mcpg_domain::event::Event;
-use mcpg_app::orchestrator::RunOptions;
-use mcpg_app::ports::{Sandbox, TripwireHandle, RunningCapsule};
 use crate::entropy::OsEntropy;
 use crate::rundir::RunDir;
+use mcpg_app::orchestrator::RunOptions;
 use mcpg_app::phase::PhaseCursor;
+use mcpg_app::ports::{RunningCapsule, Sandbox, TripwireHandle};
+use mcpg_domain::canary::registry::CanaryRegistry;
+use mcpg_domain::config::model::{CanariesConfig, Config, EnvConfig, WorkspaceConfig};
+use mcpg_domain::config::vars::VarTable;
+use mcpg_domain::env::{build_env, EnvOutcome, FixedEnv};
+use mcpg_domain::event::Event;
+use mcpg_domain::fs_view::StdFs;
+use mcpg_domain::host::HostCaps;
+use mcpg_domain::mode::Mode;
+use mcpg_domain::policy::resolve::ResolvedPolicy;
+use mcpg_domain::policy::sets::EnforcementSet;
+use mcpg_domain::seed::Seed;
+use mcpg_domain::verdict::ExitCode;
+use std::fs;
+use std::os::fd::AsRawFd;
+use std::os::fd::OwnedFd;
+use std::os::fd::RawFd;
+use std::path::{Path, PathBuf};
 
 pub struct LinuxSandbox {
     run_dir: std::sync::Mutex<Option<RunDir>>,
@@ -43,18 +43,24 @@ impl Sandbox for LinuxSandbox {
     fn probe_host_caps(&self) -> HostCaps {
         crate::probe::probe()
     }
-    fn init(&self, cfg: &Config, seed: &Seed, opts: &RunOptions) -> Result<(VarTable, CanaryRegistry, EnvOutcome), ExitCode> {
-        let run_dir = RunDir::create(Path::new("/tmp"), opts.keep_capsule, &OsEntropy).map_err(|e| {
-            eprintln!("failed to create run directory: {e}");
-            ExitCode::Internal
-        })?;
+    fn init(
+        &self,
+        cfg: &Config,
+        seed: &Seed,
+        opts: &RunOptions,
+    ) -> Result<(VarTable, CanaryRegistry, EnvOutcome), ExitCode> {
+        let run_dir =
+            RunDir::create(Path::new("/tmp"), opts.keep_capsule, &OsEntropy).map_err(|e| {
+                eprintln!("failed to create run directory: {e}");
+                ExitCode::Internal
+            })?;
 
         let canonical_cfg = opts
             .config_path
             .canonicalize()
             .unwrap_or_else(|_| opts.config_path.clone());
         let cfg_dir = canonical_cfg.parent().unwrap_or(Path::new("/"));
-        
+
         let ws_path = self.resolve_workspace(&cfg.server.workspace, &run_dir, cfg_dir)?;
         let (registry, decoys) = self.plant_canaries(&cfg.canaries, seed, &run_dir)?;
         let env_outcome = self.scrub_environment(&cfg.server.env, &run_dir, &decoys)?;
@@ -73,12 +79,18 @@ impl Sandbox for LinuxSandbox {
         Ok((vars, registry, env_outcome))
     }
 
-    fn build_ruleset(&self, policy: &ResolvedPolicy, vars: &VarTable, cmd: &str, caps: &HostCaps) -> Result<Option<OwnedFd>, ExitCode> {
+    fn build_ruleset(
+        &self,
+        policy: &ResolvedPolicy,
+        vars: &VarTable,
+        cmd: &str,
+        caps: &HostCaps,
+    ) -> Result<Option<OwnedFd>, ExitCode> {
         if !caps.landlock.available {
             eprintln!("Landlock is not available for requested enforce mode");
             return Err(ExitCode::UnsupportedHost);
         }
-        
+
         let exec_roots = Self::collect_exec_roots(cmd, &policy.allowed_child_binaries);
         let full_exec = mcpg_domain::exec_deps::exec_closure(&exec_roots, &StdFs, &|p| fs::read(p));
         let enforcement_set = EnforcementSet::from_policy(policy, vars);
@@ -96,11 +108,15 @@ impl Sandbox for LinuxSandbox {
         Ok(Some(fd))
     }
 
-    fn setup_tripwire(&self, registry: &CanaryRegistry, phase: PhaseCursor) -> Result<Option<Box<dyn TripwireHandle>>, ExitCode> {
+    fn setup_tripwire(
+        &self,
+        registry: &CanaryRegistry,
+        phase: PhaseCursor,
+    ) -> Result<Option<Box<dyn TripwireHandle>>, ExitCode> {
         if registry.records.is_empty() {
             return Ok(None);
         }
-        
+
         let tw = crate::inotify::Tripwire::new().map_err(|_| ExitCode::Internal)?;
         for record in &registry.records {
             let _ = tw.add_watch(&record.path, format!("{:?}", record.kind));
@@ -109,7 +125,11 @@ impl Sandbox for LinuxSandbox {
         Ok(Some(Box::new(LinuxTripwireHandle(handle))))
     }
 
-    fn teardown(&self, capsule: RunningCapsule, grace: std::time::Duration) -> Result<Vec<Event>, ExitCode> {
+    fn teardown(
+        &self,
+        capsule: RunningCapsule,
+        grace: std::time::Duration,
+    ) -> Result<Vec<Event>, ExitCode> {
         let shutdown_report = crate::shutdown::shutdown(capsule, grace);
         let mut events = Vec::new();
 
@@ -124,7 +144,7 @@ impl Sandbox for LinuxSandbox {
                     .build(),
             );
         }
-        
+
         if let Ok(mut guard) = self.run_dir.lock() {
             let _ = guard.take();
         }
@@ -132,7 +152,10 @@ impl Sandbox for LinuxSandbox {
         Ok(events)
     }
 
-    fn create_launcher(&self, ruleset: Option<OwnedFd>) -> (Box<dyn mcpg_app::ports::CapsuleLauncher>, Option<RawFd>) {
+    fn create_launcher(
+        &self,
+        ruleset: Option<OwnedFd>,
+    ) -> (Box<dyn mcpg_app::ports::CapsuleLauncher>, Option<RawFd>) {
         let mut launcher = crate::launcher::LinuxLauncher::new().with_seccomp(true);
         if let Some(fd) = ruleset {
             use std::os::fd::IntoRawFd;
@@ -142,7 +165,13 @@ impl Sandbox for LinuxSandbox {
         let mut child_sock = None;
         unsafe {
             let mut sv = [-1i32; 2];
-            if libc::socketpair(libc::AF_UNIX, libc::SOCK_SEQPACKET | 0x80000, 0, sv.as_mut_ptr()) == 0 {
+            if libc::socketpair(
+                libc::AF_UNIX,
+                libc::SOCK_SEQPACKET | 0x80000,
+                0,
+                sv.as_mut_ptr(),
+            ) == 0
+            {
                 parent_sock = Some(sv[0]);
                 child_sock = Some(sv[1]);
             }
@@ -210,7 +239,8 @@ impl LinuxSandbox {
                 ws_cfg.source = candidate.to_string_lossy().to_string();
             }
         }
-        if let Some(warning) = mcpg_app::hygiene::check_source_checkout_hint(Path::new(&ws_cfg.source))
+        if let Some(warning) =
+            mcpg_app::hygiene::check_source_checkout_hint(Path::new(&ws_cfg.source))
         {
             eprintln!("Warning: {warning}");
         }
@@ -264,10 +294,10 @@ impl LinuxSandbox {
     }
 
     fn collect_exec_roots(cmd: &str, child_bins: &[PathBuf]) -> Vec<PathBuf> {
-        let path_var = std::env::var("PATH").unwrap_or_else(|_| "/usr/local/bin:/usr/bin:/bin".to_string());
-        let root =
-            mcpg_domain::policy::resolve::resolve_binary(cmd, &path_var, &StdFs)
-                .unwrap_or_else(|_| PathBuf::from(cmd));
+        let path_var =
+            std::env::var("PATH").unwrap_or_else(|_| "/usr/local/bin:/usr/bin:/bin".to_string());
+        let root = mcpg_domain::policy::resolve::resolve_binary(cmd, &path_var, &StdFs)
+            .unwrap_or_else(|_| PathBuf::from(cmd));
         let mut roots = vec![root];
         roots.extend(child_bins.iter().cloned());
         roots

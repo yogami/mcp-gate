@@ -47,7 +47,7 @@ impl LinuxLauncher {
         self.observe_seccomp = observe;
         self
     }
-    
+
     pub fn with_handover_sock(mut self, fd: std::os::fd::RawFd) -> Self {
         self.handover_sock = Some(fd);
         self
@@ -185,8 +185,12 @@ fn child_pre_exec(
         }
 
         let mut keep = vec![];
-        if _landlock_fd >= 0 { keep.push(_landlock_fd); }
-        if _child_sock >= 0 { keep.push(_child_sock); }
+        if _landlock_fd >= 0 {
+            keep.push(_landlock_fd);
+        }
+        if _child_sock >= 0 {
+            keep.push(_child_sock);
+        }
         close_extra_fds_except(&keep);
 
         if libc::chdir(cwd_cstr.as_ptr()) < 0 {

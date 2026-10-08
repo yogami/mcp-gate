@@ -63,7 +63,9 @@ impl<T: McpTransport> McpClient<T> {
                 .transport
                 .receive(deadline)
                 .map_err(|e| {
-                    if e.kind() == std::io::ErrorKind::TimedOut || e.to_string().contains("deadline") {
+                    if e.kind() == std::io::ErrorKind::TimedOut
+                        || e.to_string().contains("deadline")
+                    {
                         DriverError::Inconclusive(format!("{context} timeout: {e}"))
                     } else {
                         DriverError::Io(e.to_string())

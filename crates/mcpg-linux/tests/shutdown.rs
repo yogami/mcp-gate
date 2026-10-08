@@ -60,7 +60,6 @@ fn find_syscall_probe() -> PathBuf {
 fn launch_probe(subcmd: &str, args: &[&str], workspace: &Path) -> RunningCapsule {
     let _ = mcpg_linux::self_harden::harden_self();
 
-
     let probe_bin = find_syscall_probe();
     let probe_cstr = CString::new(probe_bin.as_os_str().as_bytes()).unwrap();
 
@@ -142,7 +141,6 @@ fn daemonized_grandchild_reaped_and_reported() {
     }
     assert!(dead, "grandchild should be terminated");
 }
-
 
 #[test]
 #[ignore]

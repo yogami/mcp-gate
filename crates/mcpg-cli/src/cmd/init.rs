@@ -10,11 +10,19 @@ pub fn execute() -> ExitCode {
         let mut has_uvx = false;
         for dir in std::env::split_paths(&path_var) {
             let name = dir.file_name().unwrap_or_default();
-            if name == "npx" { has_npx = true; }
-            if name == "uvx" { has_uvx = true; }
+            if name == "npx" {
+                has_npx = true;
+            }
+            if name == "uvx" {
+                has_uvx = true;
+            }
         }
-        if has_npx { eprintln!("Warning: Detected npx in your PATH."); }
-        if has_uvx { eprintln!("Warning: Detected uvx in your PATH."); }
+        if has_npx {
+            eprintln!("Warning: Detected npx in your PATH.");
+        }
+        if has_uvx {
+            eprintln!("Warning: Detected uvx in your PATH.");
+        }
     }
 
     if path.exists() {

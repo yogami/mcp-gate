@@ -158,7 +158,11 @@ impl From<mcpg_mcp::tools::ToolCallResult> for CallOutcome {
         let text = res
             .content
             .into_iter()
-            .filter_map(|c| c.get("text").and_then(|v| v.as_str()).map(|s| s.to_string()))
+            .filter_map(|c| {
+                c.get("text")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            })
             .collect::<Vec<_>>()
             .join("\n");
         CallOutcome::from_tool_result(res.is_error, text)

@@ -6,7 +6,6 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-
 pub trait Clock: Send + Sync {
     fn now(&self) -> std::time::Instant;
 }
@@ -17,7 +16,9 @@ impl<C: Clock + ?Sized> Clock for std::sync::Arc<C> {
 }
 pub struct SystemClock;
 impl Clock for SystemClock {
-    fn now(&self) -> std::time::Instant { std::time::Instant::now() }
+    fn now(&self) -> std::time::Instant {
+        std::time::Instant::now()
+    }
 }
 
 use mcpg_domain::config::LimitsConfig;

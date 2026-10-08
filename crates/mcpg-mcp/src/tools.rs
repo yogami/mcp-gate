@@ -47,8 +47,6 @@ impl ToolCallResult {
     }
 }
 
-
-
 fn parse_tool_entries(val: &Value) -> Result<Vec<ToolDef>, DriverError> {
     let tools_val = val
         .get("tools")
@@ -138,12 +136,12 @@ impl<T: McpTransport> McpClient<T> {
                 .as_ref()
                 .map(|dt| dt.limits().call_timeout_s)
         });
-        let now = self.deadline_tracker
+        let now = self
+            .deadline_tracker
             .as_ref()
             .map(|dt| dt.clock().now())
             .unwrap_or_else(std::time::Instant::now);
-        let call_deadline = effective_limit_s
-            .map(|s| now + std::time::Duration::from_secs(s));
+        let call_deadline = effective_limit_s.map(|s| now + std::time::Duration::from_secs(s));
 
         let params = json!({
             "name": name,

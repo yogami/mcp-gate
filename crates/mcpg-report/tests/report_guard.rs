@@ -66,7 +66,10 @@ fn p1_can_06_no_raw_canary_in_any_writer() {
 fn p1_seed_03_seed_in_every_writer() {
     let record = sample_run_record();
     let seed_hex = record.seed.to_string();
-    let writers: Vec<_> = all_writers().into_iter().filter(|w| w.name() != "github").collect();
+    let writers: Vec<_> = all_writers()
+        .into_iter()
+        .filter(|w| w.name() != "github")
+        .collect();
     assert!(!writers.is_empty(), "expected registered writers");
 
     for writer in &writers {
@@ -96,7 +99,10 @@ fn p1_seed_03_seed_in_every_writer() {
 #[test]
 fn claim_sentence_in_every_writer() {
     let record = sample_run_record();
-    let writers: Vec<_> = all_writers().into_iter().filter(|w| w.name() != "github").collect();
+    let writers: Vec<_> = all_writers()
+        .into_iter()
+        .filter(|w| w.name() != "github")
+        .collect();
     assert!(!writers.is_empty(), "expected registered writers");
 
     for writer in &writers {

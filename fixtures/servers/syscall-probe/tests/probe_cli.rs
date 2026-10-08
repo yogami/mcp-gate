@@ -270,7 +270,6 @@ fn test_x32_syscall() {
 }
 
 #[test]
-
 #[test]
 fn test_threads_open() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml");

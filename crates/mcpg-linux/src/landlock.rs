@@ -47,8 +47,6 @@ struct LandlockPathBeneathAttr {
 }
 
 #[cfg(target_os = "linux")]
-
-
 #[cfg(target_os = "linux")]
 fn add_single_fs_rule(ruleset_fd: RawFd, path: &Path, allowed_access: u64) -> std::io::Result<()> {
     if path.is_relative() {

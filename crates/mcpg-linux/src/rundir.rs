@@ -39,7 +39,10 @@ impl RunDir {
         #[cfg(unix)]
         {
             use std::os::unix::fs::DirBuilderExt;
-            std::fs::DirBuilder::new().recursive(true).mode(0o700).create(&root)?;
+            std::fs::DirBuilder::new()
+                .recursive(true)
+                .mode(0o700)
+                .create(&root)?;
         }
         #[cfg(not(unix))]
         {
@@ -54,7 +57,10 @@ impl RunDir {
             #[cfg(unix)]
             {
                 use std::os::unix::fs::DirBuilderExt;
-                std::fs::DirBuilder::new().recursive(true).mode(0o700).create(sub)?;
+                std::fs::DirBuilder::new()
+                    .recursive(true)
+                    .mode(0o700)
+                    .create(sub)?;
             }
             #[cfg(not(unix))]
             {

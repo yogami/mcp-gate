@@ -54,7 +54,10 @@ pub fn plant(plan: &CanaryPlan, run_dir: &RunDir) -> io::Result<CanaryRegistry> 
             #[cfg(unix)]
             {
                 use std::os::unix::fs::DirBuilderExt;
-                std::fs::DirBuilder::new().recursive(true).mode(0o700).create(parent)?;
+                std::fs::DirBuilder::new()
+                    .recursive(true)
+                    .mode(0o700)
+                    .create(parent)?;
             }
             #[cfg(not(unix))]
             {
@@ -66,8 +69,8 @@ pub fn plant(plan: &CanaryPlan, run_dir: &RunDir) -> io::Result<CanaryRegistry> 
 
         #[cfg(unix)]
         {
-            use std::os::unix::fs::OpenOptionsExt;
             use std::io::Write;
+            use std::os::unix::fs::OpenOptionsExt;
             let mut f = std::fs::OpenOptions::new()
                 .write(true)
                 .create(true)

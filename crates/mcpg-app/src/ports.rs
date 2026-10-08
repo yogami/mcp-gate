@@ -1,21 +1,21 @@
 //! Application port traits.
 
 use std::fmt;
-use std::process::Child;
 use std::os::fd::OwnedFd;
 use std::os::fd::RawFd;
+use std::process::Child;
 
-pub use mcpg_domain::seed::EntropySource;
-use mcpg_domain::config::model::Config;
-use mcpg_domain::seed::Seed;
-use mcpg_domain::env::EnvOutcome;
-use mcpg_domain::config::vars::VarTable;
-use mcpg_domain::canary::registry::CanaryRegistry;
-use mcpg_domain::verdict::ExitCode;
-use mcpg_domain::policy::resolve::ResolvedPolicy;
-use mcpg_domain::host::HostCaps;
-use mcpg_domain::event::Event;
 use crate::orchestrator::RunOptions;
+use mcpg_domain::canary::registry::CanaryRegistry;
+use mcpg_domain::config::model::Config;
+use mcpg_domain::config::vars::VarTable;
+use mcpg_domain::env::EnvOutcome;
+use mcpg_domain::event::Event;
+use mcpg_domain::host::HostCaps;
+use mcpg_domain::policy::resolve::ResolvedPolicy;
+pub use mcpg_domain::seed::EntropySource;
+use mcpg_domain::seed::Seed;
+use mcpg_domain::verdict::ExitCode;
 
 use crate::capsule_plan::CapsulePlan;
 
@@ -111,11 +111,29 @@ impl Clock for FakeClock {
 pub trait Sandbox {
     fn generate_seed(&self) -> Result<Seed, ExitCode>;
     fn probe_host_caps(&self) -> HostCaps;
-    fn init(&self, cfg: &Config, seed: &Seed, opts: &RunOptions) -> Result<(VarTable, CanaryRegistry, EnvOutcome), ExitCode>;
-    fn build_ruleset(&self, policy: &ResolvedPolicy, vars: &VarTable, cmd: &str, caps: &HostCaps) -> Result<Option<OwnedFd>, ExitCode>;
-    fn setup_tripwire(&self, registry: &CanaryRegistry, phase: crate::phase::PhaseCursor) -> Result<Option<Box<dyn TripwireHandle>>, ExitCode>;
+    fn init(
+        &self,
+        cfg: &Config,
+        seed: &Seed,
+        opts: &RunOptions,
+    ) -> Result<(VarTable, CanaryRegistry, EnvOutcome), ExitCode>;
+    fn build_ruleset(
+        &self,
+        policy: &ResolvedPolicy,
+        vars: &VarTable,
+        cmd: &str,
+        caps: &HostCaps,
+    ) -> Result<Option<OwnedFd>, ExitCode>;
+    fn setup_tripwire(
+        &self,
+        registry: &CanaryRegistry,
+        phase: crate::phase::PhaseCursor,
+    ) -> Result<Option<Box<dyn TripwireHandle>>, ExitCode>;
     fn teardown(&self, capsule: RunningCapsule, grace: Duration) -> Result<Vec<Event>, ExitCode>;
-    fn create_launcher(&self, ruleset: Option<OwnedFd>) -> (Box<dyn CapsuleLauncher>, Option<RawFd>);
+    fn create_launcher(
+        &self,
+        ruleset: Option<OwnedFd>,
+    ) -> (Box<dyn CapsuleLauncher>, Option<RawFd>);
     fn disarm_guard(&self);
     fn arm_guard(&self, pid: i32, pids: Vec<u32>);
     fn start_observer_thread(
@@ -136,5 +154,3 @@ pub trait TripwireHandle {
     fn stop(&mut self);
     fn join(self: Box<Self>) -> Result<Vec<(String, String)>, ()>;
 }
-
-

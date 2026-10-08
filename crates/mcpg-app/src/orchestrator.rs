@@ -79,9 +79,9 @@ pub trait RunOrchestrator {
     fn execute(&self, options: &RunOptions) -> Result<RunOutcome, ExitCode>;
 }
 
-use crate::ports::{Sandbox, CapsuleLauncher};
-use crate::run_planner::RunPlanner;
 use crate::phase::PhaseCursor;
+use crate::ports::{CapsuleLauncher, Sandbox};
+use crate::run_planner::RunPlanner;
 use std::sync::Arc;
 
 pub struct AppOrchestrator {
@@ -118,7 +118,10 @@ impl RunOrchestrator for AppOrchestrator {
         };
 
         let ruleset = if mode == Mode::Enforce {
-            match self.sandbox.build_ruleset(&resolved, &vars, &cfg.server.command, &caps) {
+            match self
+                .sandbox
+                .build_ruleset(&resolved, &vars, &cfg.server.command, &caps)
+            {
                 Ok(v) => v,
                 Err(e) => return Err(e),
             }
@@ -134,9 +137,9 @@ impl RunOrchestrator for AppOrchestrator {
         };
 
         let _scanner = if !registry.records.is_empty() {
-            Some(Arc::new(
-                mcpg_domain::leak::LeakScanner::from_registry(&registry),
-            ))
+            Some(Arc::new(mcpg_domain::leak::LeakScanner::from_registry(
+                &registry,
+            )))
         } else {
             None
         };
@@ -144,20 +147,26 @@ impl RunOrchestrator for AppOrchestrator {
         let (exec_verdict, exec_code, proto_errs) = {
             let (launcher, handover) = self.sandbox.create_launcher(ruleset);
             let (obs_tx, obs_rx) = std::sync::mpsc::channel();
-            
+
             let mut _obs_handle = None;
             if let Some(fd) = handover {
-                _obs_handle = Some(self.sandbox.start_observer_thread(
-                    fd,
-                    cfg.policy.allow_network,
-                    cfg.policy.allowed_child_binaries.iter().map(std::path::PathBuf::from).collect(),
-                    Some(cfg.server.command.clone().into()),
-                    cfg.policy.allowed_unix_sockets.clone(),
-                    vec![],
-                    None,
-                    None,
-                    obs_tx
-                ));
+                _obs_handle = Some(
+                    self.sandbox.start_observer_thread(
+                        fd,
+                        cfg.policy.allow_network,
+                        cfg.policy
+                            .allowed_child_binaries
+                            .iter()
+                            .map(std::path::PathBuf::from)
+                            .collect(),
+                        Some(cfg.server.command.clone().into()),
+                        cfg.policy.allowed_unix_sockets.clone(),
+                        vec![],
+                        None,
+                        None,
+                        obs_tx,
+                    ),
+                );
             }
 
             let mut cap = match launcher.launch(&plan) {
@@ -168,33 +177,58 @@ impl RunOrchestrator for AppOrchestrator {
                 }
             };
 
-
             let transport = mcpg_mcp::transport::StdioTransport::new(
                 cap.child.stdin.take().unwrap(),
-                mcpg_mcp::framing::LineReader::new(std::io::BufReader::new(cap.child.stdout.take().unwrap()), 1024 * 1024)
+                mcpg_mcp::framing::LineReader::new(
+                    std::io::BufReader::new(cap.child.stdout.take().unwrap()),
+                    1024 * 1024,
+                ),
             );
             let mut client = mcpg_mcp::client::McpClient::new(transport)
                 .with_workspace_uri(format!("file://{}", vars.workspace.display()));
-            let tracker = mcpg_mcp::deadline::DeadlineTracker::new(std::sync::Arc::new(mcpg_mcp::deadline::SystemClock), cfg.limits.clone());
+            let tracker = mcpg_mcp::deadline::DeadlineTracker::new(
+                std::sync::Arc::new(mcpg_mcp::deadline::SystemClock),
+                cfg.limits.clone(),
+            );
             client.set_deadline_tracker(tracker.clone());
 
-            let (exec_verdict, exec_code, mut proto_errs) = crate::session::drive_session(client, &cfg, &tracker, &phase);
-            
-            let _ = self.sandbox.teardown(cap, std::time::Duration::from_millis(1500));
-            
+            let (exec_verdict, exec_code, mut proto_errs) =
+                crate::session::drive_session(client, &cfg, &tracker, &phase);
+
+            let _ = self
+                .sandbox
+                .teardown(cap, std::time::Duration::from_millis(1500));
+
             while let Ok(v) = obs_rx.try_recv() {
                 proto_errs.push(v);
             }
-            
+
             (exec_verdict, exec_code, proto_errs)
         };
-        
-        Ok(RunOutcome { verdict: exec_verdict, exit_code: exec_code, seed, registry, violations: proto_errs })
+
+        Ok(RunOutcome {
+            verdict: exec_verdict,
+            exit_code: exec_code,
+            seed,
+            registry,
+            violations: proto_errs,
+        })
     }
 }
 
 impl AppOrchestrator {
-    fn init_base(&self, opts: &RunOptions) -> Result<(mcpg_domain::config::model::Config, Mode, Seed, mcpg_domain::host::HostCaps), ExitCode> {
+    fn init_base(
+        &self,
+        opts: &RunOptions,
+    ) -> Result<
+        (
+            mcpg_domain::config::model::Config,
+            Mode,
+            Seed,
+            mcpg_domain::host::HostCaps,
+        ),
+        ExitCode,
+    > {
         let caps = self.sandbox.probe_host_caps(); // Need to abstract this later if needed.
         let mut cfg = RunPlanner::load_config(&opts.config_path)?;
         if let Some(timeout) = opts.timeout {

@@ -5,17 +5,23 @@ use mcpg_mcp::deadline::Clock;
 
 pub struct FakeClock(pub std::sync::RwLock<std::time::Instant>);
 impl FakeClock {
-    pub fn new(start: std::time::Instant) -> Self { Self(std::sync::RwLock::new(start)) }
-    pub fn advance(&self, d: std::time::Duration) { *self.0.write().unwrap() += d; }
+    pub fn new(start: std::time::Instant) -> Self {
+        Self(std::sync::RwLock::new(start))
+    }
+    pub fn advance(&self, d: std::time::Duration) {
+        *self.0.write().unwrap() += d;
+    }
 }
 impl Clock for FakeClock {
-    fn now(&self) -> std::time::Instant { *self.0.read().unwrap() }
+    fn now(&self) -> std::time::Instant {
+        *self.0.read().unwrap()
+    }
 }
 
 use mcpg_domain::config::{LimitsConfig, ScenarioConfig};
 use mcpg_domain::verdict::{ExitCode, Verdict};
 use mcpg_mcp::client::{DriverError, McpClient};
-use mcpg_mcp::deadline::{DeadlineTracker};
+use mcpg_mcp::deadline::DeadlineTracker;
 use mcpg_mcp::framing::JsonRpc;
 use mcpg_mcp::testing::scripted::ScriptedServer;
 use serde_json::json;
@@ -102,4 +108,3 @@ fn call_timeout_is_inconclusive() {
         other => panic!("expected Inconclusive error, got: {other:?}"),
     }
 }
-

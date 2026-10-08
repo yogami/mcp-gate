@@ -144,7 +144,11 @@ pub fn clean_path(path: &Path) -> PathBuf {
 
 impl<M: MemoryReader> ObserverEngine<M> {
     pub fn new(cfg: ObserverConfig, reader: M) -> Self {
-        Self { cfg, reader, has_seen_root_exec: std::sync::atomic::AtomicBool::new(false) }
+        Self {
+            cfg,
+            reader,
+            has_seen_root_exec: std::sync::atomic::AtomicBool::new(false),
+        }
     }
 
     pub fn handle_syscall(&self, pid: u32, nr: i64, args: [u64; 6]) -> SyscallResult {
@@ -266,7 +270,11 @@ impl<M: MemoryReader> ObserverEngine<M> {
             || nr == syscalls::SYS_BIND
             || nr == syscalls::SYS_SENDTO
         {
-            let sockaddr_addr = if nr == syscalls::SYS_SENDTO { args[4] } else { args[1] };
+            let sockaddr_addr = if nr == syscalls::SYS_SENDTO {
+                args[4]
+            } else {
+                args[1]
+            };
             if sockaddr_addr != 0 {
                 if let Ok(family_bytes) = self.reader.read_bytes(pid, sockaddr_addr, 2) {
                     let family = u16::from_ne_bytes([family_bytes[0], family_bytes[1]]);
@@ -288,14 +296,22 @@ impl<M: MemoryReader> ObserverEngine<M> {
                             event: Some(event),
                         };
                     } else if family == AF_UNIX {
-                        let addrlen = if nr == syscalls::SYS_SENDTO { args[5] } else { args[2] } as usize;
+                        let addrlen = if nr == syscalls::SYS_SENDTO {
+                            args[5]
+                        } else {
+                            args[2]
+                        } as usize;
                         let path_len = addrlen.saturating_sub(2).min(108);
                         if path_len > 0 {
-                            if let Ok(bytes) = self.reader.read_bytes(pid, sockaddr_addr + 2, path_len) {
+                            if let Ok(bytes) =
+                                self.reader.read_bytes(pid, sockaddr_addr + 2, path_len)
+                            {
                                 let sun_path = if bytes[0] == 0 {
                                     let mut s = String::new();
                                     s.push('@');
-                                    let content = if let Some(nul) = bytes[1..].iter().position(|&b| b == 0) {
+                                    let content = if let Some(nul) =
+                                        bytes[1..].iter().position(|&b| b == 0)
+                                    {
                                         &bytes[1..=nul]
                                     } else {
                                         &bytes[1..]
@@ -309,27 +325,27 @@ impl<M: MemoryReader> ObserverEngine<M> {
                                         String::from_utf8_lossy(&bytes).to_string()
                                     }
                                 };
-                                
+
                                 if !sun_path.is_empty()
                                     && !self.cfg.allowed_unix_sockets.contains(&sun_path)
-                            {
-                                let event = mcpg_domain::event::Event::builder(
-                                    mcpg_domain::event::EventKind::UnixConnect,
-                                    phase,
-                                )
-                                .target(sun_path.clone())
-                                .message(format!("Unapproved unix socket: {}", sun_path))
-                                .build();
-                                return SyscallResult {
-                                    flags: 0,
-                                    error: -libc::EACCES,
-                                    val: 0,
-                                    violation: Some((
-                                        "MCPG009".to_string(),
-                                        format!("Unapproved unix socket: {}", sun_path),
-                                    )),
-                                    event: Some(event),
-                                };
+                                {
+                                    let event = mcpg_domain::event::Event::builder(
+                                        mcpg_domain::event::EventKind::UnixConnect,
+                                        phase,
+                                    )
+                                    .target(sun_path.clone())
+                                    .message(format!("Unapproved unix socket: {}", sun_path))
+                                    .build();
+                                    return SyscallResult {
+                                        flags: 0,
+                                        error: -libc::EACCES,
+                                        val: 0,
+                                        violation: Some((
+                                            "MCPG009".to_string(),
+                                            format!("Unapproved unix socket: {}", sun_path),
+                                        )),
+                                        event: Some(event),
+                                    };
                                 }
                             }
                         }
@@ -434,19 +450,15 @@ impl<M: MemoryReader> ObserverEngine<M> {
 
             if let Ok(raw_path) = self.reader.read_string(pid, addr, 4096) {
                 let path = PathBuf::from(&raw_path);
-                let is_root = self
-                    .cfg
-                    .root_command
-                    .as_ref()
-                    .is_some_and(|r| r == &path);
-                let is_allowed = if is_root && !self.has_seen_root_exec.swap(true, std::sync::atomic::Ordering::SeqCst) {
+                let is_root = self.cfg.root_command.as_ref().is_some_and(|r| r == &path);
+                let is_allowed = if is_root
+                    && !self
+                        .has_seen_root_exec
+                        .swap(true, std::sync::atomic::Ordering::SeqCst)
+                {
                     true
                 } else {
-                    self
-                        .cfg
-                        .allowed_child_binaries
-                        .iter()
-                        .any(|b| b == &path)
+                    self.cfg.allowed_child_binaries.iter().any(|b| b == &path)
                 };
 
                 if !is_allowed {
@@ -510,7 +522,9 @@ pub fn start_observer_thread(
             Ok(fd) => fd,
             Err(_) => return, // Failed to receive, maybe process died or execve failed
         };
-        unsafe { libc::close(handover_fd); }
+        unsafe {
+            libc::close(handover_fd);
+        }
         let engine = ObserverEngine::new(cfg, RealMemoryReader);
         loop {
             let mut req: seccomp_notif = unsafe { std::mem::zeroed() };

@@ -84,8 +84,7 @@ mod linux_impl {
     const SYS_OPENAT_NR: u32 = 0;
 
     use crate::observer::{
-        seccomp_notif, seccomp_notif_resp, SECCOMP_IOCTL_NOTIF_RECV,
-        SECCOMP_IOCTL_NOTIF_SEND,
+        seccomp_notif, seccomp_notif_resp, SECCOMP_IOCTL_NOTIF_RECV, SECCOMP_IOCTL_NOTIF_SEND,
     };
 
     const SECCOMP_USER_NOTIF_FLAG_CONTINUE: u32 = 0x00000001;
