@@ -272,8 +272,9 @@ pub fn send_fd(sock: RawFd, fd_to_send: RawFd) -> io::Result<()> {
         };
 
         let cmsg_space = libc::CMSG_SPACE(std::mem::size_of::<libc::c_int>() as u32) as usize;
-        let mut cmsg_buf = vec![0u8; cmsg_space];
-
+        // Allocate statically or on the stack. cmsg_space is small (around 24-32 bytes).
+        let mut cmsg_buf = [0u8; 64];
+        
         let mut msg: libc::msghdr = std::mem::zeroed();
         msg.msg_iov = &mut iov;
         msg.msg_iovlen = 1;
@@ -282,7 +283,7 @@ pub fn send_fd(sock: RawFd, fd_to_send: RawFd) -> io::Result<()> {
 
         let cmsg = libc::CMSG_FIRSTHDR(&msg);
         if cmsg.is_null() {
-            return Err(io::Error::other("CMSG_FIRSTHDR returned null"));
+            return Err(io::Error::from_raw_os_error(libc::EINVAL));
         }
 
         (*cmsg).cmsg_level = libc::SOL_SOCKET;
