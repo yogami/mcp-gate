@@ -92,51 +92,9 @@ fn apply_argv(cmd: &mut Command, argv: &[CString]) {
 }
 
 #[cfg(unix)]
+#[allow(unused_variables)]
 fn close_extra_fds_except(keep_fds: &[std::os::fd::RawFd]) {
     #[cfg(target_os = "linux")]
-    unsafe {
-        const CLOSE_RANGE_CLOEXEC: libc::c_uint = 4;
-
-        let set_cloexec_fallback = |start: i32, max: i32| {
-            for fd in start..max {
-                if !keep_fds.contains(&fd) {
-                    libc::fcntl(fd, libc::F_SETFD, libc::FD_CLOEXEC);
-                }
-            }
-        };
-
-        if keep_fd < 3 {
-            let res = libc::syscall(libc::SYS_close_range, 3, !0u32, CLOSE_RANGE_CLOEXEC);
-            if res < 0 {
-                let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
-                set_cloexec_fallback(3, max_fd);
-            }
-        } else {
-            let res1 = if keep_fd > 3 {
-                libc::syscall(
-                    libc::SYS_close_range,
-                    3,
-                    (keep_fd - 1) as u32,
-                    CLOSE_RANGE_CLOEXEC,
-                )
-            } else {
-                0
-            };
-
-            let res2 = libc::syscall(
-                libc::SYS_close_range,
-                (keep_fd + 1) as u32,
-                !0u32,
-                CLOSE_RANGE_CLOEXEC,
-            );
-
-            if res1 < 0 || res2 < 0 {
-                let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
-                set_cloexec_fallback(3, max_fd);
-            }
-        }
-    }
-    #[cfg(not(target_os = "linux"))]
     unsafe {
         let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024) as i32;
         for fd in 3..max_fd {
@@ -259,8 +217,6 @@ impl CapsuleLauncher for LinuxLauncher {
             .stderr(Stdio::piped());
 
         #[cfg(target_os = "linux")]
-        let mut parent_sock = None;
-        #[cfg(target_os = "linux")]
         let mut child_sock = None;
         #[cfg(target_os = "linux")]
         let mut seccomp_filter: Vec<crate::seccomp::sock_filter> = vec![];
@@ -280,7 +236,6 @@ impl CapsuleLauncher for LinuxLauncher {
                     sv.as_mut_ptr(),
                 ) == 0
                 {
-                    parent_sock = Some(sv[0]);
                     child_sock = Some(sv[1]);
                 }
             }
