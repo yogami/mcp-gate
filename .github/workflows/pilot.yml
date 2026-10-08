@@ -38,7 +38,8 @@ jobs:
             allow_network: false
             allowed_unix_sockets: []
           ' > fs-gate.yaml
-          RUST_LOG=trace target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
+          timeout 30s strace -f -o mcp-gate.strace target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
+          cat mcp-gate.strace || true
 
       - name: Run Python Git server
         timeout-minutes: 2
