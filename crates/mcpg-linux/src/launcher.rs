@@ -104,10 +104,8 @@ fn close_extra_fds_except(keep_fds: &[std::os::fd::RawFd]) {
             // Find the smallest fd in keep_fds that is >= start_fd
             let mut next_keep = -1;
             for &fd in keep_fds {
-                if fd >= start_fd {
-                    if next_keep == -1 || fd < next_keep {
-                        next_keep = fd;
-                    }
+                if fd >= start_fd && (next_keep == -1 || fd < next_keep) {
+                    next_keep = fd;
                 }
             }
 
@@ -121,7 +119,7 @@ fn close_extra_fds_except(keep_fds: &[std::os::fd::RawFd]) {
                 );
                 if res < 0 {
                     // Fallback to loop if close_range fails (e.g. old kernel)
-                    let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).max(1024).min(65536) as i32;
+                    let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).clamp(1024, 65536) as i32;
                     for fd in start_fd..max_fd {
                         if !keep_fds.contains(&fd) {
                             libc::fcntl(fd, libc::F_SETFD, libc::FD_CLOEXEC);
