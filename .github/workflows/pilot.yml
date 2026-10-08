@@ -15,6 +15,4 @@ jobs:
         run: cargo build
 
       - name: Run Test Trace
-        env:
-          GITHUB_ACTIONS: "false"
-        run: cargo test --workspace -- --nocapture
+        run: env -u GITHUB_ACTIONS cargo test --workspace -- --nocapture
