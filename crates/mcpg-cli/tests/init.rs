@@ -47,6 +47,7 @@ server:
   name: my-mcp-server
   command: /bin/sh
   args: []
+  protocol_versions: ["2024-11-05"]
   workspace:
     source: .
     mode: copy
