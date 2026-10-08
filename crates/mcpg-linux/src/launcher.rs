@@ -189,14 +189,17 @@ fn child_pre_exec(
             }
         }
 
-        let mut keep = vec![];
+        let mut keep = [-1; 2];
+        let mut keep_len = 0;
         if _landlock_fd >= 0 {
-            keep.push(_landlock_fd);
+            keep[keep_len] = _landlock_fd;
+            keep_len += 1;
         }
         if _child_sock >= 0 {
-            keep.push(_child_sock);
+            keep[keep_len] = _child_sock;
+            keep_len += 1;
         }
-        close_extra_fds_except(&keep);
+        close_extra_fds_except(&keep[..keep_len]);
 
         if libc::chdir(cwd_cstr.as_ptr()) < 0 {
             return Err(io::Error::last_os_error());

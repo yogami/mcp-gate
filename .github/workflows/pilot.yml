@@ -14,12 +14,5 @@ jobs:
       - name: Build mcp-gate
         run: cargo build
 
-      - name: Run Test Trace
-        run: |
-          RUST_LOG=trace cargo test --test benign_server p3_ben_01_benign_server_zero_findings -- --nocapture > test.log 2>&1 &
-          PID=$!
-          while kill -0 $PID 2>/dev/null; do
-            cat test.log
-            sleep 5
-          done
-          wait $PID
+      - name: Run Unit Tests
+        run: cargo test --workspace -- --nocapture
