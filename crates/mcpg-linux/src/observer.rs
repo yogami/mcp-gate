@@ -166,7 +166,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
             )
             .message("x32 ABI system call denied")
             .build();
-            return SyscallResult {
+            eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                 flags: 0,
                 error: -libc::ENOSYS,
                 val: 0,
@@ -189,7 +189,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
             )
             .message("io_uring system call denied")
             .build();
-            return SyscallResult {
+            eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                 flags: 0,
                 error: -libc::ENOSYS,
                 val: 0,
@@ -208,7 +208,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                 )
                 .message("CLONE_NEWUSER denied")
                 .build();
-                return SyscallResult {
+                eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                     flags: 0,
                     error: -libc::EPERM,
                     val: 0,
@@ -232,7 +232,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                 )
                 .message(format!("Signal to foreign PID {target_pid} denied"))
                 .build();
-                return SyscallResult {
+                eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                     flags: 0,
                     error: -libc::EPERM,
                     val: 0,
@@ -255,7 +255,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                 )
                 .message("Network activity while allow_network is false")
                 .build();
-                return SyscallResult {
+                eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                     flags: 0,
                     error: -libc::EACCES,
                     val: 0,
@@ -285,7 +285,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                         )
                         .message("Network activity while allow_network is false")
                         .build();
-                        return SyscallResult {
+                        eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                             flags: 0,
                             error: -libc::EACCES,
                             val: 0,
@@ -336,7 +336,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                                     .target(sun_path.clone())
                                     .message(format!("Unapproved unix socket: {}", sun_path))
                                     .build();
-                                    return SyscallResult {
+                                    eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                                         flags: 0,
                                         error: -libc::EACCES,
                                         val: 0,
@@ -406,7 +406,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                     .build();
 
                     eprintln!("DEBUG: MCPG005 DENYING openat on {}", raw_path);
-                    return SyscallResult {
+                    eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                         flags: 0,
                         error: -libc::EACCES,
                         val: 0,
@@ -434,7 +434,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                 })
                 .build();
 
-                return SyscallResult {
+                eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                     flags: SECCOMP_USER_NOTIF_FLAG_CONTINUE,
                     error: 0,
                     val: 0,
@@ -472,7 +472,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                     .build();
 
                     eprintln!("DEBUG: MCPG006 DENYING execve on {}", path.display());
-                    return SyscallResult {
+                    eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                         flags: 0,
                         error: -libc::EACCES,
                         val: 0,
@@ -492,7 +492,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
                 .decision(mcpg_domain::event::Decision::Allowed)
                 .build();
 
-                return SyscallResult {
+                eprintln!("DEBUG: DENYING SYSCALL with error EACCES"); return SyscallResult {
                     flags: SECCOMP_USER_NOTIF_FLAG_CONTINUE,
                     error: 0,
                     val: 0,
