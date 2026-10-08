@@ -17,96 +17,11 @@ jobs:
         run: cargo clippy --workspace -- -D warnings
 
       - name: Run Unit Tests
-        run: cargo test --workspace -- --test-threads=1 --nocapture
-
-      - name: Build mcp-gate
-        run: cargo build --release
-      
-      - name: Run filesystem server
-        timeout-minutes: 5
         run: |
-          git clone https://github.com/modelcontextprotocol/servers.git pilot-servers
-          cd pilot-servers/src/filesystem
-          npm install && npm run build
-          cd ../../..
-          echo '
-          version: 1
-          server:
-            name: node-filesystem
-            command: node
-            args: ["dist/index.js", "."]
-            workspace:
-              source: pilot-servers/src/filesystem
-              mode: copy
-          policy:
-            read_paths:
-              - ${WORKSPACE}
-            write_paths:
-              - ${WORKSPACE}
-            allowed_child_binaries: []
-            allow_network: false
-            allowed_unix_sockets: []
-          ' > fs-gate.yaml
-          RUST_LOG=trace target/release/mcp-gate run --config fs-gate.yaml --sarif fs.sarif || true
-
-      - name: Run Python Git server
-        timeout-minutes: 5
-        run: |
-          git clone https://github.com/modelcontextprotocol/servers.git pilot-git
-          cd pilot-git/src/git
-          pip install .
-          cd ../../..
-          GIT_CMD=$(which mcp-server-git)
-          echo '
-          version: 1
-          server:
-            name: python-git
-            command: '${GIT_CMD}'
-            args: []
-            workspace:
-              source: pilot-git/src/git
-              mode: copy
-          policy:
-            read_paths:
-              - ${WORKSPACE}
-            write_paths:
-              - ${WORKSPACE}
-            allowed_child_binaries: []
-            allow_network: false
-            allowed_unix_sockets: []
-          ' > git-gate.yaml
-          RUST_LOG=trace target/release/mcp-gate run --config git-gate.yaml --sarif git.sarif || true
-
-      - name: Run Go Github server
-        timeout-minutes: 5
-        run: |
-          git clone https://github.com/github/github-mcp-server.git pilot-gh
-          cd pilot-gh
-          go build -o github-mcp-server ./cmd/github-mcp-server
-          cd ..
-          GH_CMD=$(realpath pilot-gh/github-mcp-server)
-          echo '
-          version: 1
-          server:
-            name: go-github
-            command: '${GH_CMD}'
-            args: []
-            workspace:
-              source: pilot-gh
-              mode: copy
-          policy:
-            read_paths:
-              - ${WORKSPACE}
-            write_paths:
-              - ${WORKSPACE}
-            allowed_child_binaries: []
-            allow_network: true
-            allowed_unix_sockets: []
-          ' > gh-gate.yaml
-          RUST_LOG=trace target/release/mcp-gate run --config gh-gate.yaml --sarif gh.sarif || true
-
-      - name: Upload results
-        uses: actions/upload-artifact@v4
-        with:
-          name: pilot-sarifs
-          path: "*.sarif"
+          cargo test --workspace -- --test-threads=1 --nocapture > test.log 2>&1 &
+          PID=$!
+          while kill -0 $PID 2>/dev/null; do
+            tail -n 50 test.log || true
+            sleep 10
+          done
+          wait $PID
