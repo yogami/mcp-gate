@@ -59,124 +59,128 @@ fn run_probe(command: &str, target: &Path) -> (serde_json::Value, usize) {
         }
     }
     
-    eprintln!("DEBUG: Before launch");
     let mut launcher = LinuxLauncher::new().with_seccomp(true);
     if let Some(cs) = child_sock {
         launcher = launcher.with_handover_sock(cs);
     }
     
-    eprintln!("DEBUG: Calling launch");
+    let (tx, rx) = std::sync::mpsc::channel();
+    let target_path = target.to_path_buf();
+    
+    let ps = parent_sock.expect("parent sock");
+    let obs_thread = std::thread::spawn(move || {
+        let listener = unsafe {
+            OwnedFd::from_raw_fd(mcpg_linux::seccomp::recv_fd(ps).expect("listener handover"))
+        };
+        unsafe {
+            libc::close(ps);
+            let flags = libc::fcntl(listener.as_raw_fd(), libc::F_GETFL, 0);
+            libc::fcntl(listener.as_raw_fd(), libc::F_SETFL, flags | libc::O_NONBLOCK);
+        }
+        let engine = ObserverEngine::new(
+            ObserverConfig {
+                root_command: Some(probe_binary()),
+                capsule_pids: vec![],
+                ..Default::default()
+            },
+            RealMemoryReader,
+        );
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let mut target_events = 0;
+        let mut loop_count = 0;
+        loop {
+            loop_count += 1;
+            if let Ok(()) = rx.try_recv() {
+                break;
+            }
+            assert!(Instant::now() < deadline, "notification loop deadlocked after 5s");
+            let mut pfd = libc::pollfd {
+                fd: listener.as_raw_fd(),
+                events: libc::POLLIN,
+                revents: 0,
+            };
+            let rc = unsafe { libc::poll(&mut pfd, 1, 50) };
+            assert!(rc >= 0);
+            if rc == 0 || pfd.revents & libc::POLLIN == 0 {
+                continue;
+            }
+
+            let mut request: libc::seccomp_notif = unsafe { std::mem::zeroed() };
+            let rc = unsafe {
+                libc::ioctl(
+                    listener.as_raw_fd(),
+                    libc::SECCOMP_IOCTL_NOTIF_RECV,
+                    &mut request,
+                )
+            };
+            if rc < 0 {
+                let errno = std::io::Error::last_os_error().raw_os_error();
+                assert!(matches!(errno, Some(libc::ENOENT) | Some(libc::EINTR) | Some(libc::EAGAIN)));
+                continue;
+            }
+
+            let result = engine.handle_syscall(request.pid, request.data.nr as i64, request.data.args);
+            let mut id = request.id;
+            if unsafe {
+                libc::ioctl(
+                    listener.as_raw_fd(),
+                    libc::SECCOMP_IOCTL_NOTIF_ID_VALID,
+                    &mut id,
+                )
+            } < 0
+            {
+                continue;
+            }
+
+            if let Some(event) = result.event {
+                if event.kind == EventKind::FsOpen && event.resolved.as_deref() == Some(target_path.as_path()) {
+                    assert_eq!(event.access, Some(mcpg_domain::event::AccessKind::Read));
+                    target_events += 1;
+                }
+            }
+            let response = libc::seccomp_notif_resp {
+                id: request.id,
+                val: result.val,
+                error: result.error,
+                flags: result.flags,
+            };
+            let rc = unsafe {
+                libc::ioctl(
+                    listener.as_raw_fd(),
+                    libc::SECCOMP_IOCTL_NOTIF_SEND,
+                    &response,
+                )
+            };
+            if rc < 0 {
+                assert_eq!(
+                    std::io::Error::last_os_error().raw_os_error(),
+                    Some(libc::ENOENT)
+                );
+            }
+        }
+        target_events
+    });
+
     let mut capsule = launcher
         .launch(&launch_plan)
         .expect("real seccomp launch handshake");
     assert!(start.elapsed() < Duration::from_secs(6));
-    eprintln!("DEBUG: launch returned");
 
     let guard = CapsuleGuard::new(capsule.pid as i32, vec![capsule.pid]);
-    
-    eprintln!("DEBUG: Before recv_fd");
-    let ps = parent_sock.expect("parent sock");
-    let listener = unsafe {
-        OwnedFd::from_raw_fd(mcpg_linux::seccomp::recv_fd(ps).expect("listener handover"))
-    };
-    unsafe {
-        libc::close(ps);
-        let flags = libc::fcntl(listener.as_raw_fd(), libc::F_GETFL, 0);
-        libc::fcntl(listener.as_raw_fd(), libc::F_SETFL, flags | libc::O_NONBLOCK);
-    }
-    let engine = ObserverEngine::new(
-        ObserverConfig {
-            root_command: Some(probe_binary()),
-            capsule_pids: vec![capsule.pid],
-            ..Default::default()
-        },
-        RealMemoryReader,
-    );
 
     let deadline = Instant::now() + Duration::from_secs(5);
-    let mut target_events = 0;
-    let mut loop_count = 0;
     loop {
-        loop_count += 1;
-        if loop_count % 1000 == 0 {
-            eprintln!("DEBUG: Loop iteration {}, target_events={}", loop_count, target_events);
-        }
+        assert!(Instant::now() < deadline, "wait deadlocked");
         if capsule.child.try_wait().unwrap().is_some() {
-            eprintln!("DEBUG: Child exited!");
             break;
         }
-        assert!(Instant::now() < deadline, "notification loop deadlocked after 5s");
-        let mut pfd = libc::pollfd {
-            fd: listener.as_raw_fd(),
-            events: libc::POLLIN,
-            revents: 0,
-        };
-        // SAFETY: pfd is a valid writable pollfd.
-        eprintln!("DEBUG: Polling...");
-        let rc = unsafe { libc::poll(&mut pfd, 1, 50) };
-        assert!(rc >= 0);
-        if rc == 0 || pfd.revents & libc::POLLIN == 0 {
-            continue;
-        }
-
-        // SAFETY: zero is a valid initial state for the kernel ABI structure.
-        let mut request: libc::seccomp_notif = unsafe { std::mem::zeroed() };
-        // SAFETY: listener is owned and request is a writable notification.
-        let rc = unsafe {
-            libc::ioctl(
-                listener.as_raw_fd(),
-                libc::SECCOMP_IOCTL_NOTIF_RECV,
-                &mut request,
-            )
-        };
-        if rc < 0 {
-            let errno = std::io::Error::last_os_error().raw_os_error();
-            assert!(matches!(errno, Some(libc::ENOENT) | Some(libc::EINTR) | Some(libc::EAGAIN)));
-            continue;
-        }
-
-        let result = engine.handle_syscall(request.pid, request.data.nr as i64, request.data.args);
-        let mut id = request.id;
-        // SAFETY: id is the notification ID just returned by the kernel.
-        if unsafe {
-            libc::ioctl(
-                listener.as_raw_fd(),
-                libc::SECCOMP_IOCTL_NOTIF_ID_VALID,
-                &mut id,
-            )
-        } < 0
-        {
-            continue;
-        }
-
-        if let Some(event) = result.event {
-            if event.kind == EventKind::FsOpen && event.resolved.as_deref() == Some(target) {
-                assert_eq!(event.access, Some(mcpg_domain::event::AccessKind::Read));
-                target_events += 1;
-            }
-        }
-        let response = libc::seccomp_notif_resp {
-            id: request.id,
-            val: result.val,
-            error: result.error,
-            flags: result.flags,
-        };
-        // SAFETY: response uses the ABI and ID of this notification.
-        let rc = unsafe {
-            libc::ioctl(
-                listener.as_raw_fd(),
-                libc::SECCOMP_IOCTL_NOTIF_SEND,
-                &response,
-            )
-        };
-        if rc < 0 {
-            assert_eq!(
-                std::io::Error::last_os_error().raw_os_error(),
-                Some(libc::ENOENT)
-            );
-        }
+        std::thread::sleep(Duration::from_millis(10));
     }
-
+    
+    let _ = tx.send(());
+    let target_events = obs_thread.join().unwrap();
+    
     let output = capsule.child.wait_with_output().unwrap();
     guard.disarm();
     assert!(
