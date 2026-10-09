@@ -43,6 +43,8 @@ policy:
   allow_network: false
   allowed_unix_sockets: []
   allowed_child_binaries: []
+  read_paths: []
+  write_paths: []
 "#,
         ws.display(),
         ws.display()
