@@ -312,6 +312,7 @@ fn test_execveat() {
         let val: Value = serde_json::from_str(output.trim()).expect("valid json line");
         assert!(val.get("status").is_some());
     }
+}
 
 #[test]
 fn test_sendto_addr() {
