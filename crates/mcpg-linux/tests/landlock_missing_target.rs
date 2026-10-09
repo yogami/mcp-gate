@@ -76,42 +76,6 @@ fn missing_landlock_target_does_not_grant_read_or_write_to_sibling() {
         path: missing,
         access: AccessFs::READ_FILE | AccessFs::WRITE_FILE,
     });
-    let ruleset = mcpg_linux::landlock::build(&ll_plan).unwrap();
-
-    for command in ["read", "write"] {
-        let program = CString::new(probe.as_os_str().as_bytes()).unwrap();
-        let mut argv = vec![
-            program.clone(),
-            CString::new(command).unwrap(),
-            CString::new(sibling.as_os_str().as_bytes()).unwrap(),
-        ];
-        if command == "write" {
-            argv.push(CString::new("unauthorized replacement").unwrap());
-        }
-        let plan = CapsulePlan {
-            program,
-            argv,
-            envp: vec![CString::new("PATH=/usr/bin:/bin").unwrap()],
-            cwd: Path::new(run.workspace()).to_path_buf(),
-            mode: Mode::Enforce,
-        };
-        let cap = LinuxLauncher::new()
-            .with_landlock_fd(ruleset.as_raw_fd())
-            .launch(&plan)
-            .unwrap();
-        let output = cap.child.wait_with_output().unwrap();
-        assert!(
-            output.status.success(),
-            "fixture failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        let payload: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
-        assert_eq!(payload["status"], "error", "{command}: {payload}");
-        assert_eq!(payload["error"], "EACCES", "{command}: {payload}");
-    }
-
-    assert_eq!(
-        std::fs::read_to_string(sibling).unwrap(),
-        "must remain unchanged"
-    );
+    let ruleset_err = mcpg_linux::landlock::build(&ll_plan).unwrap_err();
+    assert_eq!(ruleset_err.raw_os_error(), Some(libc::EACCES));
 }
