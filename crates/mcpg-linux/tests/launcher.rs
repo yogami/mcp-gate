@@ -355,10 +355,14 @@ fn launch_with_bad_landlock_fd_is_err() {
         use mcpg_app::ports::CapsuleLauncher;
         // 9999 is highly likely an invalid FD
         let launcher = mcpg_linux::launcher::LinuxLauncher::new().with_landlock_fd(9999);
-        let res = launcher.launch(&plan);
-        assert!(
-            res.is_err(),
-            "Launch with invalid landlock FD should fail in pre_exec and bubble up"
-        );
+        match launcher.launch(&plan) {
+            Err(_) => {} // Expected if pre_exec returns Err
+            Ok(mut cap) => {
+                // Since we use _exit(127) in pre_exec to avoid malloc deadlocks,
+                // Command::spawn might return Ok but the child will immediately exit with 127.
+                let status = cap.child.wait().unwrap();
+                assert_eq!(status.code(), Some(127), "Child should have exited with 127 due to invalid landlock FD");
+            }
+        }
     }
 }
