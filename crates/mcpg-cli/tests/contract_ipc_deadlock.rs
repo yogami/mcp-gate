@@ -7,10 +7,10 @@ use mcpg_domain::mode::Mode;
 use mcpg_linux::sandbox::LinuxSandbox;
 
 fn workspace_root() -> PathBuf {
-    let mut path = std::env::current_exe().unwrap();
-    while path.file_name().and_then(|s| s.to_str()) != Some("mcp-test-runner") {
-        path.pop();
-    }
+    // Navigate up from mcpg-cli/tests to the repo root
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.pop(); // pop mcpg-cli
+    path.pop(); // pop crates
     path.canonicalize().unwrap()
 }
 
