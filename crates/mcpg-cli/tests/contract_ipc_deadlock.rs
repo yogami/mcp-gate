@@ -30,7 +30,7 @@ fn stderr_flood_test_the_blocking_pipe_bug() {
     let cfg_path = temp_dir.join("mcp-gate.yaml");
     let cfg_content = format!(
         r#"
-version: "1.0"
+version: 1
 server:
   name: "stderr-flooder"
   command: "python3"
