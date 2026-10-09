@@ -163,7 +163,7 @@ impl RunOrchestrator for AppOrchestrator {
                     let mut buf = String::new();
                     let _ = stderr.read_to_string(&mut buf);
                     if !buf.is_empty() {
-                        eprintln!("CAPSULE STDERR: {}", buf);
+                        eprintln!("CAPSULE STDERR: {}...", buf.chars().take(100).collect::<String>());
                     }
                 });
             }
