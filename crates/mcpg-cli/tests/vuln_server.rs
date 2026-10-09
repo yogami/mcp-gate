@@ -75,11 +75,16 @@ server:
     mode: in-place
 "#,
         ws.display(),
-        r#"scenarios:
+        if defect == "daemon" || defect == "netrc-read" {
+            "scenarios: []".to_string()
+        } else {
+            r#"scenarios:
   - id: test-call
     tool: read_file
     arguments:
-      path: "../../../../../../../../../../../etc/passwd""#,
+      path: "../../../../../../../../../../../etc/passwd""#
+                .to_string()
+        },
         defect,
         ws.display(),
         ws.display()
