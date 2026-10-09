@@ -59,18 +59,22 @@ fn run_probe(command: &str, target: &Path) -> (serde_json::Value, usize) {
         }
     }
     
+    eprintln!("DEBUG: Before launch");
     let mut launcher = LinuxLauncher::new().with_seccomp(true);
     if let Some(cs) = child_sock {
         launcher = launcher.with_handover_sock(cs);
     }
     
+    eprintln!("DEBUG: Calling launch");
     let mut capsule = launcher
         .launch(&launch_plan)
         .expect("real seccomp launch handshake");
     assert!(start.elapsed() < Duration::from_secs(6));
+    eprintln!("DEBUG: launch returned");
 
     let guard = CapsuleGuard::new(capsule.pid as i32, vec![capsule.pid]);
     
+    eprintln!("DEBUG: Before recv_fd");
     let ps = parent_sock.expect("parent sock");
     let listener = unsafe {
         OwnedFd::from_raw_fd(mcpg_linux::seccomp::recv_fd(ps).expect("listener handover"))
@@ -108,6 +112,7 @@ fn run_probe(command: &str, target: &Path) -> (serde_json::Value, usize) {
             revents: 0,
         };
         // SAFETY: pfd is a valid writable pollfd.
+        eprintln!("DEBUG: Polling...");
         let rc = unsafe { libc::poll(&mut pfd, 1, 50) };
         assert!(rc >= 0);
         if rc == 0 || pfd.revents & libc::POLLIN == 0 {
@@ -222,4 +227,5 @@ fn failed_exec_does_not_hang_or_return_unobserved_capsule() {
         .launch(&plan)
         .is_err());
     assert!(start.elapsed() < Duration::from_secs(6));
+    eprintln!("DEBUG: launch returned");
 }
