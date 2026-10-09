@@ -119,7 +119,8 @@ fn close_extra_fds_except(keep_fds: &[std::os::fd::RawFd]) {
                 );
                 if res < 0 {
                     // Fallback to loop if close_range fails (e.g. old kernel)
-                    let max_fd = libc::sysconf(libc::_SC_OPEN_MAX).clamp(1024, 65536) as i32;
+                    // DO NOT use sysconf! It is not async-signal-safe and can deadlock!
+                    let max_fd = 10240;
                     for fd in start_fd..max_fd {
                         if !keep_fds.contains(&fd) {
                             libc::fcntl(fd, libc::F_SETFD, libc::FD_CLOEXEC);
@@ -138,7 +139,7 @@ fn close_extra_fds_except(keep_fds: &[std::os::fd::RawFd]) {
                     );
                     if res < 0 {
                         // Fallback
-                        let max_fd = (next_keep - 1).min(65536);
+                        let max_fd = (next_keep - 1).min(10240);
                         for fd in start_fd..=max_fd {
                             if !keep_fds.contains(&fd) {
                                 libc::fcntl(fd, libc::F_SETFD, libc::FD_CLOEXEC);
