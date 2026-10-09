@@ -92,14 +92,40 @@ fn kill_known_pids(pids: &[u32], survivors: &mut Vec<u32>) {
 
 fn collect_subreaper_adopted_children(runner_pid: u32, main_pid: u32) -> Vec<u32> {
     let mut orphans = Vec::new();
-    let task_dir = format!("/proc/{runner_pid}/task");
-    if let Ok(entries) = std::fs::read_dir(task_dir) {
-        for cpid in entries.flatten().flat_map(collect_thread_children) {
-            if cpid != main_pid {
-                orphans.extend(collect_tree_pids(cpid));
+    
+    // In Linux, adopted children reparent to the subreaper process, but they do NOT
+    // appear in /proc/PID/task/TID/children. The only reliable way to find them is to
+    // scan all processes and check if their PPID matches our runner_pid.
+    if let Ok(entries) = std::fs::read_dir("/proc") {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name_str = name.to_string_lossy();
+            if let Ok(pid) = name_str.parse::<u32>() {
+                if pid == runner_pid || pid == main_pid {
+                    continue;
+                }
+                
+                let stat_path = entry.path().join("stat");
+                if let Ok(stat) = std::fs::read_to_string(stat_path) {
+                    if let Some(rparen) = stat.rfind(')') {
+                        let after = &stat[rparen + 1..];
+                        let parts: Vec<&str> = after.split_whitespace().collect();
+                        if parts.len() >= 2 {
+                            if let Ok(ppid) = parts[1].parse::<u32>() {
+                                if ppid == runner_pid {
+                                    orphans.push(pid);
+                                    orphans.extend(collect_tree_pids(pid));
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
+    
+    orphans.sort_unstable();
+    orphans.dedup();
     orphans
 }
 
