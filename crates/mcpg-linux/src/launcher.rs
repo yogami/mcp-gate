@@ -177,13 +177,13 @@ fn child_pre_exec(
     // SAFETY: Invokes only async-signal-safe syscalls without allocating.
     unsafe {
         if libc::setsid() < 0 {
-            return Err(io::Error::last_os_error());
+            libc::_exit(127);
         }
 
         #[cfg(target_os = "linux")]
         {
             if libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL, 0, 0, 0) < 0 {
-                return Err(io::Error::last_os_error());
+                libc::_exit(127);
             }
             if libc::getppid() != _runner_pid {
                 libc::_exit(127);
@@ -203,7 +203,7 @@ fn child_pre_exec(
         close_extra_fds_except(&keep[..keep_len]);
 
         if libc::chdir(cwd_cstr.as_ptr()) < 0 {
-            return Err(io::Error::last_os_error());
+            libc::_exit(127);
         }
 
         libc::umask(0o077);
@@ -213,13 +213,13 @@ fn child_pre_exec(
             rlim_max: 0,
         };
         if libc::setrlimit(libc::RLIMIT_CORE, &rlim) < 0 {
-            return Err(io::Error::last_os_error());
+            libc::_exit(127);
         }
 
         #[cfg(target_os = "linux")]
         {
             if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 {
-                return Err(io::Error::last_os_error());
+                libc::_exit(127);
             }
 
             if !_seccomp_ptr.is_null() && _seccomp_len > 0 && _child_sock >= 0 {
@@ -230,14 +230,15 @@ fn child_pre_exec(
                         libc::close(listener_fd);
                     }
                     Err(_) => {
-                        libc::close(_child_sock);
-                        return Err(io::Error::last_os_error());
+                        libc::_exit(127);
                     }
                 }
                 libc::close(_child_sock);
             }
 
-            apply_landlock_in_child(_landlock_fd)?;
+            if apply_landlock_in_child(_landlock_fd).is_err() {
+                libc::_exit(127);
+            }
         }
 
         Ok(())
