@@ -89,13 +89,19 @@ fn run_probe(command: &str, target: &Path) -> (serde_json::Value, usize) {
         RealMemoryReader,
     );
 
-    let deadline = Instant::now() + Duration::from_secs(30);
+    let deadline = Instant::now() + Duration::from_secs(5);
     let mut target_events = 0;
+    let mut loop_count = 0;
     loop {
+        loop_count += 1;
+        if loop_count % 1000 == 0 {
+            eprintln!("DEBUG: Loop iteration {}, target_events={}", loop_count, target_events);
+        }
         if capsule.child.try_wait().unwrap().is_some() {
+            eprintln!("DEBUG: Child exited!");
             break;
         }
-        assert!(Instant::now() < deadline, "notification loop deadlocked");
+        assert!(Instant::now() < deadline, "notification loop deadlocked after 5s");
         let mut pfd = libc::pollfd {
             fd: listener.as_raw_fd(),
             events: libc::POLLIN,
