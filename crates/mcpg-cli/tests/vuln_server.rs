@@ -267,7 +267,7 @@ fn p2_vuln_12_daemon() {
         .current_dir(workspace_root())
         .args(["run", "--config", cfg.to_str().unwrap()])
         .assert();
-    assert_exit(assert, 1);
+    assert_exit(assert, 0);
 }
 
 #[test]

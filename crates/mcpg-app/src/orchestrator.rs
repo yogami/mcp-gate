@@ -186,9 +186,19 @@ impl RunOrchestrator for AppOrchestrator {
             let (exec_verdict, exec_code, mut proto_errs) =
                 crate::session::drive_session(client, &cfg, &tracker, &phase);
 
-            let _ = self
+            if let Ok(teardown_events) = self
                 .sandbox
-                .teardown(cap, std::time::Duration::from_millis(1500));
+                .teardown(cap, std::time::Duration::from_millis(1500)) 
+            {
+                for ev in teardown_events {
+                    if ev.kind == mcpg_domain::event::EventKind::ProcOrphan {
+                        proto_errs.push((
+                            "MCPG012".to_string(),
+                            ev.message.unwrap_or_else(|| "Orphaned processes detected".to_string()),
+                        ));
+                    }
+                }
+            }
 
             std::thread::sleep(std::time::Duration::from_millis(500));
             while let Ok(v) = obs_rx.try_recv() {

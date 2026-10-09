@@ -17,11 +17,27 @@ pub fn execute(opts: &RunOptions) -> ExitCode {
     match orchestrator.execute(opts) {
         Ok(mut outcome) => {
             // Apply fail_on logic for security violations
-            // If there are violations, we elevate to FailSecurity.
-            // Since we don't have the config easily accessible here anymore,
-            // we will just assume FailSecurity if there's any violation, 
-            // as is the default behaviour.
-            if !outcome.violations.is_empty() {
+            let mut fail = false;
+            let fail_on_level = match opts.fail_on.unwrap_or(mcpg_domain::config::model::FailOnLevel::Error) {
+                mcpg_domain::config::model::FailOnLevel::Error => 3,
+                mcpg_domain::config::model::FailOnLevel::Warning => 2,
+                mcpg_domain::config::model::FailOnLevel::Note => 1,
+            };
+
+            for (rule_id, _) in &outcome.violations {
+                let rule_severity = match rule_id.as_str() {
+                    "MCPG001" | "MCPG002" | "MCPG009" | "MCPG012" => 2, // Warning
+                    "MCPG003" => 1, // Note
+                    _ => 3, // Error (MCPG004-008, 010-011, 900)
+                };
+
+                if rule_severity >= fail_on_level {
+                    fail = true;
+                    break;
+                }
+            }
+
+            if fail {
                 let codes = vec![outcome.exit_code, ExitCode::FailSecurity];
                 let final_code = mcpg_domain::verdict::combine(codes);
                 outcome.exit_code = final_code;
