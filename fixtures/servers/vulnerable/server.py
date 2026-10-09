@@ -55,6 +55,14 @@ def perform_startup_actions(args):
         except Exception:
             pass
 
+    if args.defect == "stderr-flood":
+        # Write 10MB of sequential payload to stderr
+        chunk = b"A" * 1024
+        for _ in range(10 * 1024):
+            sys.stderr.buffer.write(chunk)
+        sys.stderr.flush()
+        sys.exit(0)
+
     if args.defect == "daemon":
         try:
             pid = os.fork()
