@@ -75,7 +75,11 @@ fn run_probe(command: &str, target: &Path) -> (serde_json::Value, usize) {
     let listener = unsafe {
         OwnedFd::from_raw_fd(mcpg_linux::seccomp::recv_fd(ps).expect("listener handover"))
     };
-    unsafe { libc::close(ps); }
+    unsafe {
+        libc::close(ps);
+        let flags = libc::fcntl(listener.as_raw_fd(), libc::F_GETFL, 0);
+        libc::fcntl(listener.as_raw_fd(), libc::F_SETFL, flags | libc::O_NONBLOCK);
+    }
     let engine = ObserverEngine::new(
         ObserverConfig {
             root_command: Some(probe_binary()),
@@ -116,7 +120,7 @@ fn run_probe(command: &str, target: &Path) -> (serde_json::Value, usize) {
         };
         if rc < 0 {
             let errno = std::io::Error::last_os_error().raw_os_error();
-            assert!(matches!(errno, Some(libc::ENOENT) | Some(libc::EINTR)));
+            assert!(matches!(errno, Some(libc::ENOENT) | Some(libc::EINTR) | Some(libc::EAGAIN)));
             continue;
         }
 
