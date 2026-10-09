@@ -149,7 +149,7 @@ impl RunOrchestrator for AppOrchestrator {
                 );
             }
 
-            let mut cap = match launcher.launch(&plan) {
+            eprintln!("DEBUG: before launch"); let mut cap = match launcher.launch(&plan) {
                 Ok(c) => c,
                 Err(e) => {
                     eprintln!("launch error: {:?}", e);
@@ -183,10 +183,10 @@ impl RunOrchestrator for AppOrchestrator {
             );
             client.set_deadline_tracker(tracker.clone());
 
-            let (exec_verdict, exec_code, mut proto_errs) =
+            eprintln!("DEBUG: before drive_session"); let (exec_verdict, exec_code, mut proto_errs) =
                 crate::session::drive_session(client, &cfg, &tracker, &phase);
 
-            if let Ok(teardown_events) = self
+            eprintln!("DEBUG: before teardown"); if let Ok(teardown_events) = self
                 .sandbox
                 .teardown(cap, std::time::Duration::from_millis(1500)) 
             {

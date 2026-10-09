@@ -111,7 +111,7 @@ pub fn drive_session<T: McpTransport>(
     tracker: &DeadlineTracker,
     phase: &PhaseCursor,
 ) -> (Verdict, ExitCode, Vec<(String, String)>) {
-    let _ = phase.advance_to_handshake();
+    eprintln!("DEBUG: drive_session start"); let _ = phase.advance_to_handshake();
     if let Err(e) = client.initialize(&cfg.server.protocol_versions, cfg.server.client.roots) {
         eprintln!("DEBUG: client.initialize failed with: {:?}", e);
         return (

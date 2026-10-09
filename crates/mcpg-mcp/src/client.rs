@@ -223,7 +223,7 @@ impl<T: McpTransport> McpClient<T> {
         let startup_deadline = self.deadline_tracker.as_ref().map(|dt| {
             dt.clock().now() + std::time::Duration::from_secs(dt.limits().startup_timeout_s)
         });
-        let result = self.wait_for_response_with_deadline(id, "initialize", startup_deadline)?;
+        eprintln!("DEBUG: before wait_for_response"); let result = self.wait_for_response_with_deadline(id, "initialize", startup_deadline)?; eprintln!("DEBUG: after wait_for_response");
         if let Some(start) = start {
             if let Some(dt) = &self.deadline_tracker {
                 dt.check_startup(start)?;

@@ -60,10 +60,12 @@ policy:
         sandbox: Box::new(LinuxSandbox::new()),
     };
     
+    eprintln!("DEBUG: Starting orchestrator execute");
     let start = Instant::now();
     let outcome = orchestrator.execute(&opts).expect("Execute must not panic or error at orchestrator level");
     
     let elapsed = start.elapsed();
+    eprintln!("DEBUG: Orchestrator execute finished in {:?}", elapsed);
     assert!(elapsed < Duration::from_secs(5), "Orchestrator deadlocked on stderr flood! Took {:?}", elapsed);
     
 }

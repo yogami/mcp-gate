@@ -152,14 +152,14 @@ fn execute_shutdown_escalation(
 }
 
 /// Execute graceful capsule shutdown with signal escalation and orphan reaping.
-pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport {
+pub fn shutdown(mut cap: RunningCapsule, grace: Duration) -> ShutdownReport { eprintln!("DEBUG: shutdown start");
     let mut survivors = Vec::new();
     let runner_pid = unsafe { libc::getpid() } as u32;
     let pgid = cap.pid as i32;
 
     drop(cap.child.stdin.take());
 
-    let stage = execute_shutdown_escalation(&mut cap.child, pgid, grace);
+    eprintln!("DEBUG: shutdown escalation start"); let stage = execute_shutdown_escalation(&mut cap.child, pgid, grace); eprintln!("DEBUG: shutdown escalation done");
     let _ = cap.child.wait();
 
     let orphans = collect_subreaper_adopted_children(runner_pid, cap.pid);
