@@ -385,7 +385,7 @@ fn run_enforce_denies_read_outside_policy() {
     std::fs::write(
         &cfg_path,
         format!(
-            "version: 1\npolicy:\n  read_paths: []\n  write_paths: []\n  allowed_child_binaries: []\n  allow_network: false\n  allow_network: false\n  allowed_unix_sockets: []\nscenarios: []\nserver:\n  name: \"test-server\"\n  command: \"cat\"\n  args: [\"{}\"]\n  workspace:\n    source: ./fixtures/workspace\n    mode: copy\n",
+            "version: 1\npolicy:\n  read_paths: []\n  write_paths: []\n  allowed_child_binaries: []\n  allow_network: false\n  allowed_unix_sockets: []\nscenarios: []\nserver:\n  name: \"test-server\"\n  command: \"cat\"\n  args: [\"{}\"]\n  workspace:\n    source: ./fixtures/workspace\n    mode: copy\n",
             secret.display()
         ),
     )

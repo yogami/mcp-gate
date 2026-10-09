@@ -29,6 +29,9 @@ pub mod syscalls {
     pub const SYS_IO_URING_SETUP: i64 = 425;
     pub const SYS_IO_URING_ENTER: i64 = 426;
     pub const SYS_IO_URING_REGISTER: i64 = 427;
+    pub const SYS_UNSHARE: i64 = 272;
+    pub const SYS_PROCESS_VM_READV: i64 = 310;
+    pub const SYS_OPEN_BY_HANDLE_AT: i64 = 304;
 }
 
 pub const CLONE_NEWUSER: u64 = 0x1000_0000;
@@ -178,10 +181,12 @@ impl<M: MemoryReader> ObserverEngine<M> {
             };
         }
 
-        // 2. io_uring denial
+        // 2. Advanced bypass / io_uring denials
         if nr == syscalls::SYS_IO_URING_SETUP
             || nr == syscalls::SYS_IO_URING_ENTER
             || nr == syscalls::SYS_IO_URING_REGISTER
+            || nr == syscalls::SYS_PROCESS_VM_READV
+            || nr == syscalls::SYS_OPEN_BY_HANDLE_AT
         {
             let event = mcpg_domain::event::Event::builder(
                 mcpg_domain::event::EventKind::TamperDenied,
@@ -199,7 +204,7 @@ impl<M: MemoryReader> ObserverEngine<M> {
         }
 
         // 3. clone user namespace denial
-        if nr == syscalls::SYS_CLONE || nr == syscalls::SYS_CLONE3 {
+        if nr == syscalls::SYS_CLONE || nr == syscalls::SYS_CLONE3 || nr == syscalls::SYS_UNSHARE {
             let flags = args[0];
             if (flags & CLONE_NEWUSER) != 0 {
                 let event = mcpg_domain::event::Event::builder(

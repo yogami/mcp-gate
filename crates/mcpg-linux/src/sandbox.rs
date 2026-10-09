@@ -171,9 +171,14 @@ impl Sandbox for LinuxSandbox {
         let mut child_sock = None;
         unsafe {
             let mut sv = [-1i32; 2];
+            #[cfg(target_os = "linux")]
+            let flags = libc::SOCK_SEQPACKET | libc::SOCK_CLOEXEC;
+            #[cfg(not(target_os = "linux"))]
+            let flags = libc::SOCK_SEQPACKET | 0x80000;
+
             if libc::socketpair(
                 libc::AF_UNIX,
-                libc::SOCK_SEQPACKET | 0x80000,
+                flags,
                 0,
                 sv.as_mut_ptr(),
             ) == 0

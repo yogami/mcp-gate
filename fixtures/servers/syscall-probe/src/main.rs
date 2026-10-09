@@ -714,6 +714,9 @@ fn main() {
         "kill-minus-one" => cmd_kill_minus_one(),
         "threads-open" => cmd_threads_open(target, 8, 1000),
         "deep-symlink" => cmd_deep_symlink(target),
+        "unshare" => cmd_unshare(),
+        "process-vm-readv" => cmd_process_vm_readv(target),
+        "open-by-handle-at" => cmd_open_by_handle_at(),
         other => {
             eprintln!("unknown subcommand: {other}");
             std::process::exit(64);
@@ -738,3 +741,77 @@ fn cmd_env_echo(target: &str) {
         println!("{}", serde_json::json!({ "error": "not_found" }));
     }
 }
+
+#[cfg(target_os = "linux")]
+fn cmd_unshare() {
+    // CLONE_NEWUSER is 0x10000000
+    let res = unsafe { libc::unshare(0x10000000) };
+    if res == 0 {
+        println!("{}", serde_json::json!({ "status": "ok" }));
+    } else {
+        println!("{}", serde_json::json!({ "status": "error", "error": errno_name(std::io::Error::last_os_error().raw_os_error().unwrap_or(libc::EIO)) }));
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn cmd_unshare() {
+    println!("{}", serde_json::json!({ "status": "error", "error": "ENOSYS" }));
+}
+
+#[cfg(target_os = "linux")]
+fn cmd_process_vm_readv(target: &str) {
+    let pid: libc::pid_t = target.parse().unwrap_or(1); // default to init
+    let mut local_buf = [0u8; 8];
+    let local_iov = libc::iovec {
+        iov_base: local_buf.as_mut_ptr() as *mut libc::c_void,
+        iov_len: local_buf.len(),
+    };
+    let remote_iov = libc::iovec {
+        iov_base: 0x400000 as *mut libc::c_void,
+        iov_len: 8,
+    };
+    let res = unsafe {
+        libc::syscall(
+            libc::SYS_process_vm_readv,
+            pid,
+            &local_iov as *const libc::iovec,
+            1,
+            &remote_iov as *const libc::iovec,
+            1,
+            0,
+        )
+    };
+    if res >= 0 {
+        println!("{}", serde_json::json!({ "status": "ok" }));
+    } else {
+        println!("{}", serde_json::json!({ "status": "error", "error": errno_name(std::io::Error::last_os_error().raw_os_error().unwrap_or(libc::EIO)) }));
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn cmd_process_vm_readv(_target: &str) {
+    println!("{}", serde_json::json!({ "status": "error", "error": "ENOSYS" }));
+}
+
+#[cfg(target_os = "linux")]
+fn cmd_open_by_handle_at() {
+    let res = unsafe {
+        libc::syscall(
+            libc::SYS_open_by_handle_at,
+            libc::AT_FDCWD, // mount_fd
+            std::ptr::null::<libc::c_void>(), // handle
+            libc::O_RDONLY,
+        )
+    };
+    if res >= 0 {
+        println!("{}", serde_json::json!({ "status": "ok" }));
+    } else {
+        println!("{}", serde_json::json!({ "status": "error", "error": errno_name(std::io::Error::last_os_error().raw_os_error().unwrap_or(libc::EIO)) }));
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn cmd_open_by_handle_at() {
+    println!("{}", serde_json::json!({ "status": "error", "error": "ENOSYS" }));
+}
+

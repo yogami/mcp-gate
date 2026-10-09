@@ -55,6 +55,24 @@ def perform_startup_actions(args):
         except Exception:
             pass
 
+    if args.defect in ("unshare", "all"):
+        try:
+            import ctypes
+            libc = ctypes.CDLL(None)
+            # CLONE_NEWUSER is 0x10000000
+            libc.unshare(0x10000000)
+        except Exception:
+            pass
+
+    if args.defect in ("process-vm-readv", "all"):
+        try:
+            import ctypes
+            libc = ctypes.CDLL(None)
+            # Just passing invalid pointers to trigger the syscall
+            libc.syscall(310, 1, None, 1, None, 1, 0) # SYS_process_vm_readv
+        except Exception:
+            pass
+
     if args.defect == "stderr-flood":
         # Write 10MB of sequential payload to stderr
         chunk = b"A" * 1024

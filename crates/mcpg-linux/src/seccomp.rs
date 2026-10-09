@@ -192,6 +192,11 @@ fn add_notif_rules(instrs: &mut Vec<sock_filter>, handover_sock: Option<RawFd>) 
     // Mutations
     append_syscall_rule(instrs, libc::SYS_unlinkat, notif);
     append_syscall_rule(instrs, libc::SYS_mkdirat, notif);
+    
+    // Advanced/Sandbox bypasses
+    append_syscall_rule(instrs, libc::SYS_unshare, notif);
+    append_syscall_rule(instrs, libc::SYS_process_vm_readv, notif);
+    append_syscall_rule(instrs, libc::SYS_open_by_handle_at, notif);
 }
 
 #[cfg(target_os = "linux")]

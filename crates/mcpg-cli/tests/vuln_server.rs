@@ -402,3 +402,28 @@ fn p2_vuln_20_startup_read_then_crash() {
     let final_code = mcpg_domain::verdict::combine(codes);
     assert_eq!(final_code, mcpg_domain::verdict::ExitCode::FailSecurity);
 }
+
+
+#[test]
+#[cfg(target_os = "linux")]
+fn p2_vuln_21_unshare_escape() {
+    let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
+    let root = workspace_root();
+    let out_dir = root.join("target/p2_vuln_21");
+    let cfg = make_vuln_config("unshare", &out_dir);
+
+    cmd.arg("run").arg("--config").arg(cfg).arg("--fail-on").arg("warning");
+    assert_exit(cmd.assert(), 75); // FailSecurity because it's a sandbox bypass attempt
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn p2_vuln_22_process_vm_readv() {
+    let mut cmd = assert_cmd::Command::cargo_bin("mcp-gate").unwrap();
+    let root = workspace_root();
+    let out_dir = root.join("target/p2_vuln_22");
+    let cfg = make_vuln_config("process-vm-readv", &out_dir);
+
+    cmd.arg("run").arg("--config").arg(cfg).arg("--fail-on").arg("warning");
+    assert_exit(cmd.assert(), 75); // FailSecurity
+}
