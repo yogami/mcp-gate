@@ -49,22 +49,33 @@ fn run_probe(command: &str, target: &Path) -> (serde_json::Value, usize) {
     mcpg_linux::self_harden::harden_self().unwrap();
     let launch_plan = plan(command, target);
     let start = Instant::now();
-    let mut capsule = LinuxLauncher::new()
-        .with_seccomp(true)
+    let mut parent_sock = None;
+    let mut child_sock = None;
+    unsafe {
+        let mut sv = [-1i32; 2];
+        if libc::socketpair(libc::AF_UNIX, libc::SOCK_SEQPACKET | libc::SOCK_CLOEXEC, 0, sv.as_mut_ptr()) == 0 {
+            parent_sock = Some(sv[0]);
+            child_sock = Some(sv[1]);
+        }
+    }
+    
+    let mut launcher = LinuxLauncher::new().with_seccomp(true);
+    if let Some(cs) = child_sock {
+        launcher = launcher.with_handover_sock(cs);
+    }
+    
+    let mut capsule = launcher
         .launch(&launch_plan)
         .expect("real seccomp launch handshake");
     assert!(start.elapsed() < Duration::from_secs(6));
 
     let guard = CapsuleGuard::new(capsule.pid as i32, vec![capsule.pid]);
-    // SAFETY: ownership of the returned listener is transferred to this test.
+    
+    let ps = parent_sock.expect("parent sock");
     let listener = unsafe {
-        OwnedFd::from_raw_fd(
-            capsule
-                .seccomp_listener_fd
-                .take()
-                .expect("listener handover"),
-        )
+        OwnedFd::from_raw_fd(mcpg_linux::seccomp::recv_fd(ps).expect("listener handover"))
     };
+    unsafe { libc::close(ps); }
     let engine = ObserverEngine::new(
         ObserverConfig {
             root_command: Some(probe_binary()),
