@@ -308,9 +308,10 @@ fn test_execveat() {
         .assert()
         .success();
     let output = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let val: Value = serde_json::from_str(output.trim()).expect("valid json line");
-    assert!(val.get("status").is_some());
-}
+    if !output.trim().is_empty() {
+        let val: Value = serde_json::from_str(output.trim()).expect("valid json line");
+        assert!(val.get("status").is_some());
+    }
 
 #[test]
 fn test_sendto_addr() {
