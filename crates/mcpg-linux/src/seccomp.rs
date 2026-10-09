@@ -173,9 +173,9 @@ fn add_notif_rules(instrs: &mut Vec<sock_filter>, handover_sock: Option<RawFd>) 
     append_syscall_rule(instrs, libc::SYS_openat2, notif);
 
     // Process execution & lifecycle
-    // append_syscall_rule(instrs, libc::SYS_execve, notif);
-    // append_syscall_rule(instrs, libc::SYS_execveat, notif);
-    // append_syscall_rule(instrs, libc::SYS_clone, notif);
+    append_syscall_rule(instrs, libc::SYS_execve, notif);
+    append_syscall_rule(instrs, libc::SYS_execveat, notif);
+    append_syscall_rule(instrs, libc::SYS_clone, notif);
 
     // Network operations
     append_syscall_rule(instrs, libc::SYS_socket, notif);

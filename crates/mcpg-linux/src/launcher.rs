@@ -323,17 +323,60 @@ impl CapsuleLauncher for LinuxLauncher {
             }
         }
 
+
+        #[cfg(target_os = "linux")]
+        let mut seccomp_listener_fd = None;
+        #[cfg(not(target_os = "linux"))]
+        let seccomp_listener_fd = None;
+
+        #[cfg(target_os = "linux")]
+        let thread = if self.observe_seccomp {
+            if let Some(ps) = parent_sock {
+                Some(std::thread::spawn(move || {
+                    let listener = match crate::seccomp::recv_fd(ps) {
+                        Ok(fd) => unsafe { std::os::unix::io::OwnedFd::from_raw_fd(fd) },
+                        Err(_) => {
+                            unsafe { libc::close(ps); }
+                            return None;
+                        }
+                    };
+                    unsafe {
+                        libc::close(ps);
+                    }
+                    
+                    let mut req: libc::seccomp_notif = unsafe { std::mem::zeroed() };
+                    let ret = unsafe { libc::ioctl(listener.as_raw_fd(), libc::SECCOMP_IOCTL_NOTIF_RECV, &mut req) };
+                    if ret >= 0 {
+                        let mut resp: libc::seccomp_notif_resp = unsafe { std::mem::zeroed() };
+                        resp.id = req.id;
+                        resp.error = 0;
+                        resp.val = 0;
+                        resp.flags = 1; // SECCOMP_USER_NOTIF_FLAG_CONTINUE
+                        unsafe {
+                            libc::ioctl(listener.as_raw_fd(), libc::SECCOMP_IOCTL_NOTIF_SEND, &mut resp);
+                        }
+                    }
+                    Some(listener)
+                }))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         let child = cmd.spawn()?;
         let pid = child.id();
 
         #[cfg(target_os = "linux")]
-        let seccomp_listener_fd = None;
-        #[cfg(not(target_os = "linux"))]
-        let seccomp_listener_fd = None;
-        #[cfg(target_os = "linux")]
-        if let Some(cs) = child_sock {
-            unsafe {
-                libc::close(cs);
+        {
+            if let Some(cs) = child_sock {
+                unsafe { libc::close(cs); }
+            }
+            if let Some(t) = thread {
+                if let Ok(Some(listener)) = t.join() {
+                    seccomp_listener_fd = Some(listener);
+                }
             }
         }
 
