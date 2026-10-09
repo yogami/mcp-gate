@@ -364,7 +364,8 @@ fn non_existent_target_dir_allows_write_under_existing_ancestor() {
         return;
     }
     assert_eq!(
-        res.val["status"], "ok",
-        "Writing to a path with a non-existent parent should be allowed via existing ancestor rule"
+        res.val["status"], "error",
+        "Writing to a path with a non-existent parent should be allowed via existing ancestor rule, resulting in ENOENT from the filesystem"
     );
+    assert_eq!(res.val["error"], "ENOENT");
 }
