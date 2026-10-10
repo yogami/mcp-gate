@@ -32,14 +32,12 @@ mod linux_tests {
                 },
                 protocol_versions: vec!["2024-11-05".into()],
                 limits: LimitsConfig {
-                    limits: Limits {
-                        cpu_seconds: 5,
-                        memory_mb: 256,
-                        max_fds: 100,
-                        file_size_mb: 10,
-                        max_children: 10,
-                    },
-                    grace_ms: 1000,
+                    startup_timeout_s: 30,
+                    call_timeout_s: 30,
+                    total_timeout_s: 60,
+                    shutdown_grace_s: 3,
+                    max_processes: 64,
+                    max_stdout_line_bytes: 16777216,
                 },
             },
             policy: PolicyConfig {
