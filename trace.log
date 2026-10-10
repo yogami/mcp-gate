@@ -1,0 +1,748 @@
+evaluate	Run Test Trace	2026-10-08T21:31:32.0775312Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:31:37.0777643Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:31:37.0778084Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:31:37.0778332Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0778555Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0778796Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:31:37.0779075Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:37.0779346Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:37.0779583Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0779826Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0780106Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:37.0780360Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0780608Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:37.0780828Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:37.0781089Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:31:37.0781336Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:31:37.0781621Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0781924Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:37.0782161Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:37.0782412Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:31:37.0782660Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0782883Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:37.0783116Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0783443Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:37.0783724Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0783954Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:31:37.0784188Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:31:37.0784454Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:31:37.0784685Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:31:37.0785244Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0785469Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:31:37.0785684Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0785935Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:37.0786356Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:31:37.0786631Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:31:37.0786868Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0787242Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:31:37.0787503Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:37.0787735Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0787987Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:37.0788345Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:31:37.0788715Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:37.0788978Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:37.0789240Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0789564Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:31:37.0789906Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:37.0790152Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:37.0790432Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:37.0790665Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:37.0790903Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:37.0791168Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:31:37.0791387Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:37.0791649Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:37.0792334Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:31:37.0792763Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:31:37.0793212Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:31:37.0793737Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:31:37.0794129Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:31:37.0794538Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:31:37.0794824Z 
+evaluate	Run Test Trace	2026-10-08T21:31:37.0794920Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:31:37.0795242Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:31:42.0798380Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:31:42.0798819Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:31:42.0799140Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0799355Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0799558Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:31:42.0799830Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:42.0800129Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:42.0800396Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0800634Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0800885Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:42.0801149Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0801404Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:42.0801653Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:42.0801901Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:31:42.0802137Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:31:42.0802386Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0802682Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:42.0802957Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:42.0803193Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:31:42.0803424Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0803657Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:42.0803876Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0804104Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:42.0804355Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0804589Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:31:42.0804813Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:31:42.0805100Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:31:42.0805336Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:31:42.0805857Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0806082Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:31:42.0806426Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0806665Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:42.0807028Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:31:42.0807285Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:31:42.0807522Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0807776Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:31:42.0808007Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:42.0808251Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0808499Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:42.0808839Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:31:42.0809372Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:42.0809647Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:42.0809900Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0810205Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:31:42.0810580Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:42.0810814Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:42.0811095Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:42.0811342Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:42.0811575Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:42.0811830Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:31:42.0812049Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:42.0812284Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:42.0812610Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:31:42.0813050Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:31:42.0813479Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:31:42.0813886Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:31:42.0814411Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:31:42.0814825Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:31:42.0815131Z 
+evaluate	Run Test Trace	2026-10-08T21:31:42.0815198Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:31:42.0815509Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:31:47.0819366Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:31:47.0819767Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:31:47.0820319Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0820579Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0820884Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:31:47.0821168Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:47.0821517Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:47.0821896Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0822227Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0822576Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:47.0822897Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0823223Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:47.0823549Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:47.0823863Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:31:47.0824170Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:31:47.0824508Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0824872Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:47.0825251Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:47.0825591Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:31:47.0825881Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0826175Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:47.0826409Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0826631Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:47.0826870Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0827291Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:31:47.0827547Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:31:47.0827793Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:31:47.0828065Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:31:47.0828322Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0828862Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:31:47.0829107Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0829340Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:47.0829571Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:31:47.0829835Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:31:47.0830070Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0830298Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:31:47.0830532Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:47.0830784Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0831063Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:47.0831412Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:31:47.0831780Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:47.0832141Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:47.0832372Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0832710Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:31:47.0833047Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:47.0833322Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:47.0833595Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:47.0833829Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:47.0834090Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:47.0834336Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:31:47.0834544Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:47.0834969Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:47.0835285Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:31:47.0835726Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:31:47.0836184Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:31:47.0836575Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:31:47.0837254Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:31:47.0837673Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:31:47.0837945Z 
+evaluate	Run Test Trace	2026-10-08T21:31:47.0838041Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:31:47.0838344Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:31:52.0845322Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:31:52.0845928Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:31:52.0846476Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0846819Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0847290Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:31:52.0847715Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:52.0848044Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:52.0848368Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0848643Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0849090Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:52.0849450Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0849771Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:52.0850074Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:52.0850368Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:31:52.0850616Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:31:52.0850873Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0851159Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:52.0851412Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:52.0851648Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:31:52.0852087Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0852330Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:52.0852560Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0852823Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:52.0853046Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0853306Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:31:52.0853552Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:31:52.0853793Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:31:52.0854037Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:31:52.0854265Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0854787Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:31:52.0855035Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0855258Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:52.0855550Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:31:52.0855772Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:31:52.0856013Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0856258Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:31:52.0856470Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:52.0856725Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0857106Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:52.0857855Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:31:52.0858255Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:52.0858523Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:52.0858778Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0859095Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:31:52.0859425Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:52.0859690Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:52.0859949Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:52.0860203Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:52.0860435Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:52.0860668Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:31:52.0860954Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:52.0861180Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:52.0861500Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:31:52.0861917Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:31:52.0862326Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:31:52.0862778Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:31:52.0863269Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:31:52.0863685Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:31:52.0863958Z 
+evaluate	Run Test Trace	2026-10-08T21:31:52.0864067Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:31:52.0864343Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:31:57.0868152Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:31:57.0868644Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:31:57.0869126Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0869433Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0869651Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:31:57.0869911Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:57.0870182Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:57.0870413Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0870691Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0870951Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:57.0871224Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0871465Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:57.0871697Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:57.0871979Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:31:57.0872216Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:31:57.0872450Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0872732Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:57.0873083Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:57.0873373Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:31:57.0873608Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0873835Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:57.0874068Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0874295Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:57.0874550Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0874777Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:31:57.0874994Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:31:57.0875254Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:31:57.0875662Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:31:57.0875959Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0876517Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:31:57.0876732Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0877194Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:31:57.0877494Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:31:57.0877746Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:31:57.0877991Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0878224Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:31:57.0878460Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:31:57.0878690Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0879105Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:57.0879475Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:31:57.0879839Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:57.0880102Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:31:57.0880331Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0880644Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:31:57.0880992Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:31:57.0881238Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:31:57.0881537Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:31:57.0882143Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:31:57.0882362Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:31:57.0882634Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:31:57.0882856Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:31:57.0883077Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:31:57.0883403Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:31:57.0883837Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:31:57.0884274Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:31:57.0884715Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:31:57.0885215Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:31:57.0885659Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:31:57.0885892Z 
+evaluate	Run Test Trace	2026-10-08T21:31:57.0886003Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:31:57.0886304Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:32:02.0888728Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:32:02.0889236Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:32:02.0889598Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0889962Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0890266Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:32:02.0890532Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:02.0890798Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:02.0891025Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0891303Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0891543Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:02.0891774Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0892046Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:02.0892297Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:02.0892583Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:32:02.0892817Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:32:02.0893058Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0893334Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:02.0893582Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:02.0893846Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:32:02.0894069Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0894280Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:02.0894542Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0894913Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:02.0895147Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0895372Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:32:02.0895588Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:32:02.0895853Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:32:02.0896090Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:32:02.0896335Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0896574Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:32:02.0897254Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0897534Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:02.0897966Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:32:02.0898192Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:32:02.0898439Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0898671Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:32:02.0898907Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:02.0899152Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0899374Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:02.0899731Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:32:02.0900110Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:02.0900413Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:02.0900660Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0900947Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:32:02.0901312Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:02.0901556Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:02.0901807Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:02.0902063Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:02.0902299Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:02.0902553Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:32:02.0902808Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:02.0903024Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:02.0903718Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:32:02.0904139Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:32:02.0904580Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:32:02.0904987Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:32:02.0905481Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:32:02.0905945Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:32:02.0906215Z 
+evaluate	Run Test Trace	2026-10-08T21:32:02.0906322Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:32:02.0906613Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:32:07.0911325Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:32:07.0912005Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:32:07.0912470Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0912746Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0913063Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:32:07.0913349Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:07.0913608Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:07.0913899Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0914138Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0914359Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:07.0914616Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0914889Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:07.0915142Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:07.0915402Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:32:07.0915635Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:32:07.0915882Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0916143Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:07.0916436Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:07.0916677Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:32:07.0917097Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0917350Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:07.0917571Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0917797Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:07.0918063Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0918290Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:32:07.0918563Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:32:07.0918805Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:32:07.0919035Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:32:07.0919286Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0919513Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:32:07.0920044Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0920283Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:07.0920548Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:32:07.0920784Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:32:07.0921013Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0921272Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:32:07.0921500Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:07.0921741Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0921983Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:07.0922330Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:32:07.0922680Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:07.0922947Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:07.0923187Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0923539Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:32:07.0923919Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:07.0924152Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:07.0924426Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:07.0924671Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:07.0924902Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:07.0925154Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:32:07.0925379Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:07.0925614Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:07.0925939Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:32:07.0926389Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:32:07.0926823Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:32:07.0927392Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:32:07.0927801Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:32:07.0928330Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:32:07.0928602Z 
+evaluate	Run Test Trace	2026-10-08T21:32:07.0928673Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:32:07.0928993Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:32:12.0937364Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:32:12.0937862Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:32:12.0938326Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0938572Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0938815Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:32:12.0939070Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:12.0939332Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:12.0939604Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0939839Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0940100Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:12.0940344Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0940617Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:12.0941351Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:12.0941623Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:32:12.0941849Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:32:12.0942112Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0942376Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:12.0942646Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:12.0942918Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:32:12.0943130Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0943374Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:12.0943597Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0943839Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:12.0944077Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0944305Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:32:12.0944545Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:32:12.0944788Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:32:12.0945021Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:32:12.0945308Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0945578Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:32:12.0945823Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0946383Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:12.0946618Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:32:12.0947118Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:32:12.0947413Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0947703Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:32:12.0947953Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:12.0948183Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0948458Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:12.0948807Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:32:12.0949170Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:12.0949447Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:12.0949679Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0950155Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:32:12.0950484Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:12.0950718Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:12.0951018Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:12.0951282Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:12.0951536Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:12.0951776Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:32:12.0951989Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:12.0952252Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:12.0952558Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:32:12.0952973Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:32:12.0953411Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:32:12.0953833Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:32:12.0954246Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:32:12.0954770Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:32:12.0955014Z 
+evaluate	Run Test Trace	2026-10-08T21:32:12.0955126Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:32:12.0955423Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:32:17.0958279Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:32:17.0958879Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:32:17.0959183Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0959438Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0959697Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:32:17.0959929Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:17.0960219Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:17.0960469Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0960720Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0960967Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:17.0961200Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0961428Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:17.0961719Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:17.0961962Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:32:17.0962224Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:32:17.0962475Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0962765Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:17.0963040Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:17.0963389Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:32:17.0963617Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0963852Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:17.0964077Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0964308Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:17.0964530Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0964764Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:32:17.0965023Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:32:17.0965295Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:32:17.0965548Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:32:17.0965973Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0966192Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:32:17.0966447Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0967108Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:17.0967373Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:32:17.0967629Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:32:17.0967870Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0968134Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:32:17.0968354Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:17.0968578Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0968835Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:17.0969178Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:32:17.0969552Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:17.0969801Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:17.0970019Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0970369Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:32:17.0970727Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:17.0970981Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:17.0971236Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:17.0971449Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:17.0972071Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:17.0972317Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:32:17.0972535Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:17.0972772Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:17.0973084Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:32:17.0973525Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:32:17.0973977Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:32:17.0974380Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:32:17.0974771Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:32:17.0975279Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:32:17.0975559Z 
+evaluate	Run Test Trace	2026-10-08T21:32:17.0975652Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:32:17.0975946Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:32:22.0982639Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:32:22.0983449Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:32:22.0983981Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0984888Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0985362Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:32:22.0985697Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:22.0986059Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:22.0986429Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0986765Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0987230Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:22.0987571Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0987831Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:22.0988131Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:22.0988375Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:32:22.0988619Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:32:22.0988865Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0989153Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:22.0989411Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:22.0989647Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:32:22.0989907Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0990136Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:22.0990369Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0990600Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:22.0990826Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0991041Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:32:22.0991289Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:32:22.0991549Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:32:22.0991784Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:32:22.0992017Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0992269Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:32:22.0992518Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0993076Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:22.0993320Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:32:22.0993566Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:32:22.0993800Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0994056Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:32:22.0994281Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:22.0994502Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0994757Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:22.0995127Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:32:22.0995521Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:22.0995768Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:22.0995985Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0996320Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:32:22.0996656Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:22.0996900Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:22.0997342Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:22.0997580Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:22.0997862Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:22.0998110Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:32:22.0998616Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:22.0998861Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:22.0999179Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:32:22.0999611Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:32:22.1000027Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:32:22.1000477Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:32:22.1000872Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:32:22.1001400Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:32:22.1001631Z 
+evaluate	Run Test Trace	2026-10-08T21:32:22.1001769Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:32:22.1002054Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:32:27.1005368Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:32:27.1005925Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:32:27.1006148Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1006375Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1006636Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:32:27.1006874Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:27.1007410Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:27.1007659Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1007914Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1008244Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:27.1008486Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1008731Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:27.1008995Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:27.1009219Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:32:27.1009503Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:32:27.1009742Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1010047Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:27.1010294Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:27.1010529Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:32:27.1010951Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1011179Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:27.1011404Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1011635Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:27.1011880Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1012124Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:32:27.1012352Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:32:27.1012624Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:32:27.1012860Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:32:27.1013100Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1013340Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:32:27.1013568Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1013786Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:27.1014413Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:32:27.1014665Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:32:27.1014896Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1015133Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:32:27.1015368Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:27.1015618Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1015866Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:27.1016206Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:32:27.1017072Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:27.1017339Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:27.1017585Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1017903Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:32:27.1018264Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:27.1018521Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:27.1018776Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:27.1019021Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:27.1019274Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:27.1019506Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:32:27.1019747Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:27.1019969Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:27.1020269Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:32:27.1020709Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:32:27.1021147Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:32:27.1021576Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:32:27.1021956Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:32:27.1022534Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:32:27.1022818Z 
+evaluate	Run Test Trace	2026-10-08T21:32:27.1022900Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:32:27.1023185Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:32:32.1027397Z  Downloading crates ...
+evaluate	Run Test Trace	2026-10-08T21:32:32.1027966Z   Downloaded errno v0.3.14
+evaluate	Run Test Trace	2026-10-08T21:32:32.1028446Z   Downloaded difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1028730Z   Downloaded fastrand v2.5.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1029024Z   Downloaded console v0.16.6
+evaluate	Run Test Trace	2026-10-08T21:32:32.1029303Z   Downloaded predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:32.1029567Z   Downloaded assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:32.1029915Z   Downloaded float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1030152Z   Downloaded tempfile v3.27.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1030372Z   Downloaded termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:32.1030646Z   Downloaded rand_xorshift v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1030882Z   Downloaded unarray v0.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:32.1031126Z   Downloaded wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:32.1031409Z   Downloaded quick-error v1.2.3
+evaluate	Run Test Trace	2026-10-08T21:32:32.1031656Z   Downloaded fnv v1.0.7
+evaluate	Run Test Trace	2026-10-08T21:32:32.1031944Z   Downloaded normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1032205Z   Downloaded predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:32.1032456Z   Downloaded predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:32.1032847Z   Downloaded rusty-fork v0.3.1
+evaluate	Run Test Trace	2026-10-08T21:32:32.1033070Z   Downloaded similar v2.7.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1033315Z   Downloaded rand v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:32.1033536Z   Downloaded insta v1.49.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1033747Z   Downloaded bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:32.1034024Z   Downloaded proptest v1.11.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1034252Z   Downloaded rustix v1.1.5
+evaluate	Run Test Trace	2026-10-08T21:32:32.1034500Z   Downloaded linux-raw-sys v0.12.1
+evaluate	Run Test Trace	2026-10-08T21:32:32.1034737Z    Compiling getrandom v0.3.4
+evaluate	Run Test Trace	2026-10-08T21:32:32.1034956Z    Compiling once_cell v1.21.4
+evaluate	Run Test Trace	2026-10-08T21:32:32.1035203Z    Compiling bit-vec v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1035433Z    Compiling bitflags v2.13.2
+evaluate	Run Test Trace	2026-10-08T21:32:32.1035683Z    Compiling bit-set v0.8.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1035923Z    Compiling predicates-core v1.0.10
+evaluate	Run Test Trace	2026-10-08T21:32:32.1036465Z    Compiling nix v0.31.3
+evaluate	Run Test Trace	2026-10-08T21:32:32.1036729Z    Compiling fancy-regex v0.19.2
+evaluate	Run Test Trace	2026-10-08T21:32:32.1037124Z    Compiling float-cmp v0.10.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1037395Z    Compiling ahash v0.8.12
+evaluate	Run Test Trace	2026-10-08T21:32:32.1037629Z    Compiling rand_core v0.9.5
+evaluate	Run Test Trace	2026-10-08T21:32:32.1038217Z    Compiling rand_chacha v0.9.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1038461Z    Compiling referencing v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:32.1038812Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Run Test Trace	2026-10-08T21:32:32.1039188Z    Compiling jsonschema-value v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:32.1039465Z    Compiling jsonschema v0.58.5
+evaluate	Run Test Trace	2026-10-08T21:32:32.1039694Z    Compiling difflib v0.4.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1040037Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Run Test Trace	2026-10-08T21:32:32.1040368Z    Compiling termtree v0.5.1
+evaluate	Run Test Trace	2026-10-08T21:32:32.1040620Z    Compiling normalize-line-endings v0.3.0
+evaluate	Run Test Trace	2026-10-08T21:32:32.1040896Z    Compiling assert_cmd v2.2.2
+evaluate	Run Test Trace	2026-10-08T21:32:32.1041130Z    Compiling predicates v3.1.4
+evaluate	Run Test Trace	2026-10-08T21:32:32.1041363Z    Compiling predicates-tree v1.0.13
+evaluate	Run Test Trace	2026-10-08T21:32:32.1041617Z    Compiling ctrlc v3.5.2
+evaluate	Run Test Trace	2026-10-08T21:32:32.1041856Z    Compiling bstr v1.13.1
+evaluate	Run Test Trace	2026-10-08T21:32:32.1042093Z    Compiling wait-timeout v0.2.1
+evaluate	Run Test Trace	2026-10-08T21:32:32.1042430Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Run Test Trace	2026-10-08T21:32:32.1042885Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Run Test Trace	2026-10-08T21:32:32.1043322Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Run Test Trace	2026-10-08T21:32:32.1043760Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Run Test Trace	2026-10-08T21:32:32.1044159Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 7.93s
+evaluate	Run Test Trace	2026-10-08T21:32:32.1044566Z      Running tests/benign_server.rs (target/debug/deps/benign_server-7e018c2ac07caef4)
+evaluate	Run Test Trace	2026-10-08T21:32:32.1044943Z 
+evaluate	Run Test Trace	2026-10-08T21:32:32.1045017Z running 1 test
+evaluate	Run Test Trace	2026-10-08T21:32:32.1045374Z test p3_ben_01_benign_server_zero_findings has been running for over 60 seconds
+evaluate	Run Test Trace	2026-10-08T21:32:37.1117906Z ##[error]The operation was canceled.
+evaluate	Post Run actions/checkout@v4	﻿2026-10-08T21:32:37.1226666Z Post job cleanup.
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.1878648Z [command]/usr/bin/git version
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.1911518Z git version 2.55.0
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.1940957Z Temporarily overriding HOME='/home/runner/work/_temp/3cf44bf8-6605-4216-8b05-4eeba195165b' before making global git config changes
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.1941536Z Adding repository directory to the temporary git global config as a safe directory
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.1945238Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mcp-gate/mcp-gate
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.1975121Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.1999652Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.2153570Z fatal: No url found for submodule path 'pilot/github-mcp-server' in .gitmodules
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:32:37.2186800Z ##[warning]The process '/usr/bin/git' failed with exit code 128
+evaluate	Complete job	﻿2026-10-08T21:32:37.2309609Z Cleaning up orphan processes
+evaluate	Complete job	2026-10-08T21:32:37.2563782Z Terminate orphan process: pid (3686) (cargo)
+evaluate	Complete job	2026-10-08T21:32:37.2585496Z Terminate orphan process: pid (4055) (benign_server-7e018c2ac07caef4)
+evaluate	Complete job	2026-10-08T21:32:37.2603143Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

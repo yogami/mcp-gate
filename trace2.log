@@ -1,0 +1,388 @@
+evaluate	Set up job	﻿2026-10-08T21:47:26.1629714Z Current runner version: '2.337.0'
+evaluate	Set up job	2026-10-08T21:47:26.1654363Z ##[group]Runner Image Provisioner
+evaluate	Set up job	2026-10-08T21:47:26.1655526Z Hosted Compute Agent
+evaluate	Set up job	2026-10-08T21:47:26.1656119Z Version: 20261002.596
+evaluate	Set up job	2026-10-08T21:47:26.1656731Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+evaluate	Set up job	2026-10-08T21:47:26.1657611Z Build Date: 2026-10-02T22:28:27Z
+evaluate	Set up job	2026-10-08T21:47:26.1658281Z Worker ID: {517e7f3f-1923-4559-bf62-5bec3392dc21}
+evaluate	Set up job	2026-10-08T21:47:26.1659009Z Region: westcentralus
+evaluate	Set up job	2026-10-08T21:47:26.1659550Z Cloud: Azure
+evaluate	Set up job	2026-10-08T21:47:26.1660049Z ##[endgroup]
+evaluate	Set up job	2026-10-08T21:47:26.1661420Z ##[group]Operating System
+evaluate	Set up job	2026-10-08T21:47:26.1662014Z Ubuntu
+evaluate	Set up job	2026-10-08T21:47:26.1662593Z 24.04.5
+evaluate	Set up job	2026-10-08T21:47:26.1663088Z LTS
+evaluate	Set up job	2026-10-08T21:47:26.1663567Z ##[endgroup]
+evaluate	Set up job	2026-10-08T21:47:26.1664107Z ##[group]Runner Image
+evaluate	Set up job	2026-10-08T21:47:26.1664672Z Image: ubuntu-24.04
+evaluate	Set up job	2026-10-08T21:47:26.1665231Z Version: 20261004.327.1
+evaluate	Set up job	2026-10-08T21:47:26.1666245Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+evaluate	Set up job	2026-10-08T21:47:26.1668157Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+evaluate	Set up job	2026-10-08T21:47:26.1669088Z ##[endgroup]
+evaluate	Set up job	2026-10-08T21:47:26.1670276Z ##[group]GITHUB_TOKEN Permissions
+evaluate	Set up job	2026-10-08T21:47:26.1672600Z Contents: read
+evaluate	Set up job	2026-10-08T21:47:26.1673183Z Metadata: read
+evaluate	Set up job	2026-10-08T21:47:26.1673730Z Packages: read
+evaluate	Set up job	2026-10-08T21:47:26.1674294Z ##[endgroup]
+evaluate	Set up job	2026-10-08T21:47:26.1676282Z Secret source: Actions
+evaluate	Set up job	2026-10-08T21:47:26.1677127Z Cache mode: write
+evaluate	Set up job	2026-10-08T21:47:26.1678426Z Prepare workflow directory
+evaluate	Set up job	2026-10-08T21:47:26.2026293Z Prepare all required actions
+evaluate	Set up job	2026-10-08T21:47:26.2073383Z Getting action download info
+evaluate	Set up job	2026-10-08T21:47:26.4909717Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+evaluate	Set up job	2026-10-08T21:47:27.0715841Z Complete job name: evaluate
+evaluate	Run actions/checkout@v4	﻿2026-10-08T21:47:27.1369861Z ##[group]Run actions/checkout@v4
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1370823Z with:
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1371395Z   repository: yogami/mcp-gate
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1375149Z   token: ***
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1375672Z   ssh-strict: true
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1376164Z   ssh-user: git
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1376702Z   persist-credentials: true
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1377306Z   clean: true
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1378156Z   sparse-checkout-cone-mode: true
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1378738Z   fetch-depth: 1
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1379223Z   fetch-tags: false
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1379772Z   show-progress: true
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1380286Z   lfs: false
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1380788Z   submodules: false
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1381309Z   set-safe-directory: true
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1381878Z   allow-unsafe-pr-checkout: false
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.1382637Z ##[endgroup]
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.2488426Z Syncing repository: yogami/mcp-gate
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.2491763Z ##[group]Getting Git version info
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.2492966Z Working directory is '/home/runner/work/mcp-gate/mcp-gate'
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.2508896Z [command]/usr/bin/git version
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.3981184Z git version 2.55.0
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4001292Z ##[endgroup]
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4014487Z Temporarily overriding HOME='/home/runner/work/_temp/74496ce7-0fea-4091-9e06-64634e7d98fe' before making global git config changes
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4015957Z Adding repository directory to the temporary git global config as a safe directory
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4020465Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mcp-gate/mcp-gate
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4364524Z Deleting the contents of '/home/runner/work/mcp-gate/mcp-gate'
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4369372Z ##[group]Initializing the repository
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4373120Z [command]/usr/bin/git init /home/runner/work/mcp-gate/mcp-gate
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4892161Z hint: Using 'master' as the name for the initial branch. This default branch name
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4893902Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4895129Z hint: to use in all of your new repositories, which will suppress this warning,
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4896193Z hint: call:
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4896653Z hint:
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4897332Z hint: 	git config --global init.defaultBranch <name>
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4898193Z hint:
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4898890Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4899837Z hint: 'development'. The just-created branch can be renamed via this command:
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4900640Z hint:
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4901247Z hint: 	git branch -m <name>
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4901807Z hint:
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4902497Z hint: Disable this message with "git config set advice.defaultBranchName false"
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4908189Z Initialized empty Git repository in /home/runner/work/mcp-gate/mcp-gate/.git/
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.4920627Z [command]/usr/bin/git remote add origin https://github.com/yogami/mcp-gate
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.5212978Z ##[endgroup]
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.5214373Z ##[group]Disabling automatic garbage collection
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.5217852Z [command]/usr/bin/git config --local gc.auto 0
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.5248925Z ##[endgroup]
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.5250113Z ##[group]Setting up auth
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.5255787Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.5283498Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.7433576Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.7461652Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.7646615Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.7675331Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.7933768Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.7936632Z ##[endgroup]
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.7937835Z ##[group]Fetching the repository
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:27.7939747Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +14981560d10ff23e7328380a3f9c251d07182a5e:refs/remotes/origin/pilot-eval
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5599215Z From https://github.com/yogami/mcp-gate
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5600644Z  * [new ref]         14981560d10ff23e7328380a3f9c251d07182a5e -> origin/pilot-eval
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5604102Z ##[endgroup]
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5605989Z ##[group]Determining the checkout info
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5607081Z ##[endgroup]
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5612095Z [command]/usr/bin/git sparse-checkout disable
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5830286Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5861312Z ##[group]Checking out the ref
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.5864374Z [command]/usr/bin/git checkout --progress --force -B pilot-eval refs/remotes/origin/pilot-eval
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.6022089Z Switched to a new branch 'pilot-eval'
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.6030343Z branch 'pilot-eval' set up to track 'origin/pilot-eval'.
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.6032530Z ##[endgroup]
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.6068949Z [command]/usr/bin/git log -1 --format=%H
+evaluate	Run actions/checkout@v4	2026-10-08T21:47:28.6091355Z 14981560d10ff23e7328380a3f9c251d07182a5e
+evaluate	Build mcp-gate	﻿2026-10-08T21:47:28.6313320Z ##[group]Run cargo build
+evaluate	Build mcp-gate	2026-10-08T21:47:28.6314111Z ^[[36;1mcargo build^[[0m
+evaluate	Build mcp-gate	2026-10-08T21:47:28.7731596Z shell: /usr/bin/bash -e {0}
+evaluate	Build mcp-gate	2026-10-08T21:47:28.7732583Z ##[endgroup]
+evaluate	Build mcp-gate	2026-10-08T21:47:32.4388089Z     Updating crates.io index
+evaluate	Build mcp-gate	2026-10-08T21:47:33.0588724Z  Downloading crates ...
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3121729Z   Downloaded ahash v0.8.12
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3408179Z   Downloaded uuid-simd v0.8.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3464974Z   Downloaded allocator-api2 v0.2.21
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3516787Z   Downloaded cpufeatures v0.2.17
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3525225Z   Downloaded curve25519-dalek-derive v0.1.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3569087Z   Downloaded anstream v1.0.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3582888Z   Downloaded anstyle v1.0.14
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3624941Z   Downloaded unicode-ident v1.0.26
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3723107Z   Downloaded colorchoice v1.0.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3729633Z   Downloaded crypto-common v0.1.7
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3735227Z   Downloaded clap_derive v4.6.7
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3749235Z   Downloaded anstyle-parse v1.0.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3760459Z   Downloaded utf8parse v0.2.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3821527Z   Downloaded bitflags v2.13.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3846027Z   Downloaded data-encoding v2.11.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3854082Z   Downloaded ed25519 v2.2.3
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3864783Z   Downloaded ctrlc v3.5.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3877158Z   Downloaded aho-corasick v1.1.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3915510Z   Downloaded equivalent v1.0.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3920924Z   Downloaded itoa v1.0.18
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3929346Z   Downloaded rustc-hash v2.1.3
+evaluate	Build mcp-gate	2026-10-08T21:47:33.3982494Z   Downloaded clap v4.6.7
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4039919Z   Downloaded num v0.4.3
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4047038Z   Downloaded num-complex v0.4.6
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4057669Z   Downloaded num-rational v0.4.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4065399Z   Downloaded bit-vec v0.8.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4076205Z   Downloaded bytecount v0.6.9
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4088502Z   Downloaded digest v0.10.7
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4097941Z   Downloaded autocfg v1.5.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4108082Z   Downloaded version_check v0.9.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4137090Z   Downloaded zmij v1.0.23
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4148770Z   Downloaded thiserror-impl v2.0.21
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4157691Z   Downloaded vsimd v0.8.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4171112Z   Downloaded zeroize v1.9.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4181719Z   Downloaded thiserror v2.0.21
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4218971Z   Downloaded unicode-general-category v1.1.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4230170Z   Downloaded subtle v2.6.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4239212Z   Downloaded ref-cast-impl v1.0.27
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4243615Z   Downloaded scopeguard v1.2.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4250545Z   Downloaded borrow-or-share v0.2.4
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4257158Z   Downloaded num-iter v0.1.46
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4262685Z   Downloaded strum v0.28.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4267751Z   Downloaded anstyle-query v1.1.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4275235Z   Downloaded block-buffer v0.10.4
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4281365Z   Downloaded percent-encoding v2.3.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4285964Z   Downloaded bit-set v0.8.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4293601Z   Downloaded jsonschema-regex v0.58.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4299327Z   Downloaded generic-array v0.14.7
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4306558Z   Downloaded cfg-if v1.0.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4313975Z   Downloaded heck v0.5.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4347318Z   Downloaded hmac v0.12.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4360740Z   Downloaded foldhash v0.2.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4369334Z   Downloaded quote v1.0.47
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4387647Z   Downloaded serde_yml v0.0.13
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4404524Z   Downloaded outref v0.5.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4413775Z   Downloaded clap_lex v1.1.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4420981Z   Downloaded is_terminal_polyfill v1.70.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4427802Z   Downloaded rustc_version v0.4.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4436078Z   Downloaded cfg_aliases v0.2.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4442531Z   Downloaded ref-cast v1.0.27
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4457968Z   Downloaded signature v2.2.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4467827Z   Downloaded num-cmp v0.1.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4474551Z   Downloaded lock_api v0.4.14
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4484201Z   Downloaded num-integer v0.1.47
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4494934Z   Downloaded sha2 v0.10.9
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4509773Z   Downloaded strum_macros v0.28.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4528223Z   Downloaded ppv-lite86 v0.2.21
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4539608Z   Downloaded strsim v0.11.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4551798Z   Downloaded typenum v1.20.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4585094Z   Downloaded syn v2.0.119
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4656059Z   Downloaded zerocopy v0.8.59
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4795243Z   Downloaded getrandom v0.3.4
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4815036Z   Downloaded clap_builder v4.6.7
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4857268Z   Downloaded rand_chacha v0.9.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4867656Z   Downloaded email_address v0.2.9
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4885119Z   Downloaded once_cell v1.21.4
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4906864Z   Downloaded parking_lot_core v0.9.12
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4932882Z   Downloaded smallvec v1.16.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4942277Z   Downloaded ordered-float v5.5.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4953579Z   Downloaded rand_core v0.9.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4963055Z   Downloaded arraydeque v0.5.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4970520Z   Downloaded semver v1.0.28
+evaluate	Build mcp-gate	2026-10-08T21:47:33.4983543Z   Downloaded micromap v0.3.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5011496Z   Downloaded ed25519-dalek v2.2.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5034691Z   Downloaded hashlink v0.12.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5060009Z   Downloaded num-traits v0.2.19
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5076397Z   Downloaded parking_lot v0.12.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5091259Z   Downloaded serde_core v1.0.229
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5108432Z   Downloaded fluent-uri v0.4.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5124937Z   Downloaded saphyr v0.1.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5144690Z   Downloaded serde_derive v1.0.229
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5162752Z   Downloaded proc-macro2 v1.0.107
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5180248Z   Downloaded jsonschema-value v0.58.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5201144Z   Downloaded saphyr-parser v0.1.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5222348Z   Downloaded referencing v0.58.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5247130Z   Downloaded serde v1.0.229
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5268791Z   Downloaded memchr v2.8.3
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5299784Z   Downloaded num-bigint v0.4.8
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5328501Z   Downloaded fraction v0.17.0
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5362172Z   Downloaded regex v1.13.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5396625Z   Downloaded indexmap v2.14.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5423407Z   Downloaded serde_json v1.0.151
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5466271Z   Downloaded hkdf v0.12.4
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5482755Z   Downloaded hashbrown v0.17.1
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5517541Z   Downloaded curve25519-dalek v4.1.3
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5575031Z   Downloaded fancy-regex v0.19.2
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5620017Z   Downloaded syn v3.0.6
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5690771Z   Downloaded nix v0.31.3
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5765747Z   Downloaded regex-syntax v0.8.11
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5817515Z   Downloaded regex-automata v0.4.18
+evaluate	Build mcp-gate	2026-10-08T21:47:33.5922106Z   Downloaded noyalib v0.0.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.6182647Z   Downloaded libc v0.2.190
+evaluate	Build mcp-gate	2026-10-08T21:47:33.6444612Z   Downloaded jsonschema v0.58.5
+evaluate	Build mcp-gate	2026-10-08T21:47:33.6803400Z   Downloaded encoding_rs v0.8.35
+evaluate	Build mcp-gate	2026-10-08T21:47:33.7598401Z    Compiling proc-macro2 v1.0.107
+evaluate	Build mcp-gate	2026-10-08T21:47:33.7599294Z    Compiling unicode-ident v1.0.26
+evaluate	Build mcp-gate	2026-10-08T21:47:33.7599751Z    Compiling quote v1.0.47
+evaluate	Build mcp-gate	2026-10-08T21:47:33.7600179Z    Compiling version_check v0.9.5
+evaluate	Build mcp-gate	2026-10-08T21:47:36.5804968Z    Compiling cfg-if v1.0.5
+evaluate	Build mcp-gate	2026-10-08T21:47:36.5805581Z    Compiling serde_core v1.0.229
+evaluate	Build mcp-gate	2026-10-08T21:47:36.6453228Z    Compiling autocfg v1.5.1
+evaluate	Build mcp-gate	2026-10-08T21:47:37.2252530Z    Compiling num-traits v0.2.19
+evaluate	Build mcp-gate	2026-10-08T21:47:41.4332705Z    Compiling memchr v2.8.3
+evaluate	Build mcp-gate	2026-10-08T21:47:41.4508908Z    Compiling serde v1.0.229
+evaluate	Build mcp-gate	2026-10-08T21:47:41.6535200Z    Compiling generic-array v0.14.7
+evaluate	Build mcp-gate	2026-10-08T21:47:41.7149399Z    Compiling libc v0.2.190
+evaluate	Build mcp-gate	2026-10-08T21:47:42.4919497Z    Compiling typenum v1.20.1
+evaluate	Build mcp-gate	2026-10-08T21:47:42.5448735Z    Compiling syn v3.0.6
+evaluate	Build mcp-gate	2026-10-08T21:47:43.4214614Z    Compiling zerocopy v0.8.59
+evaluate	Build mcp-gate	2026-10-08T21:47:43.5883512Z    Compiling zmij v1.0.23
+evaluate	Build mcp-gate	2026-10-08T21:47:43.7160909Z    Compiling block-buffer v0.10.4
+evaluate	Build mcp-gate	2026-10-08T21:47:43.7919137Z    Compiling crypto-common v0.1.7
+evaluate	Build mcp-gate	2026-10-08T21:47:43.8419034Z    Compiling syn v2.0.119
+evaluate	Build mcp-gate	2026-10-08T21:47:44.3679440Z    Compiling subtle v2.6.1
+evaluate	Build mcp-gate	2026-10-08T21:47:44.4519078Z    Compiling foldhash v0.2.0
+evaluate	Build mcp-gate	2026-10-08T21:47:44.5908954Z    Compiling equivalent v1.0.2
+evaluate	Build mcp-gate	2026-10-08T21:47:44.6198995Z    Compiling allocator-api2 v0.2.21
+evaluate	Build mcp-gate	2026-10-08T21:47:44.9089609Z    Compiling serde_json v1.0.151
+evaluate	Build mcp-gate	2026-10-08T21:47:45.0058966Z    Compiling hashbrown v0.17.1
+evaluate	Build mcp-gate	2026-10-08T21:47:45.5508940Z    Compiling digest v0.10.7
+evaluate	Build mcp-gate	2026-10-08T21:47:45.8618874Z    Compiling serde_derive v1.0.229
+evaluate	Build mcp-gate	2026-10-08T21:47:46.2958766Z    Compiling num-integer v0.1.47
+evaluate	Build mcp-gate	2026-10-08T21:47:46.6918995Z    Compiling itoa v1.0.18
+evaluate	Build mcp-gate	2026-10-08T21:47:46.8519882Z    Compiling semver v1.0.28
+evaluate	Build mcp-gate	2026-10-08T21:47:47.0428852Z    Compiling aho-corasick v1.1.5
+evaluate	Build mcp-gate	2026-10-08T21:47:47.1033121Z    Compiling rustc_version v0.4.1
+evaluate	Build mcp-gate	2026-10-08T21:47:47.2999132Z    Compiling getrandom v0.3.4
+evaluate	Build mcp-gate	2026-10-08T21:47:47.4689111Z    Compiling smallvec v1.16.2
+evaluate	Build mcp-gate	2026-10-08T21:47:47.6358956Z    Compiling curve25519-dalek v4.1.3
+evaluate	Build mcp-gate	2026-10-08T21:47:47.7486982Z    Compiling num-bigint v0.4.8
+evaluate	Build mcp-gate	2026-10-08T21:47:48.3408876Z    Compiling ahash v0.8.12
+evaluate	Build mcp-gate	2026-10-08T21:47:48.4327995Z    Compiling cpufeatures v0.2.17
+evaluate	Build mcp-gate	2026-10-08T21:47:48.4600713Z    Compiling ref-cast v1.0.27
+evaluate	Build mcp-gate	2026-10-08T21:47:48.5808872Z    Compiling heck v0.5.0
+evaluate	Build mcp-gate	2026-10-08T21:47:48.6878843Z    Compiling parking_lot_core v0.9.12
+evaluate	Build mcp-gate	2026-10-08T21:47:48.7889435Z    Compiling regex-syntax v0.8.11
+evaluate	Build mcp-gate	2026-10-08T21:47:49.1495394Z    Compiling num-rational v0.4.2
+evaluate	Build mcp-gate	2026-10-08T21:47:49.3332892Z    Compiling curve25519-dalek-derive v0.1.1
+evaluate	Build mcp-gate	2026-10-08T21:47:49.4299284Z    Compiling num-iter v0.1.46
+evaluate	Build mcp-gate	2026-10-08T21:47:49.4806318Z    Compiling ref-cast-impl v1.0.27
+evaluate	Build mcp-gate	2026-10-08T21:47:49.6868712Z    Compiling num-complex v0.4.6
+evaluate	Build mcp-gate	2026-10-08T21:47:49.7375741Z    Compiling signature v2.2.0
+evaluate	Build mcp-gate	2026-10-08T21:47:49.7888836Z    Compiling scopeguard v1.2.0
+evaluate	Build mcp-gate	2026-10-08T21:47:49.7969360Z    Compiling zeroize v1.9.0
+evaluate	Build mcp-gate	2026-10-08T21:47:49.8328724Z    Compiling once_cell v1.21.4
+evaluate	Build mcp-gate	2026-10-08T21:47:49.9341102Z    Compiling thiserror v2.0.21
+evaluate	Build mcp-gate	2026-10-08T21:47:50.0448682Z    Compiling num v0.4.3
+evaluate	Build mcp-gate	2026-10-08T21:47:50.1229150Z    Compiling lock_api v0.4.14
+evaluate	Build mcp-gate	2026-10-08T21:47:50.1862056Z    Compiling ed25519 v2.2.3
+evaluate	Build mcp-gate	2026-10-08T21:47:50.2789056Z    Compiling sha2 v0.10.9
+evaluate	Build mcp-gate	2026-10-08T21:47:50.4247296Z    Compiling regex-automata v0.4.18
+evaluate	Build mcp-gate	2026-10-08T21:47:50.7408954Z    Compiling ppv-lite86 v0.2.21
+evaluate	Build mcp-gate	2026-10-08T21:47:51.0198859Z    Compiling thiserror-impl v2.0.21
+evaluate	Build mcp-gate	2026-10-08T21:47:51.4879819Z    Compiling hmac v0.12.1
+evaluate	Build mcp-gate	2026-10-08T21:47:51.5346128Z    Compiling rand_core v0.9.5
+evaluate	Build mcp-gate	2026-10-08T21:47:51.5588953Z    Compiling borrow-or-share v0.2.4
+evaluate	Build mcp-gate	2026-10-08T21:47:51.5968879Z    Compiling unicode-general-category v1.1.0
+evaluate	Build mcp-gate	2026-10-08T21:47:51.6550332Z    Compiling jsonschema-value v0.58.5
+evaluate	Build mcp-gate	2026-10-08T21:47:51.7379201Z    Compiling noyalib v0.0.5
+evaluate	Build mcp-gate	2026-10-08T21:47:51.8443555Z    Compiling bit-vec v0.8.0
+evaluate	Build mcp-gate	2026-10-08T21:47:51.9998647Z    Compiling bit-set v0.8.0
+evaluate	Build mcp-gate	2026-10-08T21:47:52.0348896Z    Compiling rand_chacha v0.9.0
+evaluate	Build mcp-gate	2026-10-08T21:47:52.0978624Z    Compiling fluent-uri v0.4.1
+evaluate	Build mcp-gate	2026-10-08T21:47:52.1328381Z    Compiling hkdf v0.12.4
+evaluate	Build mcp-gate	2026-10-08T21:47:52.2004692Z    Compiling ed25519-dalek v2.2.0
+evaluate	Build mcp-gate	2026-10-08T21:47:52.3429351Z    Compiling parking_lot v0.12.5
+evaluate	Build mcp-gate	2026-10-08T21:47:52.3769002Z    Compiling fraction v0.17.0
+evaluate	Build mcp-gate	2026-10-08T21:47:52.6878811Z    Compiling strum_macros v0.28.0
+evaluate	Build mcp-gate	2026-10-08T21:47:52.8188965Z    Compiling indexmap v2.14.2
+evaluate	Build mcp-gate	2026-10-08T21:47:52.8209821Z    Compiling percent-encoding v2.3.2
+evaluate	Build mcp-gate	2026-10-08T21:47:52.9378843Z    Compiling arraydeque v0.5.1
+evaluate	Build mcp-gate	2026-10-08T21:47:53.0618749Z    Compiling micromap v0.3.0
+evaluate	Build mcp-gate	2026-10-08T21:47:53.2919390Z    Compiling vsimd v0.8.0
+evaluate	Build mcp-gate	2026-10-08T21:47:53.4982751Z    Compiling outref v0.5.2
+evaluate	Build mcp-gate	2026-10-08T21:47:53.5323838Z    Compiling num-cmp v0.1.0
+evaluate	Build mcp-gate	2026-10-08T21:47:53.7468597Z    Compiling bytecount v0.6.9
+evaluate	Build mcp-gate	2026-10-08T21:47:53.7566503Z    Compiling rustc-hash v2.1.3
+evaluate	Build mcp-gate	2026-10-08T21:47:54.3148844Z    Compiling uuid-simd v0.8.0
+evaluate	Build mcp-gate	2026-10-08T21:47:54.3389472Z    Compiling strum v0.28.0
+evaluate	Build mcp-gate	2026-10-08T21:47:54.3807708Z    Compiling referencing v0.58.5
+evaluate	Build mcp-gate	2026-10-08T21:47:54.7087340Z    Compiling saphyr-parser v0.1.0
+evaluate	Build mcp-gate	2026-10-08T21:47:54.7979015Z    Compiling regex v1.13.1
+evaluate	Build mcp-gate	2026-10-08T21:47:55.1318768Z    Compiling fancy-regex v0.19.2
+evaluate	Build mcp-gate	2026-10-08T21:47:55.1837820Z    Compiling mcpg-domain v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-domain)
+evaluate	Build mcp-gate	2026-10-08T21:47:56.4628790Z    Compiling jsonschema-regex v0.58.5
+evaluate	Build mcp-gate	2026-10-08T21:47:56.8409763Z    Compiling email_address v0.2.9
+evaluate	Build mcp-gate	2026-10-08T21:47:57.0358546Z    Compiling hashlink v0.12.2
+evaluate	Build mcp-gate	2026-10-08T21:47:57.1528946Z    Compiling ordered-float v5.5.0
+evaluate	Build mcp-gate	2026-10-08T21:47:57.3008541Z    Compiling encoding_rs v0.8.35
+evaluate	Build mcp-gate	2026-10-08T21:47:57.3866291Z    Compiling cfg_aliases v0.2.2
+evaluate	Build mcp-gate	2026-10-08T21:47:57.4278749Z    Compiling utf8parse v0.2.2
+evaluate	Build mcp-gate	2026-10-08T21:47:57.4750307Z    Compiling data-encoding v2.11.1
+evaluate	Build mcp-gate	2026-10-08T21:47:57.4938702Z    Compiling anstyle-parse v1.0.0
+evaluate	Build mcp-gate	2026-10-08T21:47:57.6108994Z    Compiling nix v0.31.3
+evaluate	Build mcp-gate	2026-10-08T21:47:57.7768805Z    Compiling jsonschema v0.58.5
+evaluate	Build mcp-gate	2026-10-08T21:47:57.8379209Z    Compiling mcpg-mcp v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-mcp)
+evaluate	Build mcp-gate	2026-10-08T21:47:58.2708924Z    Compiling saphyr v0.1.0
+evaluate	Build mcp-gate	2026-10-08T21:47:58.2968492Z    Compiling serde_yml v0.0.13
+evaluate	Build mcp-gate	2026-10-08T21:47:58.3338698Z    Compiling anstyle v1.0.14
+evaluate	Build mcp-gate	2026-10-08T21:47:58.4818960Z    Compiling is_terminal_polyfill v1.70.2
+evaluate	Build mcp-gate	2026-10-08T21:47:58.5188672Z    Compiling colorchoice v1.0.5
+evaluate	Build mcp-gate	2026-10-08T21:47:58.5668801Z    Compiling anstyle-query v1.1.5
+evaluate	Build mcp-gate	2026-10-08T21:47:58.6058851Z    Compiling anstream v1.0.0
+evaluate	Build mcp-gate	2026-10-08T21:47:58.8332726Z    Compiling bitflags v2.13.2
+evaluate	Build mcp-gate	2026-10-08T21:47:58.9868890Z    Compiling strsim v0.11.1
+evaluate	Build mcp-gate	2026-10-08T21:47:58.9870079Z    Compiling clap_lex v1.1.1
+evaluate	Build mcp-gate	2026-10-08T21:47:59.3489037Z    Compiling clap_builder v4.6.7
+evaluate	Build mcp-gate	2026-10-08T21:47:59.3929864Z    Compiling clap_derive v4.6.7
+evaluate	Build mcp-gate	2026-10-08T21:47:59.9398901Z    Compiling ctrlc v3.5.2
+evaluate	Build mcp-gate	2026-10-08T21:48:00.0280129Z    Compiling syscall-probe v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/fixtures/servers/syscall-probe)
+evaluate	Build mcp-gate	2026-10-08T21:48:00.9894352Z    Compiling clap v4.6.7
+evaluate	Build mcp-gate	2026-10-08T21:48:02.6746173Z    Compiling mcpg-app v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-app)
+evaluate	Build mcp-gate	2026-10-08T21:48:03.3344450Z    Compiling mcpg-report v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-report)
+evaluate	Build mcp-gate	2026-10-08T21:48:03.3755742Z    Compiling mcpg-linux v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-linux)
+evaluate	Build mcp-gate	2026-10-08T21:48:06.2675971Z    Compiling mcpg-cli v0.1.0 (/home/runner/work/mcp-gate/mcp-gate/crates/mcpg-cli)
+evaluate	Build mcp-gate	2026-10-08T21:48:06.7922415Z     Finished `dev` profile [unoptimized + debuginfo] target(s) in 36.96s
+evaluate	Run Test Trace	﻿2026-10-08T21:48:06.8549623Z ##[group]Run RUST_LOG=trace target/debug/mcp-gate run --config tests/configs/valid/benign.yaml > mcp-gate.log 2>&1 &
+evaluate	Run Test Trace	2026-10-08T21:48:06.8550558Z ^[[36;1mRUST_LOG=trace target/debug/mcp-gate run --config tests/configs/valid/benign.yaml > mcp-gate.log 2>&1 &^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8551117Z ^[[36;1mPID=$!^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8551405Z ^[[36;1m^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8551710Z ^[[36;1m# Print the log file as it grows^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8552076Z ^[[36;1mtail -f mcp-gate.log &^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8552413Z ^[[36;1mTAIL_PID=$!^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8552753Z ^[[36;1m^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8553037Z ^[[36;1m# Wait for up to 60 seconds^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8553388Z ^[[36;1mfor i in {1..60}; do^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8553839Z ^[[36;1m  if ! kill -0 $PID 2>/dev/null; then^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8554211Z ^[[36;1m    break^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8554515Z ^[[36;1m  fi^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8554795Z ^[[36;1m  sleep 1^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8555109Z ^[[36;1mdone^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8555380Z ^[[36;1m^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8555775Z ^[[36;1mif kill -0 $PID 2>/dev/null; then^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8556162Z ^[[36;1m  echo "mcp-gate run is hanging!"^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8556557Z ^[[36;1m  kill -9 $PID^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8556850Z ^[[36;1mfi^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8557105Z ^[[36;1m^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8557628Z ^[[36;1mkill -9 $TAIL_PID 2>/dev/null || true^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8558054Z ^[[36;1mcat mcp-gate.log^[[0m
+evaluate	Run Test Trace	2026-10-08T21:48:06.8601132Z shell: /usr/bin/bash -e {0}
+evaluate	Run Test Trace	2026-10-08T21:48:06.8601508Z ##[endgroup]
+evaluate	Run Test Trace	2026-10-08T21:49:06.9547618Z mcp-gate run is hanging!
+evaluate	Run Test Trace	2026-10-08T21:49:06.9560412Z /home/runner/work/_temp/3ac0a824-4c32-4944-9f5b-99002f0fe72d.sh: line 22:  4093 Killed                  RUST_LOG=trace target/debug/mcp-gate run --config tests/configs/valid/benign.yaml > mcp-gate.log 2>&1
+evaluate	Run Test Trace	2026-10-08T21:49:06.9562166Z /home/runner/work/_temp/3ac0a824-4c32-4944-9f5b-99002f0fe72d.sh: line 22:  4094 Killed                  tail -f mcp-gate.log
+evaluate	Post Run actions/checkout@v4	﻿2026-10-08T21:49:06.9686308Z Post job cleanup.
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0516114Z [command]/usr/bin/git version
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0555154Z git version 2.55.0
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0589283Z Temporarily overriding HOME='/home/runner/work/_temp/f3e58550-0ffb-4894-a021-1839d242d873' before making global git config changes
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0590637Z Adding repository directory to the temporary git global config as a safe directory
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0594859Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mcp-gate/mcp-gate
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0632366Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0662824Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0865687Z fatal: No url found for submodule path 'pilot/github-mcp-server' in .gitmodules
+evaluate	Post Run actions/checkout@v4	2026-10-08T21:49:07.0917958Z ##[warning]The process '/usr/bin/git' failed with exit code 128
+evaluate	Complete job	﻿2026-10-08T21:49:07.1089939Z Cleaning up orphan processes
+evaluate	Complete job	2026-10-08T21:49:07.1314187Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -171,6 +171,10 @@ fn add_notif_rules(instrs: &mut Vec<sock_filter>, handover_sock: Option<RawFd>) 
     // File operations
     append_syscall_rule(instrs, libc::SYS_openat, notif);
     append_syscall_rule(instrs, libc::SYS_openat2, notif);
+    #[cfg(target_arch = "x86_64")]
+    append_syscall_rule(instrs, libc::SYS_open, notif);
+    #[cfg(target_arch = "x86_64")]
+    append_syscall_rule(instrs, libc::SYS_creat, notif);
 
     // Process execution & lifecycle
     append_syscall_rule(instrs, libc::SYS_execve, notif);

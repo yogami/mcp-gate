@@ -15,6 +15,8 @@ pub const SECCOMP_USER_NOTIF_FLAG_CONTINUE: u32 = 0x00000001;
 pub mod syscalls {
     pub const SYS_OPENAT: i64 = 257;
     pub const SYS_OPENAT2: i64 = 437;
+    pub const SYS_OPEN: i64 = 2;
+    pub const SYS_CREAT: i64 = 85;
     pub const SYS_EXECVE: i64 = 59;
     pub const SYS_EXECVEAT: i64 = 322;
     pub const SYS_CLONE: i64 = 56;
@@ -359,18 +361,32 @@ impl<M: MemoryReader> ObserverEngine<M> {
             }
         }
 
-        // 6. Path operations: openat and openat2
-        if nr == syscalls::SYS_OPENAT || nr == syscalls::SYS_OPENAT2 {
-            let dirfd = args[0] as i64 as i32;
-            let addr = args[1];
-            let flags = if nr == syscalls::SYS_OPENAT2 {
-                if let Ok(bytes) = self.reader.read_bytes(pid, args[2], 8) {
-                    u64::from_ne_bytes(bytes.try_into().unwrap()) as i32
+        // 6. Path operations: open, creat, openat, and openat2
+        if nr == syscalls::SYS_OPENAT 
+            || nr == syscalls::SYS_OPENAT2 
+            || nr == syscalls::SYS_OPEN 
+            || nr == syscalls::SYS_CREAT 
+        {
+            let (dirfd, addr, flags) = if nr == syscalls::SYS_OPEN || nr == syscalls::SYS_CREAT {
+                let flags = if nr == syscalls::SYS_CREAT {
+                    libc::O_CREAT | libc::O_WRONLY | libc::O_TRUNC
                 } else {
-                    0
-                }
+                    args[1] as i32
+                };
+                (libc::AT_FDCWD, args[0], flags)
             } else {
-                args[2] as i32
+                let dirfd = args[0] as i64 as i32;
+                let addr = args[1];
+                let flags = if nr == syscalls::SYS_OPENAT2 {
+                    if let Ok(bytes) = self.reader.read_bytes(pid, args[2], 8) {
+                        u64::from_ne_bytes(bytes.try_into().unwrap()) as i32
+                    } else {
+                        0
+                    }
+                } else {
+                    args[2] as i32
+                };
+                (dirfd, addr, flags)
             };
 
             if let Ok(raw_path) = self.reader.read_string(pid, addr, 4096) {

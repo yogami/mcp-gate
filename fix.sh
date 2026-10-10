@@ -1,0 +1,2 @@
+#!/bin/bash
+sed -i '' -e 's/fn create_launcher(&self, ruleset: Option<OwnedFd>) -> Box<dyn CapsuleLauncher>;/fn create_launcher(\&self, ruleset: Option<OwnedFd>) -> (Box<dyn CapsuleLauncher>, Option<RawFd>);/g' crates/mcpg-app/src/ports.rs
