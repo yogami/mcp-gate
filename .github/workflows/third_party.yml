@@ -61,7 +61,8 @@ jobs:
 
       - name: Run Orchestrator
         run: |
-          # Create a dummy database
+          # Create a dummy database and npm dirs
           touch /tmp/test.db
+          mkdir -p /home/runner/.npm/_npx
           # Run mcp-gate
           ./target/release/mcp-gate run -c mcp-gate.yaml -v
