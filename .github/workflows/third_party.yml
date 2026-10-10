@@ -63,6 +63,10 @@ jobs:
 
       - name: Run Orchestrator
         run: |
+          which node
+          which npx
+          ls -la $(which npx)
+          ls -la $(which node)
           # Create a dummy database and npm dirs
           touch /tmp/test.db
           mkdir -p /home/runner/.npm/_npx
