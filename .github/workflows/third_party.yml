@@ -47,6 +47,7 @@ jobs:
             shutdown_grace_s: 3
             max_processes: 64
           policy:
+            baseline: "node"
             allow_network: true
             allowed_unix_sockets: []
             allowed_child_binaries: ["node"]
