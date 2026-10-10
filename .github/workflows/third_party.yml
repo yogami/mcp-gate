@@ -50,7 +50,7 @@ jobs:
             baseline: "node"
             allow_network: true
             allowed_unix_sockets: []
-            allowed_child_binaries: ["node"]
+            allowed_child_binaries: ["node", "npx", "env", "bash", "sh"]
             read_paths:
               - "/tmp"
               - "/usr/local/bin"
