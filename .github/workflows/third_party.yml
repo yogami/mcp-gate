@@ -50,7 +50,7 @@ jobs:
             baseline: "node"
             allow_network: true
             allowed_unix_sockets: []
-            allowed_child_binaries: ["node", "npx", "env", "bash", "sh"]
+            allowed_child_binaries: ["node", "npx", "env", "bash", "sh", "/bin/node", "/usr/bin/node", "/usr/local/bin/node", "/opt/hostedtoolcache/node/20.20.2/x64/bin/node"]
             read_paths:
               - "/tmp"
               - "/usr/local/bin"
