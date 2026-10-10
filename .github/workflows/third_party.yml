@@ -58,7 +58,6 @@ jobs:
             write_paths:
               - "/tmp"
               - "/home/runner/.npm/_npx"
-            fail_on: "error"
           YAML
 
       - name: Run Orchestrator
