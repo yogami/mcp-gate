@@ -50,20 +50,11 @@ jobs:
             baseline: "node"
             allow_network: true
             allowed_unix_sockets: []
-            allowed_child_binaries: ["node", "npx", "env", "bash", "sh", "/usr/local/bin/node"]
+            allowed_child_binaries: ["node"]
             read_paths:
               - "/tmp"
-              - "/usr/local/bin"
-              - "/opt/hostedtoolcache/node"
-              - "/usr/bin"
-              - "/bin"
-              - "/usr/lib"
-              - "/lib"
-              - "/etc"
-              - "/home/runner/.npm"
             write_paths:
               - "/tmp"
-              - "/home/runner/.npm/_npx"
           YAML
 
       - name: Run Orchestrator
@@ -73,8 +64,6 @@ jobs:
           ls -la $(which npx)
           ls -la $(which node)
           # Create a dummy database and npm dirs
-          sudo ln -sf $(which node) /usr/local/bin/node
           touch /tmp/test.db
-          mkdir -p /home/runner/.npm/_npx
           # Run mcp-gate
-          ./target/release/mcp-gate run -c mcp-gate.yaml -v
+          ./target/release/mcp-gate run -c mcp-gate.yaml --mode observe -v
