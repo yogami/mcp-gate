@@ -1,0 +1,69 @@
+name: Third-Party MCP Integration
+
+on:
+  push:
+    branches:
+      - pilot-eval
+  workflow_dispatch:
+
+jobs:
+  test-sqlite-server:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustc --version
+          cargo --version
+
+      - name: Build mcp-gate
+        run: cargo build
+
+      - name: Create Config
+        run: |
+          cat << 'YAML' > mcp-gate.yaml
+          version: 1
+          server:
+            name: "anthropic-sqlite-test"
+            command: "npx"
+            args: ["-y", "@modelcontextprotocol/server-sqlite", "/tmp/test.db"]
+            env: {}
+            protocol_versions:
+              - "2024-11-05"
+            workspace:
+              source: "."
+              mode: "in-place"
+            limits:
+              cpu_seconds: 20
+              memory_mb: 512
+              max_fds: 100
+              file_size_mb: 10
+              max_children: 10
+              grace_ms: 1000
+          policy:
+            allow_network: true
+            allowed_unix_sockets: []
+            allowed_child_binaries: ["node"]
+            read_paths:
+              - "/tmp"
+              - "/usr/local/bin"
+              - "/home/runner/.npm"
+            write_paths:
+              - "/tmp"
+              - "/home/runner/.npm/_npx"
+            fail_on: "error"
+          YAML
+
+      - name: Run Orchestrator
+        run: |
+          # Create a dummy database
+          touch /tmp/test.db
+          # Run mcp-gate
+          ./target/debug/mcp-gate run -c mcp-gate.yaml -vv
