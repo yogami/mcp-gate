@@ -24,7 +24,7 @@ jobs:
           cargo --version
 
       - name: Build mcp-gate
-        run: cargo build
+        run: cargo build --release
 
       - name: Create Config
         run: |
@@ -66,4 +66,4 @@ jobs:
           # Create a dummy database
           touch /tmp/test.db
           # Run mcp-gate
-          ./target/debug/mcp-gate run -c mcp-gate.yaml -v
+          ./target/release/mcp-gate run -c mcp-gate.yaml -v
