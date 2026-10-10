@@ -66,4 +66,4 @@ jobs:
           # Create a dummy database
           touch /tmp/test.db
           # Run mcp-gate
-          ./target/debug/mcp-gate run -c mcp-gate.yaml -vv
+          ./target/debug/mcp-gate run -c mcp-gate.yaml -v
