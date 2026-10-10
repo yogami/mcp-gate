@@ -55,6 +55,11 @@ jobs:
               - "/tmp"
               - "/usr/local/bin"
               - "/opt/hostedtoolcache/node"
+              - "/usr/bin"
+              - "/bin"
+              - "/usr/lib"
+              - "/lib"
+              - "/etc"
               - "/home/runner/.npm"
             write_paths:
               - "/tmp"
