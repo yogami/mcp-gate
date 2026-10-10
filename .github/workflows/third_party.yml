@@ -40,13 +40,13 @@ jobs:
             workspace:
               source: "."
               mode: "in-place"
-            limits:
-              cpu_seconds: 20
-              memory_mb: 512
-              max_fds: 100
-              file_size_mb: 10
-              max_children: 10
-              grace_ms: 1000
+          limits:
+            cpu_seconds: 20
+            memory_mb: 512
+            max_fds: 100
+            file_size_mb: 10
+            max_children: 10
+            grace_ms: 1000
           policy:
             allow_network: true
             allowed_unix_sockets: []
