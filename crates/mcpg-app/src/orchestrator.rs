@@ -133,6 +133,7 @@ impl RunOrchestrator for AppOrchestrator {
                 _obs_handle = Some(
                     self.sandbox.start_observer_thread(
                         fd,
+                        mode.clone(),
                         cfg.policy.allow_network,
                         cfg.policy
                             .allowed_child_binaries

@@ -142,6 +142,7 @@ pub trait Sandbox {
     fn start_observer_thread(
         &self,
         fd: RawFd,
+        mode: mcpg_domain::mode::Mode,
         allow_network: bool,
         allowed_child_binaries: Vec<std::path::PathBuf>,
         root_command: Option<std::path::PathBuf>,

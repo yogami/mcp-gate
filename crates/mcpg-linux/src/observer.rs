@@ -106,6 +106,7 @@ impl MemoryReader for MockMemoryReader {
 /// Observer configuration parameters.
 #[derive(Debug, Clone, Default)]
 pub struct ObserverConfig {
+    pub mode: mcpg_domain::mode::Mode,
     pub allow_network: bool,
     pub allowed_child_binaries: Vec<PathBuf>,
     pub root_command: Option<PathBuf>,
@@ -575,9 +576,15 @@ pub fn start_observer_thread(
 
             let nr = req.data.nr as i64;
             let res = engine.handle_syscall(req.pid, nr, req.data.args);
-            resp.flags = res.flags;
-            resp.error = res.error;
-            resp.val = res.val;
+            if engine.cfg.mode == mcpg_domain::mode::Mode::Observe {
+                resp.flags = SECCOMP_USER_NOTIF_FLAG_CONTINUE;
+                resp.error = 0;
+                resp.val = 0;
+            } else {
+                resp.flags = res.flags;
+                resp.error = res.error;
+                resp.val = res.val;
+            }
 
             if let Some(vio) = res.violation {
                 let _ = violations_tx.send(vio);

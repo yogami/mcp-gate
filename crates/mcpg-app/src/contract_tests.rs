@@ -143,6 +143,7 @@ mod tests {
         fn start_observer_thread(
             &self,
             _fd: RawFd,
+            _mode: mcpg_domain::mode::Mode,
             _allow_network: bool,
             _allowed_child_binaries: Vec<std::path::PathBuf>,
             _root_command: Option<std::path::PathBuf>,

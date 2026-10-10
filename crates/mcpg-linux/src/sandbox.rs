@@ -203,6 +203,7 @@ impl Sandbox for LinuxSandbox {
     fn start_observer_thread(
         &self,
         fd: RawFd,
+        mode: mcpg_domain::mode::Mode,
         allow_network: bool,
         allowed_child_binaries: Vec<std::path::PathBuf>,
         root_command: Option<std::path::PathBuf>,
@@ -213,6 +214,7 @@ impl Sandbox for LinuxSandbox {
         obs_tx: std::sync::mpsc::Sender<(String, String)>,
     ) -> std::thread::JoinHandle<()> {
         let obs_cfg = crate::observer::ObserverConfig {
+            mode,
             allow_network,
             allowed_child_binaries,
             root_command,
