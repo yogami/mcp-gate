@@ -32,29 +32,6 @@ fn encode_b62(raw: &[u8]) -> String {
         .collect()
 }
 
-fn to_base64(data: &[u8]) -> String {
-    let mut out = String::new();
-    for chunk in data.chunks(3) {
-        let b0 = chunk[0] as u32;
-        let b1 = if chunk.len() > 1 { chunk[1] as u32 } else { 0 };
-        let b2 = if chunk.len() > 2 { chunk[2] as u32 } else { 0 };
-        let triple = (b0 << 16) | (b1 << 8) | b2;
-
-        out.push(B64_ALPHABET[((triple >> 18) & 0x3f) as usize] as char);
-        out.push(B64_ALPHABET[((triple >> 12) & 0x3f) as usize] as char);
-        if chunk.len() > 1 {
-            out.push(B64_ALPHABET[((triple >> 6) & 0x3f) as usize] as char);
-        } else {
-            out.push('=');
-        }
-        if chunk.len() > 2 {
-            out.push(B64_ALPHABET[(triple & 0x3f) as usize] as char);
-        } else {
-            out.push('=');
-        }
-    }
-    out
-}
 
 /// A planned canary file to be planted in the capsule or run directory.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -183,7 +160,7 @@ fn render_docker(seed: &Seed, files: &mut Vec<PlannedFile>, secrets: &mut Vec<Se
     let entry = entry_for_kind(CanaryKind::Docker);
     let token = encode_b62(&derive(seed, "docker", "token", 32));
     let raw_auth = format!("agent:{token}");
-    let auth = to_base64(raw_auth.as_bytes());
+    let auth = crate::util::to_base64(raw_auth.as_bytes());
 
     secrets.push(Secret {
         field: "docker_token".to_string(),
@@ -389,7 +366,7 @@ fn render_ssh(seed: &Seed, files: &mut Vec<PlannedFile>, secrets: &mut Vec<Secre
 
     secrets.push(Secret {
         field: "ssh_ed25519_key".to_string(),
-        value: to_base64(&key_pair.secret_raw),
+        value: crate::util::to_base64(&key_pair.secret_raw),
         kind: CanaryKind::Ssh,
     });
 

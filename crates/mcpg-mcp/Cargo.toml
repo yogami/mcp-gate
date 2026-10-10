@@ -10,3 +10,9 @@ repository.workspace = true
 mcpg-domain = { path = "../mcpg-domain" }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[features]
+testing = []
+
+[dev-dependencies]
+mcpg-mcp = { path = ".", features = ["testing"] }

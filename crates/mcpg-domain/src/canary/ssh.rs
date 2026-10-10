@@ -14,30 +14,6 @@ fn write_string(buf: &mut Vec<u8>, s: &[u8]) {
     buf.extend_from_slice(s);
 }
 
-fn to_base64(data: &[u8]) -> String {
-    const B64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut out = String::new();
-    for chunk in data.chunks(3) {
-        let b0 = chunk[0] as u32;
-        let b1 = if chunk.len() > 1 { chunk[1] as u32 } else { 0 };
-        let b2 = if chunk.len() > 2 { chunk[2] as u32 } else { 0 };
-        let triple = (b0 << 16) | (b1 << 8) | b2;
-
-        out.push(B64[((triple >> 18) & 0x3f) as usize] as char);
-        out.push(B64[((triple >> 12) & 0x3f) as usize] as char);
-        if chunk.len() > 1 {
-            out.push(B64[((triple >> 6) & 0x3f) as usize] as char);
-        } else {
-            out.push('=');
-        }
-        if chunk.len() > 2 {
-            out.push(B64[(triple & 0x3f) as usize] as char);
-        } else {
-            out.push('=');
-        }
-    }
-    out
-}
 
 /// Generated SSH key pair in OpenSSH format.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -72,7 +48,7 @@ pub fn generate_ssh_key(seed: &Seed) -> SshKeyPair {
     write_string(&mut pub_blob, b"ssh-ed25519");
     write_string(&mut pub_blob, &public_bytes);
 
-    let pub_b64 = to_base64(&pub_blob);
+    let pub_b64 = crate::util::to_base64(&pub_blob);
     let public_key = format!("ssh-ed25519 {pub_b64} {comment}\n").into_bytes();
 
     // 2. Build private key block (unencrypted)
@@ -106,7 +82,7 @@ pub fn generate_ssh_key(seed: &Seed) -> SshKeyPair {
     write_string(&mut container, &priv_block);
 
     // 4. Wrap with PEM header and footer with 70-character line breaks
-    let b64_container = to_base64(&container);
+    let b64_container = crate::util::to_base64(&container);
     let mut pem = String::from("-----BEGIN OPENSSH PRIVATE KEY-----\n");
     for chunk in b64_container.as_bytes().chunks(70) {
         pem.push_str(std::str::from_utf8(chunk).expect("valid utf-8 b64"));

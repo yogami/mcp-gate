@@ -556,7 +556,10 @@ pub fn start_observer_thread(
             if ret < 0 {
                 let err = std::io::Error::last_os_error();
                 if err.raw_os_error() == Some(libc::ENOENT) {
-                    continue; // Process died or syscall interrupted
+                    break; // Process died, no more processes attached to filter
+                }
+                if err.kind() == std::io::ErrorKind::Interrupted {
+                    continue; // Syscall interrupted
                 }
                 break;
             }
