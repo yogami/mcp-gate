@@ -41,12 +41,11 @@ jobs:
               source: "."
               mode: "in-place"
           limits:
-            cpu_seconds: 20
-            memory_mb: 512
-            max_fds: 100
-            file_size_mb: 10
-            max_children: 10
-            grace_ms: 1000
+            startup_timeout_s: 30
+            call_timeout_s: 30
+            total_timeout_s: 60
+            shutdown_grace_s: 3
+            max_processes: 64
           policy:
             allow_network: true
             allowed_unix_sockets: []
