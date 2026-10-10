@@ -50,7 +50,7 @@ jobs:
             baseline: "node"
             allow_network: true
             allowed_unix_sockets: []
-            allowed_child_binaries: ["node", "npx", "env", "bash", "sh", "/bin/node", "/usr/bin/node", "/usr/local/bin/node", "/opt/hostedtoolcache/node/20.20.2/x64/bin/node"]
+            allowed_child_binaries: ["node", "npx", "env", "bash", "sh", "/usr/local/bin/node"]
             read_paths:
               - "/tmp"
               - "/usr/local/bin"
@@ -73,6 +73,7 @@ jobs:
           ls -la $(which npx)
           ls -la $(which node)
           # Create a dummy database and npm dirs
+          sudo ln -sf $(which node) /usr/local/bin/node
           touch /tmp/test.db
           mkdir -p /home/runner/.npm/_npx
           # Run mcp-gate
