@@ -53,6 +53,7 @@ jobs:
             read_paths:
               - "/tmp"
               - "/usr/local/bin"
+              - "/opt/hostedtoolcache/node"
               - "/home/runner/.npm"
             write_paths:
               - "/tmp"
