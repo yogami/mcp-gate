@@ -15,99 +15,28 @@ impl ReportWriter for SarifWriter {
     }
 
     fn write(&self, run: &RunRecord, out: &mut dyn Write) -> io::Result<()> {
-        let rules = vec![
-            json!({
-                "id": "MCPG001",
-                "name": "canary-file-access",
-                "shortDescription": { "text": "Server process accessed a decoy canary file or triggered an inotify tripwire on planted credentials" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "9.0", "tags": ["CWE-552"] }
-            }),
-            json!({
-                "id": "MCPG002",
-                "name": "canary-value-leak",
-                "shortDescription": { "text": "Decoy canary secret value observed in stdout, stderr, written files, child process arguments, or network traffic" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "9.5", "tags": ["CWE-200"] }
-            }),
-            json!({
-                "id": "MCPG003",
-                "name": "read-outside-policy",
-                "shortDescription": { "text": "File read access outside declared policy read paths and runtime baseline" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "7.5", "tags": ["CWE-284"] }
-            }),
-            json!({
-                "id": "MCPG004",
-                "name": "write-outside-policy",
-                "shortDescription": { "text": "File write, creation, truncation, or mutation outside declared policy write paths" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "8.0", "tags": ["CWE-284"] }
-            }),
-            json!({
-                "id": "MCPG005",
-                "name": "path-traversal-escape",
-                "shortDescription": { "text": "Path traversal escape via relative components, symlinks, or absolute paths targeting files outside declared directories during a tool call" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "8.5", "tags": ["CWE-22"] }
-            }),
-            json!({
-                "id": "MCPG006",
-                "name": "unapproved-child-process",
-                "shortDescription": { "text": "Execution of a binary or child process not permitted by policy allowed child binaries" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "8.0", "tags": ["CWE-78"] }
-            }),
-            json!({
-                "id": "MCPG007",
-                "name": "unapproved-network",
-                "shortDescription": { "text": "Network activity while allow_network is disabled" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "7.5", "tags": ["CWE-200"] }
-            }),
-            json!({
-                "id": "MCPG008",
-                "name": "foreign-proc-access",
-                "shortDescription": { "text": "Access to foreign /proc entries outside the capsule process tree" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "8.0", "tags": ["CWE-214"] }
-            }),
-            json!({
-                "id": "MCPG009",
-                "name": "unapproved-unix-socket",
-                "shortDescription": { "text": "Connection to a Unix domain socket not listed in policy allowed_unix_sockets" },
-                "defaultConfiguration": { "level": "error" },
-                "properties": { "security-severity": "9.0", "tags": ["CWE-269"] }
-            }),
-            json!({
-                "id": "MCPG010",
-                "name": "harness-tamper-attempt",
-                "shortDescription": { "text": "Attempt to tamper with harness execution, send disallowed signals, or invoke restricted system calls" },
-                "defaultConfiguration": { "level": "warning" },
-                "properties": { "security-severity": "6.0", "tags": ["CWE-693"] }
-            }),
-            json!({
-                "id": "MCPG011",
-                "name": "sensitive-path-probe",
-                "shortDescription": { "text": "Existence probing or stat on sensitive paths such as user home directories or decoy credential zones" },
-                "defaultConfiguration": { "level": "note" },
-                "properties": { "security-severity": "3.0", "tags": ["CWE-200"] }
-            }),
-            json!({
-                "id": "MCPG012",
-                "name": "process-escape",
-                "shortDescription": { "text": "Subprocess or orphaned daemon outliving the test run after shutdown signals" },
-                "defaultConfiguration": { "level": "warning" },
-                "properties": { "security-severity": "5.0", "tags": ["CWE-404"] }
-            }),
-            json!({
-                "id": "MCPG900",
-                "name": "protocol-violation",
-                "shortDescription": { "text": "MCP JSON-RPC protocol violation or framing error" },
-                "defaultConfiguration": { "level": "warning" },
-                "properties": { "security-severity": "0.0" }
-            }),
-        ];
+        let rules: Vec<serde_json::Value> = mcpg_domain::rules::RULES
+            .iter()
+            .map(|r| {
+                let level_str = match r.default_level {
+                    mcpg_domain::rules::FindingLevel::Note => "note",
+                    mcpg_domain::rules::FindingLevel::Warning => "warning",
+                    mcpg_domain::rules::FindingLevel::Error => "error",
+                };
+                let mut props = serde_json::Map::new();
+                props.insert("security-severity".to_string(), json!(r.security_severity));
+                if r.cwe != "n/a" {
+                    props.insert("tags".to_string(), json!([r.cwe]));
+                }
+                json!({
+                    "id": r.id,
+                    "name": r.name,
+                    "shortDescription": { "text": r.description },
+                    "defaultConfiguration": { "level": level_str },
+                    "properties": props
+                })
+            })
+            .collect();
 
         let max_results = 5000;
         let truncated = run.protocol_violations.len() > max_results;
@@ -125,12 +54,13 @@ impl ReportWriter for SarifWriter {
             .iter()
             .take(max_results)
             .map(|(rule_id, detail)| {
-                let level = match rule_id.as_str() {
-                    "MCPG001" | "MCPG002" | "MCPG003" | "MCPG004" | "MCPG005" | "MCPG006"
-                    | "MCPG007" | "MCPG008" | "MCPG009" => "error",
-                    "MCPG011" => "note",
-                    _ => "warning",
-                };
+                let level = mcpg_domain::rules::get_rule(rule_id.as_str())
+                    .map(|r| match r.default_level {
+                        mcpg_domain::rules::FindingLevel::Note => "note",
+                        mcpg_domain::rules::FindingLevel::Warning => "warning",
+                        mcpg_domain::rules::FindingLevel::Error => "error",
+                    })
+                    .unwrap_or("warning");
                 let mut hasher = sha2::Sha256::new();
                 use sha2::Digest;
                 hasher.update(b"mcpGate/v1:");

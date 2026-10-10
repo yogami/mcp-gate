@@ -18,20 +18,14 @@ pub fn execute(opts: &RunOptions) -> ExitCode {
         Ok(mut outcome) => {
             // Apply fail_on logic for security violations
             let mut fail = false;
-            let fail_on_level = match opts.fail_on.unwrap_or(mcpg_domain::config::model::FailOnLevel::Error) {
-                mcpg_domain::config::model::FailOnLevel::Error => 3,
-                mcpg_domain::config::model::FailOnLevel::Warning => 2,
-                mcpg_domain::config::model::FailOnLevel::Note => 1,
-            };
+            let fail_on_level = opts.fail_on.unwrap_or(mcpg_domain::config::model::FailOnLevel::Error);
 
             for (rule_id, _) in &outcome.violations {
-                let rule_severity = match rule_id.as_str() {
-                    "MCPG001" | "MCPG002" | "MCPG009" | "MCPG012" => 2, // Warning
-                    "MCPG003" => 1, // Note
-                    _ => 3, // Error (MCPG004-008, 010-011, 900)
-                };
+                let default_level = mcpg_domain::rules::get_rule(rule_id)
+                    .map(|r| r.default_level)
+                    .unwrap_or(mcpg_domain::rules::FindingLevel::Warning);
 
-                if rule_severity >= fail_on_level {
+                if fail_on_level.admits(default_level) {
                     fail = true;
                     break;
                 }

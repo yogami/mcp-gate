@@ -317,11 +317,11 @@ pub enum FailOnLevel {
 }
 
 impl FailOnLevel {
-    pub fn should_fail(self, finding_level: FailOnLevel) -> bool {
+    pub fn admits(self, finding_level: crate::rules::FindingLevel) -> bool {
         match self {
-            FailOnLevel::Error => matches!(finding_level, FailOnLevel::Error),
+            FailOnLevel::Error => matches!(finding_level, crate::rules::FindingLevel::Error),
             FailOnLevel::Warning => {
-                matches!(finding_level, FailOnLevel::Error | FailOnLevel::Warning)
+                matches!(finding_level, crate::rules::FindingLevel::Error | crate::rules::FindingLevel::Warning)
             }
             FailOnLevel::Note => true,
         }
